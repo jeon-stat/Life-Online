@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Life Online",
+    "slug": "life-online",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "experiments": {
+      "baseUrl": "/Life-Online"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-status-bar"
+    ]
+  }
+}
