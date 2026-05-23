@@ -42,7 +42,7 @@ test("scene config keeps the character in the open stage layout", () => {
   assert.equal(STAGE_LAYOUT.heroHeight, 462);
 });
 
-test("drag rotation only changes yaw so page scroll no longer fights vertical tilt", () => {
+test("drag rotation updates both yaw and tilt inside the character hotspot", () => {
   const nextRotation = getRotationFromDrag(
     { x: 0.02, y: 0 },
     { dx: 40, dy: -120 },
@@ -50,5 +50,5 @@ test("drag rotation only changes yaw so page scroll no longer fights vertical ti
   );
 
   assert.equal(nextRotation.y, 0.8);
-  assert.equal(nextRotation.x, 0.02);
+  assert.equal(nextRotation.x, -0.5);
 });

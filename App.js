@@ -72,8 +72,8 @@ export default function App() {
           </View>
 
           <Text style={styles.helperText}>
-            Use the dedicated rotation bar under the stage to spin the model. Page scroll and
-            character rotation are separated on purpose.
+            Drag directly on the character area to rotate it. Outside that area, vertical swipes
+            keep working as normal page scroll.
           </Text>
         </View>
       </ScrollView>
