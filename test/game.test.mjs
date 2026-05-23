@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { createGameState, applyAction, ACTIONS } from "../src/game.js";
-import { FLOOR_TILES, CHARACTER_PARTS, FLOOR_LABEL } from "../src/scene.js";
+import { CHARACTER_CLASSES, STAGE_MODE } from "../src/characters.js";
 
 test("study action grows exp and keeps the cute adventurer title before level up", () => {
   const nextState = applyAction(createGameState(), ACTIONS.study);
@@ -11,7 +11,7 @@ test("study action grows exp and keeps the cute adventurer title before level up
   assert.equal(nextState.count, 1);
   assert.equal(nextState.level, 1);
   assert.equal(nextState.mood, "뿌듯");
-  assert.equal(nextState.title, "성실한 새싹 모험가");
+  assert.equal(nextState.title, "\uc131\uc2e4\ud55c \uc0c8\uc2f9 \ubaa8\ud5d8\uac00");
 });
 
 test("reaching 30 exp upgrades the title and level", () => {
@@ -24,33 +24,28 @@ test("reaching 30 exp upgrades the title and level", () => {
 
   assert.equal(state.exp, 30);
   assert.equal(state.level, 2);
-  assert.equal(state.title, "반짝이는 루틴 모험가");
+  assert.equal(state.title, "\ubc18\uc9dd\uc774\ub294 \ub8e8\ud2f4 \ubaa8\ud5d8\uac00");
 });
 
-test("scene keeps a 3x3 floor grid and richer character parts", () => {
-  assert.equal(FLOOR_TILES.length, 9);
-  assert.equal(FLOOR_LABEL, "3x3 floor grid");
+test("character roster includes warrior mage and pirate without floor tiles", () => {
+  assert.equal(STAGE_MODE, "character-only");
   assert.deepEqual(
-    CHARACTER_PARTS,
-    [
-      "backHair",
-      "hairCap",
-      "bangLeft",
-      "bangRight",
-      "head",
-      "earLeft",
-      "earRight",
-      "neck",
-      "body",
-      "belt",
-      "armLeft",
-      "armRight",
-      "handLeft",
-      "handRight",
-      "legLeft",
-      "legRight",
-      "shoeLeft",
-      "shoeRight",
-    ],
+    CHARACTER_CLASSES.map((item) => item.id),
+    ["warrior", "mage", "pirate"],
   );
+  assert.deepEqual(
+    CHARACTER_CLASSES.map((item) => item.label),
+    ["\uc804\uc0ac", "\ub9c8\ubc95\uc0ac", "\ud574\uc801"],
+  );
+  assert.equal(CHARACTER_CLASSES.every((item) => typeof item.palette.primary === "string"), true);
+});
+
+test("each character class has a distinct hero silhouette for the 3d model", () => {
+  const warrior = CHARACTER_CLASSES.find((item) => item.id === "warrior");
+  const mage = CHARACTER_CLASSES.find((item) => item.id === "mage");
+  const pirate = CHARACTER_CLASSES.find((item) => item.id === "pirate");
+
+  assert.deepEqual(warrior.modelSignature, ["broad-shoulders", "great-sword", "armor-bangs"]);
+  assert.deepEqual(mage.modelSignature, ["wide-hat", "long-robe", "staff-orb"]);
+  assert.deepEqual(pirate.modelSignature, ["tricorn-hat", "long-coat", "hook-blade"]);
 });
