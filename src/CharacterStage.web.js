@@ -1,9 +1,7 @@
 import { useMemo, useRef, useState } from "react";
-import { PanResponder, StyleSheet, View } from "react-native";
+import { PanResponder, StyleSheet, Text, View } from "react-native";
 
-import { MageModel } from "./models/MageModel.js";
-import { PirateModel } from "./models/PirateModel.js";
-import { WarriorModel } from "./models/WarriorModel.js";
+import { PongoModel } from "./models/PongoModel.js";
 import { StageCanvas } from "./scene/StageCanvas.web.js";
 import { StageRig } from "./scene/StageRig.js";
 import { getRotationFromDrag } from "./scene/rotationMath.js";
@@ -18,7 +16,8 @@ export function CharacterStage({ character, onInteractionChange }) {
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_, gestureState) =>
+          Math.abs(gestureState.dx) > 4 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy),
         onPanResponderTerminationRequest: () => false,
         onPanResponderGrant: () => {
           dragStartRef.current = rotationRef.current;
@@ -46,20 +45,26 @@ export function CharacterStage({ character, onInteractionChange }) {
 
   return (
     <View style={styles.stage}>
-      <StageCanvas>
-        <StageRig rotation={rotation}>
-          <ClassModel character={character} />
-        </StageRig>
-      </StageCanvas>
-      <View style={styles.gestureLayer} {...panResponder.panHandlers} />
+      <View style={styles.canvasViewport}>
+        <StageCanvas>
+          <StageRig rotation={rotation}>
+            <PongoModel character={character} />
+          </StageRig>
+        </StageCanvas>
+      </View>
+      <View style={styles.controlPanel}>
+        <Text style={styles.controlTitle}>Rotate Character</Text>
+        <Text style={styles.controlHint}>
+          Drag this bar left or right. Vertical page scrolling is kept separate.
+        </Text>
+        <View style={styles.gestureTrack} {...panResponder.panHandlers}>
+          <View style={styles.gestureTrackInner}>
+            <View style={styles.gestureKnob} />
+          </View>
+        </View>
+      </View>
     </View>
   );
-}
-
-function ClassModel({ character }) {
-  if (character.id === "mage") return <MageModel character={character} />;
-  if (character.id === "pirate") return <PirateModel character={character} />;
-  return <WarriorModel character={character} />;
 }
 
 const styles = StyleSheet.create({
@@ -67,11 +72,42 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: STAGE_LAYOUT.background,
   },
-  gestureLayer: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "transparent",
-    cursor: "grab",
+  canvasViewport: {
+    flex: 1,
+  },
+  controlPanel: {
+    paddingTop: 8,
+    paddingBottom: 6,
+    gap: 6,
+  },
+  controlTitle: {
+    color: "#223047",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  controlHint: {
+    color: "#627182",
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  gestureTrack: {
+    height: 44,
+    justifyContent: "center",
+    cursor: "ew-resize",
     touchAction: "none",
     userSelect: "none",
+  },
+  gestureTrackInner: {
+    height: 12,
+    borderRadius: 999,
+    backgroundColor: "#e7ecf4",
+    justifyContent: "center",
+    paddingHorizontal: 8,
+  },
+  gestureKnob: {
+    width: 54,
+    height: 24,
+    borderRadius: 999,
+    backgroundColor: "#27364d",
   },
 });

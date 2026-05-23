@@ -12,7 +12,7 @@ import { StatRow } from "./src/ui/StatRow.js";
 
 export default function App() {
   const [state, setState] = useState(() => createGameState());
-  const [selectedId, setSelectedId] = useState("warrior");
+  const [selectedId, setSelectedId] = useState(CHARACTER_CLASSES[0]?.id ?? "pongo");
   const [isStageDragging, setIsStageDragging] = useState(false);
 
   const selectedCharacter =
@@ -29,7 +29,7 @@ export default function App() {
             </View>
           </View>
 
-          <Text style={styles.heading}>내 캐릭터</Text>
+          <Text style={styles.heading}>3D Character Test</Text>
           <Text style={styles.subtitle}>{selectedCharacter.label}</Text>
           <Text style={styles.blurb}>{selectedCharacter.blurb}</Text>
 
@@ -40,20 +40,22 @@ export default function App() {
             />
           </View>
 
-          <View style={styles.surface}>
-            <ClassTabs
-              characters={CHARACTER_CLASSES}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-            />
-          </View>
+          {CHARACTER_CLASSES.length > 1 ? (
+            <View style={styles.surface}>
+              <ClassTabs
+                characters={CHARACTER_CLASSES}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
+              />
+            </View>
+          ) : null}
 
           <View style={styles.surface}>
             <StatRow
               items={[
                 { label: "EXP", value: String(state.exp) },
-                { label: "기분", value: state.mood },
-                { label: "오늘", value: String(state.count) },
+                { label: "MOOD", value: state.mood },
+                { label: "ACTIONS", value: String(state.count) },
               ]}
             />
           </View>
@@ -70,8 +72,8 @@ export default function App() {
           </View>
 
           <Text style={styles.helperText}>
-            캐릭터를 손가락으로 드래그해서 돌려볼 수 있어요. 세로 스크롤과 충돌하지 않도록
-            드래그 중에는 화면 스크롤을 잠깐 멈추게 했어요.
+            Use the dedicated rotation bar under the stage to spin the model. Page scroll and
+            character rotation are separated on purpose.
           </Text>
         </View>
       </ScrollView>
@@ -140,7 +142,7 @@ const styles = StyleSheet.create({
     color: "#627182",
     fontSize: 15,
     lineHeight: 21,
-    maxWidth: 320,
+    maxWidth: 340,
   },
   heroStage: {
     width: "100%",

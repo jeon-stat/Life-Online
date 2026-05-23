@@ -1,10 +1,10 @@
-import { View, Text, StyleSheet } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 export function CharacterStage({ character }) {
   return (
     <View style={styles.fallback}>
       <Text style={styles.title}>{character.label}</Text>
-      <Text style={styles.copy}>3D 미리보기는 웹에서 확인할 수 있어요.</Text>
+      <Text style={styles.copy}>3D preview is available in the web build.</Text>
     </View>
   );
 }
