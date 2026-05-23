@@ -6,10 +6,12 @@ import { PirateModel } from "./models/PirateModel.js";
 import { WarriorModel } from "./models/WarriorModel.js";
 import { StageCanvas } from "./scene/StageCanvas.web.js";
 import { StageRig } from "./scene/StageRig.js";
+import { getRotationFromDrag } from "./scene/rotationMath.js";
 import { STAGE_LAYOUT } from "./scene/stageConfig.js";
 
-export function CharacterStage({ character }) {
+export function CharacterStage({ character, onInteractionChange }) {
   const [rotation, setRotation] = useState(STAGE_LAYOUT.defaultRotation);
+  const rotationRef = useRef(STAGE_LAYOUT.defaultRotation);
   const dragStartRef = useRef(STAGE_LAYOUT.defaultRotation);
 
   const panResponder = useMemo(
@@ -17,22 +19,29 @@ export function CharacterStage({ character }) {
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
+        onPanResponderTerminationRequest: () => false,
         onPanResponderGrant: () => {
-          dragStartRef.current = rotation;
+          dragStartRef.current = rotationRef.current;
+          onInteractionChange?.(true);
         },
         onPanResponderMove: (_, gestureState) => {
-          const nextY =
-            dragStartRef.current.y + gestureState.dx * STAGE_LAYOUT.rotationLimit.yStep;
-          const nextX = clamp(
-            dragStartRef.current.x - gestureState.dy * STAGE_LAYOUT.rotationLimit.xStep,
-            -STAGE_LAYOUT.rotationLimit.x,
-            STAGE_LAYOUT.rotationLimit.x,
+          const nextRotation = getRotationFromDrag(
+            dragStartRef.current,
+            gestureState,
+            STAGE_LAYOUT.rotationLimit,
           );
 
-          setRotation({ x: nextX, y: nextY });
+          rotationRef.current = nextRotation;
+          setRotation(nextRotation);
+        },
+        onPanResponderRelease: () => {
+          onInteractionChange?.(false);
+        },
+        onPanResponderTerminate: () => {
+          onInteractionChange?.(false);
         },
       }),
-    [rotation],
+    [onInteractionChange],
   );
 
   return (
@@ -53,10 +62,6 @@ function ClassModel({ character }) {
   return <WarriorModel character={character} />;
 }
 
-function clamp(value, min, max) {
-  return Math.max(min, Math.min(max, value));
-}
-
 const styles = StyleSheet.create({
   stage: {
     flex: 1,
@@ -66,5 +71,7 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "transparent",
     cursor: "grab",
+    touchAction: "none",
+    userSelect: "none",
   },
 });

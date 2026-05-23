@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { createGameState, applyAction, ACTIONS } from "../src/game.js";
 import { CHARACTER_CLASSES, STAGE_MODE } from "../src/characters.js";
 import { CHARACTER_SCALE, STAGE_LAYOUT } from "../src/scene/stageConfig.js";
+import { getRotationFromDrag } from "../src/scene/rotationMath.js";
 
 test("study action grows exp and keeps the cute adventurer title before level up", () => {
   const nextState = applyAction(createGameState(), ACTIONS.study);
@@ -57,4 +58,15 @@ test("scene config keeps the character smaller and in an open stage layout", () 
   assert.equal(STAGE_LAYOUT.surface, "full-bleed");
   assert.equal(STAGE_LAYOUT.background, "#ffffff");
   assert.equal(STAGE_LAYOUT.interaction, "drag-rotate");
+});
+
+test("drag rotation responds more strongly and clamps vertical tilt", () => {
+  const nextRotation = getRotationFromDrag(
+    { x: 0.03, y: -0.24 },
+    { dx: 40, dy: -120 },
+    STAGE_LAYOUT.rotationLimit,
+  );
+
+  assert.equal(nextRotation.y, 0.56);
+  assert.equal(nextRotation.x, 0.5);
 });

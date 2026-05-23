@@ -13,13 +13,14 @@ import { StatRow } from "./src/ui/StatRow.js";
 export default function App() {
   const [state, setState] = useState(() => createGameState());
   const [selectedId, setSelectedId] = useState("warrior");
+  const [isStageDragging, setIsStageDragging] = useState(false);
 
   const selectedCharacter =
     CHARACTER_CLASSES.find((item) => item.id === selectedId) ?? CHARACTER_CLASSES[0];
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} scrollEnabled={!isStageDragging}>
         <View style={styles.screen}>
           <View style={styles.topbar}>
             <Text style={styles.brand}>Life Online DEV</Text>
@@ -33,7 +34,10 @@ export default function App() {
           <Text style={styles.blurb}>{selectedCharacter.blurb}</Text>
 
           <View style={[styles.heroStage, { height: STAGE_LAYOUT.heroHeight }]}>
-            <CharacterStage character={selectedCharacter} />
+            <CharacterStage
+              character={selectedCharacter}
+              onInteractionChange={setIsStageDragging}
+            />
           </View>
 
           <View style={styles.surface}>
@@ -66,8 +70,8 @@ export default function App() {
           </View>
 
           <Text style={styles.helperText}>
-            캐릭터를 손가락으로 드래그해서 돌려볼 수 있어요. 지금은 빠른 테스트 버전이라
-            회전만 먼저 붙여둔 상태예요.
+            캐릭터를 손가락으로 드래그해서 돌려볼 수 있어요. 세로 스크롤과 충돌하지 않도록
+            드래그 중에는 화면 스크롤을 잠깐 멈추게 했어요.
           </Text>
         </View>
       </ScrollView>
