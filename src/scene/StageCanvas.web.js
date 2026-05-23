@@ -9,8 +9,8 @@ export function StageCanvas({ children }) {
       camera={{ position: STAGE_LAYOUT.cameraPosition, fov: STAGE_LAYOUT.fov }}
       dpr={[1, 2]}
     >
-      <color attach="background" args={["#f8fbff"]} />
-      <fog attach="fog" args={["#f8fbff", 8, 16]} />
+      <color attach="background" args={[STAGE_LAYOUT.background]} />
+      <fog attach="fog" args={[STAGE_LAYOUT.background, 8, 16]} />
       <StageLights />
       {children}
     </Canvas>

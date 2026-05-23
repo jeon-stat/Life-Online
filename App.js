@@ -1,5 +1,4 @@
 import { StatusBar } from "expo-status-bar";
-import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
 import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
@@ -19,83 +18,81 @@ export default function App() {
     CHARACTER_CLASSES.find((item) => item.id === selectedId) ?? CHARACTER_CLASSES[0];
 
   return (
-    <LinearGradient colors={["#cfeeff", "#fff7df", "#ffe3ef"]} style={styles.background}>
-      <SafeAreaView style={styles.safe}>
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.screen}>
-            <View style={styles.topbar}>
-              <Text style={styles.brand}>Life Online DEV</Text>
-              <View style={styles.levelPill}>
-                <Text style={styles.levelText}>LV {state.level}</Text>
-              </View>
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.screen}>
+          <View style={styles.topbar}>
+            <Text style={styles.brand}>Life Online DEV</Text>
+            <View style={styles.levelPill}>
+              <Text style={styles.levelText}>LV {state.level}</Text>
             </View>
-
-            <Text style={styles.heading}>내 캐릭터</Text>
-            <Text style={styles.subtitle}>{selectedCharacter.label}</Text>
-            <Text style={styles.blurb}>{selectedCharacter.blurb}</Text>
-
-            <View style={[styles.heroStage, { height: STAGE_LAYOUT.heroHeight }]}>
-              <CharacterStage character={selectedCharacter} />
-            </View>
-
-            <View style={styles.surface}>
-              <ClassTabs
-                characters={CHARACTER_CLASSES}
-                selectedId={selectedId}
-                onSelect={setSelectedId}
-              />
-            </View>
-
-            <View style={styles.surface}>
-              <StatRow
-                items={[
-                  { label: "EXP", value: String(state.exp) },
-                  { label: "기분", value: state.mood },
-                  { label: "오늘", value: String(state.count) },
-                ]}
-              />
-            </View>
-
-            <View style={styles.surface}>
-              <ActionGrid
-                actions={ACTION_LIST}
-                onAction={(action) => setState((current) => applyAction(current, action))}
-              />
-            </View>
-
-            <View style={styles.logPanel}>
-              <Text style={styles.logText}>{state.log}</Text>
-            </View>
-
-            <Text style={styles.helperText}>
-              이제 씬은 카드가 아니라 열린 공간으로 다룹니다. 다음 단계에서는 이 공간 안에서
-              자유 회전과 더 정교한 캐릭터 디테일을 붙이면 됩니다.
-            </Text>
           </View>
-        </ScrollView>
-      </SafeAreaView>
+
+          <Text style={styles.heading}>내 캐릭터</Text>
+          <Text style={styles.subtitle}>{selectedCharacter.label}</Text>
+          <Text style={styles.blurb}>{selectedCharacter.blurb}</Text>
+
+          <View style={[styles.heroStage, { height: STAGE_LAYOUT.heroHeight }]}>
+            <CharacterStage character={selectedCharacter} />
+          </View>
+
+          <View style={styles.surface}>
+            <ClassTabs
+              characters={CHARACTER_CLASSES}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+            />
+          </View>
+
+          <View style={styles.surface}>
+            <StatRow
+              items={[
+                { label: "EXP", value: String(state.exp) },
+                { label: "기분", value: state.mood },
+                { label: "오늘", value: String(state.count) },
+              ]}
+            />
+          </View>
+
+          <View style={styles.surface}>
+            <ActionGrid
+              actions={ACTION_LIST}
+              onAction={(action) => setState((current) => applyAction(current, action))}
+            />
+          </View>
+
+          <View style={styles.logPanel}>
+            <Text style={styles.logText}>{state.log}</Text>
+          </View>
+
+          <Text style={styles.helperText}>
+            캐릭터를 손가락으로 드래그해서 돌려볼 수 있어요. 지금은 빠른 테스트 버전이라
+            회전만 먼저 붙여둔 상태예요.
+          </Text>
+        </View>
+      </ScrollView>
       <StatusBar style="dark" />
-    </LinearGradient>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  background: {
-    flex: 1,
-  },
   safe: {
     flex: 1,
+    backgroundColor: "#ffffff",
   },
   scrollContent: {
     flexGrow: 1,
     paddingHorizontal: 16,
     paddingTop: 10,
     paddingBottom: 24,
+    backgroundColor: "#ffffff",
   },
   screen: {
     width: "100%",
     maxWidth: 460,
     alignSelf: "center",
+    backgroundColor: "#ffffff",
   },
   topbar: {
     flexDirection: "row",
@@ -146,6 +143,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 14,
     overflow: "hidden",
+    backgroundColor: "#ffffff",
   },
   surface: {
     marginTop: 10,
@@ -153,7 +151,9 @@ const styles = StyleSheet.create({
   logPanel: {
     marginTop: 12,
     borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.86)",
+    borderWidth: 1,
+    borderColor: "#e8edf4",
+    backgroundColor: "#ffffff",
     paddingHorizontal: 14,
     paddingVertical: 14,
   },

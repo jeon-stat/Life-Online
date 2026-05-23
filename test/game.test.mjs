@@ -55,4 +55,6 @@ test("scene config keeps the character smaller and in an open stage layout", () 
   assert.equal(CHARACTER_SCALE, 0.5);
   assert.equal(STAGE_LAYOUT.mode, "open-stage");
   assert.equal(STAGE_LAYOUT.surface, "full-bleed");
+  assert.equal(STAGE_LAYOUT.background, "#ffffff");
+  assert.equal(STAGE_LAYOUT.interaction, "drag-rotate");
 });
