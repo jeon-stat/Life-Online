@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 
 import { createGameState, applyAction, ACTIONS } from "../src/game.js";
 import { CHARACTER_CLASSES, STAGE_MODE } from "../src/characters.js";
+import { CHARACTER_SCALE, STAGE_LAYOUT } from "../src/scene/stageConfig.js";
 
 test("study action grows exp and keeps the cute adventurer title before level up", () => {
   const nextState = applyAction(createGameState(), ACTIONS.study);
@@ -48,4 +49,10 @@ test("each character class has a distinct hero silhouette for the 3d model", () 
   assert.deepEqual(warrior.modelSignature, ["broad-shoulders", "great-sword", "armor-bangs"]);
   assert.deepEqual(mage.modelSignature, ["wide-hat", "long-robe", "staff-orb"]);
   assert.deepEqual(pirate.modelSignature, ["tricorn-hat", "long-coat", "hook-blade"]);
+});
+
+test("scene config keeps the character smaller and in an open stage layout", () => {
+  assert.equal(CHARACTER_SCALE, 0.5);
+  assert.equal(STAGE_LAYOUT.mode, "open-stage");
+  assert.equal(STAGE_LAYOUT.surface, "full-bleed");
 });

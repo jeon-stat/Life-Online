@@ -1,18 +1,15 @@
 import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
 import { useState } from "react";
-import {
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { CharacterStage } from "./src/CharacterStage";
 import { CHARACTER_CLASSES } from "./src/characters.js";
 import { ACTION_LIST, applyAction, createGameState } from "./src/game.js";
+import { STAGE_LAYOUT } from "./src/scene/stageConfig.js";
+import { ActionGrid } from "./src/ui/ActionGrid.js";
+import { ClassTabs } from "./src/ui/ClassTabs.js";
+import { StatRow } from "./src/ui/StatRow.js";
 
 export default function App() {
   const [state, setState] = useState(() => createGameState());
@@ -22,10 +19,10 @@ export default function App() {
     CHARACTER_CLASSES.find((item) => item.id === selectedId) ?? CHARACTER_CLASSES[0];
 
   return (
-    <LinearGradient colors={["#bde7ff", "#fff7df", "#ffd6e9"]} style={styles.background}>
+    <LinearGradient colors={["#cfeeff", "#fff7df", "#ffe3ef"]} style={styles.background}>
       <SafeAreaView style={styles.safe}>
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.appShell}>
+          <View style={styles.screen}>
             <View style={styles.topbar}>
               <Text style={styles.brand}>Life Online DEV</Text>
               <View style={styles.levelPill}>
@@ -37,73 +34,48 @@ export default function App() {
             <Text style={styles.subtitle}>{selectedCharacter.label}</Text>
             <Text style={styles.blurb}>{selectedCharacter.blurb}</Text>
 
-            <View style={styles.hero}>
-              <LinearGradient colors={["#f7fbff", "#fff2d4"]} style={styles.characterCard}>
-                <CharacterStage character={selectedCharacter} />
-              </LinearGradient>
+            <View style={[styles.heroStage, { height: STAGE_LAYOUT.heroHeight }]}>
+              <CharacterStage character={selectedCharacter} />
             </View>
 
-            <View style={styles.classRow}>
-              {CHARACTER_CLASSES.map((character) => {
-                const selected = character.id === selectedCharacter.id;
-
-                return (
-                  <Pressable
-                    key={character.id}
-                    onPress={() => setSelectedId(character.id)}
-                    style={[
-                      styles.classButton,
-                      selected && { backgroundColor: character.palette.primary },
-                    ]}
-                  >
-                    <Text style={[styles.classText, selected && styles.classTextSelected]}>
-                      {character.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
+            <View style={styles.surface}>
+              <ClassTabs
+                characters={CHARACTER_CLASSES}
+                selectedId={selectedId}
+                onSelect={setSelectedId}
+              />
             </View>
 
-            <View style={styles.statsRow}>
-              <StatCard label="EXP" value={String(state.exp)} />
-              <StatCard label="기분" value={state.mood} />
-              <StatCard label="오늘" value={String(state.count)} />
+            <View style={styles.surface}>
+              <StatRow
+                items={[
+                  { label: "EXP", value: String(state.exp) },
+                  { label: "기분", value: state.mood },
+                  { label: "오늘", value: String(state.count) },
+                ]}
+              />
             </View>
 
-            <View style={styles.actionsGrid}>
-              {ACTION_LIST.map((action) => (
-                <Pressable
-                  key={action.id}
-                  onPress={() => setState((current) => applyAction(current, action))}
-                  style={({ pressed }) => [
-                    styles.actionButton,
-                    pressed && styles.actionButtonPressed,
-                  ]}
-                >
-                  <Text style={styles.actionText}>{action.label}</Text>
-                </Pressable>
-              ))}
+            <View style={styles.surface}>
+              <ActionGrid
+                actions={ACTION_LIST}
+                onAction={(action) => setState((current) => applyAction(current, action))}
+              />
             </View>
 
-            <Text style={styles.logText}>{state.log}</Text>
+            <View style={styles.logPanel}>
+              <Text style={styles.logText}>{state.log}</Text>
+            </View>
+
             <Text style={styles.helperText}>
-              지금은 전사, 마법사, 해적 3종의 캐릭터 모델을 먼저 잡는 단계예요.
-              다음 단계에서 자유 회전과 상세 연출을 붙일게요.
+              이제 씬은 카드가 아니라 열린 공간으로 다룹니다. 다음 단계에서는 이 공간 안에서
+              자유 회전과 더 정교한 캐릭터 디테일을 붙이면 됩니다.
             </Text>
           </View>
         </ScrollView>
       </SafeAreaView>
       <StatusBar style="dark" />
     </LinearGradient>
-  );
-}
-
-function StatCard({ label, value }) {
-  return (
-    <View style={styles.statCard}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue}>{value}</Text>
-    </View>
   );
 }
 
@@ -116,23 +88,14 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: "center",
-    padding: 14,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 24,
   },
-  appShell: {
+  screen: {
     width: "100%",
-    maxWidth: 420,
+    maxWidth: 460,
     alignSelf: "center",
-    padding: 20,
-    borderRadius: 34,
-    borderWidth: 8,
-    borderColor: "#27364d",
-    backgroundColor: "#f8fbff",
-    shadowColor: "#1c2537",
-    shadowOpacity: 0.18,
-    shadowRadius: 28,
-    shadowOffset: { width: 0, height: 18 },
-    elevation: 5,
   },
   topbar: {
     flexDirection: "row",
@@ -176,103 +139,26 @@ const styles = StyleSheet.create({
     color: "#627182",
     fontSize: 15,
     lineHeight: 21,
-  },
-  hero: {
-    alignItems: "center",
-    paddingTop: 20,
-    paddingBottom: 10,
-  },
-  characterCard: {
-    width: "100%",
     maxWidth: 320,
-    height: 390,
-    borderRadius: 28,
-    overflow: "hidden",
-    shadowColor: "#4e5f7d",
-    shadowOpacity: 0.14,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 16 },
   },
-  classRow: {
-    flexDirection: "row",
-    gap: 8,
-    marginBottom: 18,
-  },
-  classButton: {
-    flex: 1,
-    minHeight: 46,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#dce5f0",
-    backgroundColor: "#ffffff",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  classText: {
-    color: "#27364d",
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  classTextSelected: {
-    color: "#ffffff",
-  },
-  statsRow: {
-    flexDirection: "row",
-    gap: 8,
+  heroStage: {
+    width: "100%",
+    marginTop: 12,
     marginBottom: 14,
+    overflow: "hidden",
   },
-  statCard: {
-    flex: 1,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#dce5f0",
-    backgroundColor: "rgba(255,255,255,0.85)",
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-    alignItems: "center",
+  surface: {
+    marginTop: 10,
   },
-  statLabel: {
-    color: "#7b8798",
-    fontSize: 12,
-    fontWeight: "900",
-  },
-  statValue: {
-    color: "#243042",
-    fontSize: 18,
-    fontWeight: "900",
-    marginTop: 5,
-  },
-  actionsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  actionButton: {
-    flexBasis: "18%",
-    minWidth: 64,
-    flexGrow: 1,
-    minHeight: 52,
-    borderRadius: 12,
-    backgroundColor: "#27364d",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  actionButtonPressed: {
-    opacity: 0.88,
-    transform: [{ translateY: 1 }],
-  },
-  actionText: {
-    color: "#ffffff",
-    fontWeight: "900",
-    fontSize: 15,
-  },
-  logText: {
-    marginTop: 14,
-    borderRadius: 12,
-    backgroundColor: "#ffffff",
-    color: "#5d6879",
+  logPanel: {
+    marginTop: 12,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.86)",
     paddingHorizontal: 14,
     paddingVertical: 14,
+  },
+  logText: {
+    color: "#5d6879",
     fontSize: 14,
     fontWeight: "800",
   },
@@ -281,5 +167,6 @@ const styles = StyleSheet.create({
     color: "#6a7585",
     fontSize: 13,
     lineHeight: 18,
+    paddingBottom: 8,
   },
 });
