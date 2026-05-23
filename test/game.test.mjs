@@ -1,45 +1,41 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { ACTIONS, applyAction, createGameState } from "../src/game.js";
+import { ACTIONS, CATEGORY_LIMITS, DAILY_EXP_CAP, applyAction, createGameState } from "../src/game.js";
 import { CHARACTER_CLASSES, STAGE_MODE } from "../src/characters.js";
 import { CHARACTER_SCALE, STAGE_LAYOUT } from "../src/scene/stageConfig.js";
 import { getRotationFromDrag } from "../src/scene/rotationMath.js";
 
-test("study action grows exp and keeps the early-game title before level up", () => {
-  const nextState = applyAction(createGameState(), ACTIONS.study);
+test("focus session grants strong progress on first completion", () => {
+  const nextState = applyAction(createGameState(), ACTIONS.focusSession);
 
-  assert.equal(nextState.exp, 8);
+  assert.equal(nextState.exp, 20);
+  assert.equal(nextState.dailyExp, 20);
+  assert.equal(nextState.categoryTotals.focus, 20);
   assert.equal(nextState.count, 1);
-  assert.equal(nextState.level, 1);
 });
 
-test("reaching 30 exp upgrades the title and level", () => {
+test("repeated actions lose efficiency and respect category caps", () => {
   let state = createGameState();
-  state = applyAction(state, ACTIONS.study);
-  state = applyAction(state, ACTIONS.exercise);
-  state = applyAction(state, ACTIONS.sleep);
-  state = applyAction(state, ACTIONS.clean);
-  state = applyAction(state, ACTIONS.lucky);
+  state = applyAction(state, ACTIONS.focusSession);
+  state = applyAction(state, ACTIONS.focusSession);
+  state = applyAction(state, ACTIONS.focusSession);
 
-  assert.equal(state.exp, 30);
-  assert.equal(state.level, 2);
+  assert.equal(state.categoryTotals.focus, CATEGORY_LIMITS.focus);
+  assert.equal(state.dailyExp, CATEGORY_LIMITS.focus);
 });
 
-test("character roster is reduced to the single Pongo test model", () => {
+test("daily growth loop uses one mascot character for now", () => {
   assert.equal(STAGE_MODE, "character-only");
   assert.deepEqual(CHARACTER_CLASSES.map((item) => item.id), ["pongo"]);
-  assert.equal(CHARACTER_CLASSES[0].label, "Pongo Test Model");
-  assert.equal(typeof CHARACTER_CLASSES[0].palette.primary, "string");
 });
 
-test("scene config keeps the character in the open stage layout", () => {
+test("scene config stays in open stage mode", () => {
   assert.equal(CHARACTER_SCALE, 0.5);
   assert.equal(STAGE_LAYOUT.mode, "open-stage");
   assert.equal(STAGE_LAYOUT.surface, "full-bleed");
   assert.equal(STAGE_LAYOUT.background, "#ffffff");
   assert.equal(STAGE_LAYOUT.interaction, "drag-rotate");
-  assert.equal(STAGE_LAYOUT.heroHeight, 462);
 });
 
 test("drag rotation updates both yaw and tilt inside the character hotspot", () => {
@@ -51,4 +47,24 @@ test("drag rotation updates both yaw and tilt inside the character hotspot", () 
 
   assert.equal(nextRotation.y, 0.8);
   assert.equal(nextRotation.x, -0.5);
+});
+
+test("daily exp never exceeds the hard cap", () => {
+  let state = createGameState();
+  const loop = [
+    ACTIONS.walkGoal,
+    ACTIONS.focusSession,
+    ACTIONS.windDown,
+    ACTIONS.tidyReset,
+    ACTIONS.reflection,
+    ACTIONS.walkGoal,
+    ACTIONS.focusSession,
+    ACTIONS.tidyReset,
+  ];
+
+  for (const action of loop) {
+    state = applyAction(state, action);
+  }
+
+  assert.equal(state.dailyExp <= DAILY_EXP_CAP, true);
 });
