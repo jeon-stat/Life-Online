@@ -9,37 +9,37 @@ import { ACTION_LIST, CATEGORY_LIMITS, DAILY_EXP_CAP, applyAction, createGameSta
 import { BottomTabs } from "./src/ui/BottomTabs.js";
 
 const NAV_ITEMS = [
-  { id: "today", label: "\uC624\uB298", icon: "H" },
-  { id: "focus", label: "\uC9D1\uC911", icon: "F" },
-  { id: "journey", label: "\uAE30\uB85D", icon: "J" },
-  { id: "avatar", label: "\uAFB8\uBBF8\uAE30", icon: "A" },
+  { id: "today", label: "오늘", icon: "H" },
+  { id: "focus", label: "집중", icon: "F" },
+  { id: "journey", label: "기록", icon: "J" },
+  { id: "avatar", label: "꾸미기", icon: "A" },
 ];
 
 const ACTION_HELP = {
-  walkGoal: "\uAC00\uBCBD\uAC8C \uBAB8\uC744 \uAE68\uC6B0\uB294 \uAE30\uBCF8 \uD589\uB3D9",
-  focusSession: "25\uBD84 \uB3D9\uC548 \uD55C \uAC00\uC9C0\uC5D0 \uBAB0\uC785",
-  windDown: "\uBC24 \uB8E8\uD2F4\uC744 \uC815\uB9AC\uD558\uB294 \uD589\uB3D9",
-  tidyReset: "\uACF5\uAC04\uC744 \uBE44\uC6B0\uACE0 \uB2E4\uC2DC \uC2DC\uC791",
-  reflection: "\uC624\uB298\uC744 \uD55C \uC904\uB85C \uB0A8\uAE30\uAE30",
+  walkGoal: "가벽게 몸을 깨우는 기본 행동",
+  focusSession: "25분 동안 한 가지에 몰입",
+  windDown: "밤 루틴을 정리하는 행동",
+  tidyReset: "공간을 비우고 다시 시작",
+  reflection: "오늘을 한 줄로 남기기",
 };
 
 const CATEGORY_COPY = {
-  body: "\uBC14\uB514",
-  focus: "\uC9D1\uC911",
-  mind: "\uB9C8\uC74C",
-  life: "\uC0DD\uD65C",
+  body: "바디",
+  focus: "집중",
+  mind: "마음",
+  life: "생활",
 };
 
 const MOOD_OPTIONS = [
-  { id: "soft", label: "\uCC28\uBD84" },
-  { id: "bright", label: "\uC0C1\uCF8C" },
-  { id: "spark", label: "\uD65C\uAE30" },
+  { id: "soft", label: "차분" },
+  { id: "bright", label: "상쾌" },
+  { id: "spark", label: "활기" },
 ];
 
 const THEME_OPTIONS = [
-  { id: "morning", label: "\uC544\uCE68" },
-  { id: "study", label: "\uACF5\uBD80" },
-  { id: "rest", label: "\uD734\uC2DD" },
+  { id: "morning", label: "아침" },
+  { id: "study", label: "공부" },
+  { id: "rest", label: "휴식" },
 ];
 
 export default function App() {
@@ -55,12 +55,12 @@ export default function App() {
 
   const heroStatus = useMemo(() => {
     if (state.dailyExp >= 70) {
-      return "\uC624\uB298 \uD750\uB984\uC774 \uC88B\uC544\uC694. \uD55C \uBC88\uB9CC \uB354 \uD589\uB3D9\uD558\uBA74 \uC131\uC7A5 \uD3ED\uC774 \uCEE4\uC838\uC694.";
+      return "오늘 흐름이 좋아요. 한 번만 더 행동하면 성장 폭이 커져요.";
     }
     if (state.dailyExp >= 35) {
-      return "\uB9AC\uB4EC\uC774 \uC62C\uB77C\uC624\uACE0 \uC788\uC5B4\uC694. \uC9C0\uAE08 \uD150\uC158\uC744 \uC774\uC5B4\uAC00\uBA74 \uC88B\uC544\uC694.";
+      return "리듬이 올라오고 있어요. 지금 텐션을 이어가면 좋아요.";
     }
-    return "\uC791\uC740 \uD589\uB3D9 \uD558\uB098\uB9CC \uC2DC\uC791\uD574\uB3C4 \uCE90\uB9AD\uD130\uAC00 \uBC14\uB85C \uBC18\uC751\uD558\uAC8C \uB9CC\uB4E4\uC5B4\uC694.";
+    return "작은 행동 하나만 시작해도 캐릭터가 바로 반응하게 만들어요.";
   }, [state.dailyExp]);
 
   return (
@@ -83,14 +83,14 @@ export default function App() {
 
           <View style={styles.sheet}>
             <SectionHeader
-              title="\uC624\uB298 \uD1B5\uACC4"
-              caption="\uB204\uB974\uB294 \uBC84\uD2BC\uC774 \uC544\uB2C8\uB77C \uC0C1\uD0DC\uB97C \uBCF4\uB294 \uC601\uC5ED"
+              title="오늘 통계"
+              caption="누르는 버튼이 아니라 상태를 보는 영역"
             />
             <StatsRow
               items={[
-                { label: "\uB808\uBCA8", value: `LV ${state.level}` },
-                { label: "\uC624\uB298 XP", value: `${dailyProgress}%` },
-                { label: "\uC644\uB8CC \uC218", value: `${state.count}\uD68C` },
+                { label: "레벨", value: `LV ${state.level}` },
+                { label: "오늘 XP", value: `${dailyProgress}%` },
+                { label: "완료 수", value: `${state.count}회` },
               ]}
             />
 
@@ -147,10 +147,10 @@ function HeroSection({ character, level, dailyProgress, calendar, statusCopy, on
       </View>
 
       <View style={styles.heroCopyBlock}>
-        <Text style={styles.heroTitle}>{"\uB0B4 \uCE90\uB9AD\uD130"}</Text>
+        <Text style={styles.heroTitle}>{"내 캐릭터"}</Text>
         <Text style={styles.heroCopy}>{statusCopy}</Text>
         <View style={styles.heroBadgeRow}>
-          <InfoBadge text={`\uC624\uB298 XP ${dailyProgress}%`} />
+          <InfoBadge text={`오늘 XP ${dailyProgress}%`} />
           <InfoBadge text={character.label} />
         </View>
       </View>
@@ -161,7 +161,7 @@ function HeroSection({ character, level, dailyProgress, calendar, statusCopy, on
 
       <Text style={styles.heroHint}>
         {
-          "\uCE90\uB9AD\uD130\uB97C \uB4DC\uB798\uADF8\uD558\uBA74 \uD68C\uC804\uD558\uACE0, \uC544\uB798\uB85C \uC2A4\uD06C\uB864\uD558\uBA74 \uD568\uAED8 \uC6C0\uC9C1\uC5EC\uC694."
+          "캐릭터를 드래그하면 회전하고, 아래로 스크롤하면 함께 움직여요."
         }
       </Text>
     </LinearGradient>
@@ -172,8 +172,8 @@ function TodayTab({ state, onAction }) {
   return (
     <>
       <SectionHeader
-        title="\uC2E4\uD589 \uBC84\uD2BC"
-        caption="\uACBD\uD5D8\uCE58\uB97C \uC313\uB294 \uBC84\uD2BC \uC601\uC5ED"
+        title="실행 버튼"
+        caption="경험치를 쌓는 버튼 영역"
       />
       <View style={styles.actionGrid}>
         {ACTION_LIST.map((action) => {
@@ -196,19 +196,19 @@ function TodayTab({ state, onAction }) {
       </View>
 
       <SectionHeader
-        title="\uC624\uB298 \uC0C1\uD0DC"
-        caption="\uC2E4\uD589 \uACB0\uACFC\uAC00 \uC313\uC774\uB294 \uD1B5\uACC4 \uC601\uC5ED"
+        title="오늘 상태"
+        caption="실행 결과가 쌓이는 통계 영역"
       />
       <ContentCard>
-        <MetricBar label="\uBC14\uB514" value={state.categoryTotals.body} max={CATEGORY_LIMITS.body} />
-        <MetricBar label="\uC9D1\uC911" value={state.categoryTotals.focus} max={CATEGORY_LIMITS.focus} />
-        <MetricBar label="\uB9C8\uC74C" value={state.categoryTotals.mind} max={CATEGORY_LIMITS.mind} />
-        <MetricBar label="\uC0DD\uD65C" value={state.categoryTotals.life} max={CATEGORY_LIMITS.life} />
+        <MetricBar label="바디" value={state.categoryTotals.body} max={CATEGORY_LIMITS.body} />
+        <MetricBar label="집중" value={state.categoryTotals.focus} max={CATEGORY_LIMITS.focus} />
+        <MetricBar label="마음" value={state.categoryTotals.mind} max={CATEGORY_LIMITS.mind} />
+        <MetricBar label="생활" value={state.categoryTotals.life} max={CATEGORY_LIMITS.life} />
       </ContentCard>
 
       <SectionHeader
-        title="\uCD5C\uADFC \uAE30\uB85D"
-        caption="\uBC29\uAE08 \uB204\uB978 \uACB0\uACFC\uB97C \uD655\uC778\uD558\uB294 \uC601\uC5ED"
+        title="최근 기록"
+        caption="방금 누른 결과를 확인하는 영역"
       />
       <ContentCard>
         <Text style={styles.logText}>{state.log}</Text>
@@ -216,7 +216,7 @@ function TodayTab({ state, onAction }) {
           {state.history.length === 0 ? (
             <Text style={styles.emptyText}>
               {
-                "\uC544\uC9C1 \uAE30\uB85D\uC774 \uC5C6\uC5B4\uC694. \uC704 \uBC84\uD2BC \uC911 \uD558\uB098\uB97C \uB20C\uB7EC \uC2DC\uC791\uD574\uBCF4\uC138\uC694."
+                "아직 기록이 없어요. 위 버튼 중 하나를 눌러 시작해보세요."
               }
             </Text>
           ) : (
@@ -242,26 +242,26 @@ function FocusTab({ state, onAction }) {
   return (
     <>
       <SectionHeader
-        title="\uC9D1\uC911 \uC2E4\uD589"
-        caption="\uC9C0\uAE08 \uBC14\uB85C \uB204\uB97C \uC218 \uC788\uB294 \uD575\uC2EC \uBC84\uD2BC"
+        title="집중 실행"
+        caption="지금 바로 누를 수 있는 핵심 버튼"
       />
       <View style={styles.focusStack}>
         <WideActionCard
-          title="\uC9D1\uC911 \uC138\uC158 \uC644\uB8CC"
-          subtitle="25\uBD84 \uBAB0\uC785 \uD6C4 \uB20C\uB7EC\uC11C \uAE30\uB85D"
+          title="집중 세션 완료"
+          subtitle="25분 몰입 후 눌러서 기록"
           countText={`${state.actionCounts[focusAction.id] ?? 0}/${focusAction.dailyLimit}`}
           disabled={(state.actionCounts[focusAction.id] ?? 0) >= focusAction.dailyLimit}
           onPress={() => onAction(focusAction)}
         />
         <View style={styles.secondaryActionRow}>
           <MiniActionCard
-            title="\uD558\uB8E8 \uD68C\uACE0"
+            title="하루 회고"
             countText={`${state.actionCounts[reflectionAction.id] ?? 0}/${reflectionAction.dailyLimit}`}
             disabled={(state.actionCounts[reflectionAction.id] ?? 0) >= reflectionAction.dailyLimit}
             onPress={() => onAction(reflectionAction)}
           />
           <MiniActionCard
-            title="\uC815\uB9AC \uB9AC\uC14B"
+            title="정리 리셋"
             countText={`${state.actionCounts[tidyAction.id] ?? 0}/${tidyAction.dailyLimit}`}
             disabled={(state.actionCounts[tidyAction.id] ?? 0) >= tidyAction.dailyLimit}
             onPress={() => onAction(tidyAction)}
@@ -270,13 +270,13 @@ function FocusTab({ state, onAction }) {
       </View>
 
       <SectionHeader
-        title="\uC9D1\uC911 \uD1B5\uACC4"
-        caption="\uB20C\uB9AC\uB294 \uBC84\uD2BC\uACFC \uAD6C\uBD84\uB41C \uACB0\uACFC \uC601\uC5ED"
+        title="집중 통계"
+        caption="눌리는 버튼과 구분된 결과 영역"
       />
       <ContentCard>
-        <MetricBar label="\uC9D1\uC911 XP" value={state.categoryTotals.focus} max={CATEGORY_LIMITS.focus} />
-        <MetricBar label="\uB9C8\uC74C XP" value={state.categoryTotals.mind} max={CATEGORY_LIMITS.mind} />
-        <MetricBar label="\uC0DD\uD65C XP" value={state.categoryTotals.life} max={CATEGORY_LIMITS.life} />
+        <MetricBar label="집중 XP" value={state.categoryTotals.focus} max={CATEGORY_LIMITS.focus} />
+        <MetricBar label="마음 XP" value={state.categoryTotals.mind} max={CATEGORY_LIMITS.mind} />
+        <MetricBar label="생활 XP" value={state.categoryTotals.life} max={CATEGORY_LIMITS.life} />
       </ContentCard>
     </>
   );
@@ -286,26 +286,26 @@ function JourneyTab({ state }) {
   return (
     <>
       <SectionHeader
-        title="\uC131\uC7A5 \uD1B5\uACC4"
-        caption="\uC624\uB298 \uB204\uC801\uB41C \uACB0\uACFC\uB97C \uBCF4\uB294 \uC601\uC5ED"
+        title="성장 통계"
+        caption="오늘 누적된 결과를 보는 영역"
       />
       <ContentCard>
         <StatsRow
           items={[
-            { label: "\uCD1D XP", value: `${state.exp}` },
-            { label: "\uC624\uB298 XP", value: `${state.dailyExp}` },
-            { label: "\uC0C1\uD0DC", value: state.mood },
+            { label: "총 XP", value: `${state.exp}` },
+            { label: "오늘 XP", value: `${state.dailyExp}` },
+            { label: "상태", value: state.mood },
           ]}
         />
       </ContentCard>
 
       <SectionHeader
-        title="\uAE30\uB85D \uC774\uB825"
-        caption="\uD589\uB3D9 \uC21C\uC11C\uB300\uB85C \uD655\uC778\uD558\uB294 \uC601\uC5ED"
+        title="기록 이력"
+        caption="행동 순서대로 확인하는 영역"
       />
       <ContentCard>
         {state.history.length === 0 ? (
-          <Text style={styles.emptyText}>\uC544\uC9C1 \uC313\uC778 \uAE30\uB85D\uC774 \uC5C6\uC5B4\uC694.</Text>
+          <Text style={styles.emptyText}>아직 쌓인 기록이 없어요.</Text>
         ) : (
           state.history.map((item) => (
             <HistoryRow
@@ -324,11 +324,11 @@ function AvatarTab({ state, selectedMood, selectedTheme, onMoodChange, onThemeCh
   return (
     <>
       <SectionHeader
-        title="\uCE90\uB9AD\uD130 \uBC18\uC751"
-        caption="\uACBD\uD5D8\uCE58\uC640\uB294 \uBCC4\uAC1C\uC778 \uC120\uD0DD\uD615 \uC601\uC5ED"
+        title="캐릭터 반응"
+        caption="경험치와는 별개인 선택형 영역"
       />
       <ContentCard>
-        <Text style={styles.subLabel}>\uBB34\uB4DC \uC120\uD0DD</Text>
+        <Text style={styles.subLabel}>무드 선택</Text>
         <View style={styles.selectionRow}>
           {MOOD_OPTIONS.map((item) => (
             <SelectionChip
@@ -340,7 +340,7 @@ function AvatarTab({ state, selectedMood, selectedTheme, onMoodChange, onThemeCh
           ))}
         </View>
 
-        <Text style={styles.subLabel}>\uBC30\uACBD \uD14C\uB9C8</Text>
+        <Text style={styles.subLabel}>배경 테마</Text>
         <View style={styles.selectionRow}>
           {THEME_OPTIONS.map((item) => (
             <SelectionChip
@@ -354,14 +354,14 @@ function AvatarTab({ state, selectedMood, selectedTheme, onMoodChange, onThemeCh
       </ContentCard>
 
       <SectionHeader
-        title="\uC131\uC7A5 \uBC29\uD5A5"
-        caption="\uB2E4\uC74C \uD574\uAE08 \uD3EC\uC778\uD2B8\uB97C \uBCF4\uB294 \uC601\uC5ED"
+        title="성장 방향"
+        caption="다음 해금 포인트를 보는 영역"
       />
       <ContentCard>
-        <HistoryRow title="\uD604\uC7AC \uB808\uBCA8" meta={`LV ${state.level} · ${state.title}`} />
+        <HistoryRow title="현재 레벨" meta={`LV ${state.level} · ${state.title}`} />
         <HistoryRow
-          title="\uB2E4\uC74C \uBCF4\uC0C1"
-          meta="\uC758\uC0C1 \uD1A4 \uBCC0\uD654 · \uD45C\uC815 \uC138\uD2B8 · \uBC30\uACBD \uC18C\uD488"
+          title="다음 보상"
+          meta="의상 톤 변화 · 표정 세트 · 배경 소품"
         />
       </ContentCard>
     </>
@@ -372,8 +372,8 @@ function CalendarCard({ calendar }) {
   return (
     <>
       <SectionHeader
-        title="\uD604\uC7AC \uB0A0\uC9DC"
-        caption="\uC624\uB298 \uB0A0\uC9DC\uC5D0 \uB9DE\uCDB0 \uC790\uB3D9\uC73C\uB85C \uBC14\uB03C\uB294 \uC601\uC5ED"
+        title="현재 날짜"
+        caption="오늘 날짜에 맞춰 자동으로 바뀼는 영역"
       />
       <ContentCard>
         <View style={styles.calendarHeader}>
@@ -442,7 +442,7 @@ function ActionCard({ title, help, xp, countText, disabled, onPress }) {
       <View style={styles.actionFooter}>
         <Text style={[styles.actionXp, disabled && styles.actionXpDisabled]}>+{xp} XP</Text>
         <Text style={[styles.actionState, disabled && styles.actionStateDisabled]}>
-          {disabled ? "\uC624\uB298 \uC644\uB8CC" : "\uB20C\uB7EC\uC11C \uAE30\uB85D"}
+          {disabled ? "오늘 완료" : "눌러서 기록"}
         </Text>
       </View>
     </Pressable>
@@ -540,7 +540,7 @@ function InfoBadge({ text }) {
 }
 
 function buildCalendar(date) {
-  const weekLabels = ["\uC6D4", "\uD654", "\uC218", "\uBAA9", "\uAE08", "\uD1A0", "\uC77C"];
+  const weekLabels = ["월", "화", "수", "목", "금", "토", "일"];
   const current = new Date(date);
   const day = current.getDay();
   const mondayOffset = day === 0 ? -6 : 1 - day;
@@ -559,9 +559,9 @@ function buildCalendar(date) {
   });
 
   return {
-    headerDate: `${current.getFullYear()}\uB144 ${current.getMonth() + 1}\uC6D4 ${current.getDate()}\uC77C`,
-    monthLabel: `${current.getFullYear()}\uB144 ${current.getMonth() + 1}\uC6D4`,
-    todayLabel: `\uC624\uB298 ${weekLabels[day === 0 ? 6 : day - 1]}`,
+    headerDate: `${current.getFullYear()}년 ${current.getMonth() + 1}월 ${current.getDate()}일`,
+    monthLabel: `${current.getFullYear()}년 ${current.getMonth() + 1}월`,
+    todayLabel: `오늘 ${weekLabels[day === 0 ? 6 : day - 1]}`,
     weekDays,
   };
 }

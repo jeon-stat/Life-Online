@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { ACTIONS, CATEGORY_LIMITS, DAILY_EXP_CAP, applyAction, createGameState } from "../src/game.js";
@@ -68,4 +69,11 @@ test("daily exp never exceeds the hard cap", () => {
   }
 
   assert.equal(state.dailyExp <= DAILY_EXP_CAP, true);
+});
+
+test("App.js does not ship JSX unicode escape literals that render as raw text", () => {
+  const appSource = readFileSync(new URL("../App.js", import.meta.url), "utf8");
+
+  assert.equal(/=\s*"\\u[0-9A-Fa-f]{4}/.test(appSource), false);
+  assert.equal(/>\s*\\u[0-9A-Fa-f]{4}/.test(appSource), false);
 });
