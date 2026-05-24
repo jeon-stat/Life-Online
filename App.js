@@ -67,7 +67,7 @@ export default function App() {
             <View style={styles.topbar}>
               <View>
                 <Text style={styles.brand}>Life Online</Text>
-                <Text style={styles.brandSub}>Healthy growth game prototype</Text>
+                <Text style={styles.brandSub}>Healthy growth game prototype · build 2026-05-24-b</Text>
               </View>
               <View style={styles.levelPill}>
                 <Text style={styles.levelText}>LV {state.level}</Text>
