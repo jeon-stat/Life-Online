@@ -1,6 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { Suspense, useMemo, useRef, useState } from "react";
 import { PanResponder, StyleSheet, View } from "react-native";
 
+import { GLBCharacterModel } from "./models/GLBCharacterModel.js";
 import { PongoModel } from "./models/PongoModel.js";
 import { StageCanvas } from "./scene/StageCanvas.web.js";
 import { StageRig } from "./scene/StageRig.js";
@@ -47,7 +48,13 @@ export function CharacterStage({ character, onInteractionChange }) {
     <View style={styles.stage}>
       <StageCanvas>
         <StageRig rotation={rotation}>
-          <PongoModel character={character} />
+          <Suspense fallback={null}>
+            {character.modelUrl ? (
+              <GLBCharacterModel character={character} />
+            ) : (
+              <PongoModel character={character} />
+            )}
+          </Suspense>
         </StageRig>
       </StageCanvas>
       <View style={styles.gestureHotspot} {...panResponder.panHandlers} />

@@ -25,9 +25,10 @@ test("repeated actions lose efficiency and respect category caps", () => {
   assert.equal(state.dailyExp, CATEGORY_LIMITS.focus);
 });
 
-test("daily growth loop uses one mascot character for now", () => {
+test("daily growth loop uses one imported Blender character for now", () => {
   assert.equal(STAGE_MODE, "character-only");
-  assert.deepEqual(CHARACTER_CLASSES.map((item) => item.id), ["pongo"]);
+  assert.deepEqual(CHARACTER_CLASSES.map((item) => item.id), ["custom-chibi"]);
+  assert.equal(CHARACTER_CLASSES[0].modelUrl, "/models/character.glb");
 });
 
 test("scene config stays in open stage mode", () => {
