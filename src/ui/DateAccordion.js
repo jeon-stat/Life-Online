@@ -1,22 +1,18 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export function DateAccordion({ items, expandedId, onToggle }) {
-  const activeItem = items.find((item) => item.id === expandedId) ?? items[0] ?? null;
+  const activeItem = items.find((item) => item.id === expandedId) ?? items.at(-1) ?? null;
 
   return (
     <View style={styles.shell}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.datesRail}
-      >
+      <View style={styles.datesRail}>
         {items.map((item) => {
           const active = item.id === expandedId;
 
           return (
             <Pressable
               key={item.id}
-              onPress={() => onToggle(active ? null : item.id)}
+              onPress={() => onToggle(item.id)}
               style={[styles.dayChip, active && styles.dayChipActive]}
             >
               <Text style={[styles.dayNumber, active && styles.dayNumberActive]}>
@@ -28,7 +24,7 @@ export function DateAccordion({ items, expandedId, onToggle }) {
             </Pressable>
           );
         })}
-      </ScrollView>
+      </View>
 
       {activeItem ? (
         <View key={`${activeItem.id}-panel`} style={styles.panel}>
@@ -87,12 +83,13 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   datesRail: {
-    paddingRight: 8,
-    gap: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
   },
   dayChip: {
-    width: 58,
-    height: 58,
+    width: 44,
+    height: 44,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: "#e5e7eb",
@@ -106,16 +103,16 @@ const styles = StyleSheet.create({
   },
   dayNumber: {
     color: "#111827",
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: "900",
   },
   dayNumberActive: {
     color: "#ffffff",
   },
   dayMeta: {
-    marginTop: 2,
+    marginTop: 1,
     color: "#9ca3af",
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "800",
   },
   dayMetaActive: {

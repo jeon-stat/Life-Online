@@ -69,7 +69,7 @@ export default function App() {
   const headerDate = formatHeaderDate(now);
   const dailyProgress = Math.round((state.dailyExp / DAILY_EXP_CAP) * 100);
   const homeDatePanels = useMemo(() => buildHomeDatePanels(now, state), [now, state]);
-  const [expandedDateId, setExpandedDateId] = useState(() => homeDatePanels[0]?.id ?? null);
+  const [expandedDateId, setExpandedDateId] = useState(() => homeDatePanels.at(-1)?.id ?? null);
 
   return (
     <SafeAreaView style={styles.safe}>

@@ -87,28 +87,31 @@ test("DateAccordion.js does not ship JSX unicode escape literals that render as 
   assert.equal(/>\s*\\u[0-9A-Fa-f]{4}/.test(source), false);
 });
 
-test("home date panels put today first and include live today state", () => {
+test("home date panels keep seven dates and place today last with live state", () => {
   let state = createGameState();
   state = applyAction(state, ACTIONS.walkGoal);
   state = applyAction(state, ACTIONS.reflection);
 
   const panels = buildHomeDatePanels(new Date("2026-05-24T09:00:00+09:00"), state);
 
-  assert.equal(panels[0].isToday, true);
-  assert.equal(panels[0].xp, state.dailyExp);
-  assert.equal(panels[0].count, state.count);
-  assert.equal(panels[0].entries.length, state.history.length);
-  assert.equal(panels.length >= 5, true);
+  const todayPanel = panels.at(-1);
+
+  assert.equal(panels.length, 7);
+  assert.equal(todayPanel.isToday, true);
+  assert.equal(todayPanel.xp, state.dailyExp);
+  assert.equal(todayPanel.count, state.count);
+  assert.equal(todayPanel.entries.length, state.history.length);
 });
 
-test("date selector stays as a horizontal circle rail with a separate detail panel", () => {
+test("date selector uses a full-width seven-chip row with a separate detail panel", () => {
   const dateAccordionSource = readFileSync(
     new URL("../src/ui/DateAccordion.js", import.meta.url),
     "utf8",
   );
 
-  assert.equal(dateAccordionSource.includes("horizontal"), true);
-  assert.equal(dateAccordionSource.includes("showsHorizontalScrollIndicator={false}"), true);
+  assert.equal(dateAccordionSource.includes("ScrollView"), false);
+  assert.equal(dateAccordionSource.includes("flexDirection: \"row\""), true);
+  assert.equal(dateAccordionSource.includes("justifyContent: \"space-between\""), true);
   assert.equal(dateAccordionSource.includes("borderRadius: 999"), true);
   assert.equal(dateAccordionSource.includes("styles.panel"), true);
 });

@@ -46,6 +46,29 @@ const SAMPLE_DAYS = [
       { id: "sample-reflection-4", label: "\uD558\uB8E8 \uD68C\uACE0", meta: "10 XP \u00B7 \uB9C8\uC74C" },
     ],
   },
+  {
+    offset: 5,
+    xp: 46,
+    count: 3,
+    mood: "\uC548\uC815",
+    summary: "\uD558\uB8E8 \uD750\uB984\uC744 \uBB34\uB9AC \uC5C6\uC774 \uC774\uC5B4\uAC04 \uB0A0",
+    entries: [
+      { id: "sample-walk-5", label: "\uAC78\uC74C \uBAA9\uD45C", meta: "18 XP \u00B7 \uBC14\uB514" },
+      { id: "sample-focus-5", label: "\uC9D1\uC911 \uC138\uC158", meta: "20 XP \u00B7 \uC9D1\uC911" },
+      { id: "sample-tidy-5", label: "\uC815\uB9AC \uB9AC\uC14B", meta: "12 XP \u00B7 \uC0DD\uD65C" },
+    ],
+  },
+  {
+    offset: 6,
+    xp: 31,
+    count: 2,
+    mood: "\uCC28\uBD84",
+    summary: "\uBB34\uB9AC\uD558\uC9C0 \uC54A\uACE0 \uAE30\uBCF8 \uB8E8\uD2F4\uB9CC \uCC59\uAE34 \uB0A0",
+    entries: [
+      { id: "sample-wind-6", label: "\uC218\uBA74 \uC900\uBE44", meta: "16 XP \u00B7 \uBC14\uB514" },
+      { id: "sample-reflection-6", label: "\uD558\uB8E8 \uD68C\uACE0", meta: "10 XP \u00B7 \uB9C8\uC74C" },
+    ],
+  },
 ];
 
 export function buildHomeDatePanels(now, state) {
@@ -67,7 +90,9 @@ export function buildHomeDatePanels(now, state) {
     })),
   };
 
-  const previousPanels = SAMPLE_DAYS.map((sample) => {
+  const previousPanels = SAMPLE_DAYS.slice()
+    .sort((left, right) => right.offset - left.offset)
+    .map((sample) => {
     const date = new Date(today);
     date.setDate(today.getDate() - sample.offset);
 
@@ -82,9 +107,9 @@ export function buildHomeDatePanels(now, state) {
       mood: sample.mood,
       entries: sample.entries,
     };
-  });
+    });
 
-  return [todayPanel, ...previousPanels];
+  return [...previousPanels, todayPanel];
 }
 
 function formatDateKey(date) {
