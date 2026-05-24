@@ -1,4 +1,4 @@
-export const CHARACTER_SCALE = 0.5;
+export const CHARACTER_SCALE = 0.48;
 
 export const STAGE_LAYOUT = {
   mode: "open-stage",
@@ -6,8 +6,9 @@ export const STAGE_LAYOUT = {
   background: "#ffffff",
   interaction: "drag-rotate",
   heroHeight: 462,
-  cameraPosition: [0, 0.48, 6.6],
-  fov: 26,
+  cameraPosition: [0, 0.84, 8.55],
+  fov: 32,
+  modelBaseY: -0.34,
   defaultRotation: {
     x: 0.02,
     y: 0,

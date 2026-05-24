@@ -45,7 +45,7 @@ export function CharacterStage({ character, state, onInteractionChange }) {
   );
 
   return (
-    <View style={[styles.shell, { backgroundColor: state.stageColor }]}>
+    <View style={styles.shell}>
       <View style={styles.glowBack} />
       <View style={styles.effectWrap} pointerEvents="none">
         <StageEffect effect={state.effect} />
@@ -70,14 +70,14 @@ function AnimatedCharacter({ character, rotation, state }) {
     const t = frameState.clock.getElapsedTime() * state.animationSpeed;
     rootRef.current.rotation.x = rotation.x;
     rootRef.current.rotation.y = rotation.y;
-    rootRef.current.position.y = Math.sin(t * 1.2) * state.bobAmount;
+    rootRef.current.position.y = STAGE_LAYOUT.modelBaseY + Math.sin(t * 1.2) * state.bobAmount;
     const scalePulse = 1 + Math.sin(t * 0.7) * 0.015;
     rootRef.current.scale.set(scalePulse, scalePulse, scalePulse);
   });
 
   return (
-    <group ref={rootRef} position={[0, 0.02, 0]}>
-      <GLBCharacterModel character={character} />
+    <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY, 0]}>
+      <GLBCharacterModel character={character} animationState="idle" />
     </group>
   );
 }
@@ -112,10 +112,11 @@ function StageEffect({ effect }) {
 
 const styles = StyleSheet.create({
   shell: {
-    height: 340,
+    height: 360,
     borderRadius: theme.radius.xl,
     overflow: "hidden",
     position: "relative",
+    backgroundColor: "#ffffff",
   },
   glowBack: {
     position: "absolute",
@@ -135,7 +136,7 @@ const styles = StyleSheet.create({
     left: "50%",
     top: 16,
     width: 280,
-    height: 300,
+    height: 320,
     marginLeft: -140,
     backgroundColor: "transparent",
     cursor: "grab",

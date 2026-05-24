@@ -2,12 +2,14 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { theme } from "../constants/theme.js";
 
-export function CharacterStage({ character, state }) {
+export function CharacterStage({ character }) {
   return (
-    <View style={[styles.shell, { backgroundColor: state.stageColor }]}>
+    <View style={styles.shell}>
       <View style={styles.placeholder}>
         <Text style={styles.name}>{character.label}</Text>
-        <Text style={styles.copy}>3D character view is available in the web build.</Text>
+        <Text style={styles.copy}>
+          {"3D \uCE90\uB9AD\uD130 \uBCF4\uAE30\uB294 \uC6F9 \uBBF8\uB9AC\uBCF4\uAE30\uC5D0\uC11C \uD655\uC778\uD560 \uC218 \uC788\uC5B4\uC694."}
+        </Text>
       </View>
     </View>
   );
@@ -20,6 +22,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#ffffff",
   },
   placeholder: {
     alignItems: "center",

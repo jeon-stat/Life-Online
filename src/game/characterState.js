@@ -1,5 +1,7 @@
 import { theme } from "../constants/theme.js";
-import { getLevelProgress, getStreak, getTotalXp } from "./progression.js";
+import { getMemories } from "./memories.js";
+import { getPersonality } from "./personality.js";
+import { getGrowthProgress } from "./progression.js";
 import { DEFAULT_STEP_GOAL, getCharacterStatus, getStepProgress } from "./stepRules.js";
 
 export function buildCharacterViewModel({ todayRecord, history, goal = DEFAULT_STEP_GOAL }) {
@@ -8,16 +10,16 @@ export function buildCharacterViewModel({ todayRecord, history, goal = DEFAULT_S
   const statusTheme = theme.status[status];
   const progress = getStepProgress(steps, goal);
   const progressPercent = Math.round(progress * 100);
-  const totalXp = getTotalXp(history, goal);
-  const progression = getLevelProgress(totalXp);
-  const streak = getStreak(history, goal);
+  const growth = getGrowthProgress(history, goal);
+  const personality = getPersonality(history, goal);
+  const memories = getMemories(history, goal);
 
   return {
     steps,
     goal,
     status,
     statusLabel: statusTheme.label,
-    bubbleText: statusTheme.bubble,
+    bubbleText: `${statusTheme.bubble} ${personality.bubbleTone}`,
     statusDescription: statusTheme.description,
     background: statusTheme.background,
     stageColor: statusTheme.stage,
@@ -27,13 +29,16 @@ export function buildCharacterViewModel({ todayRecord, history, goal = DEFAULT_S
     bobAmount: statusTheme.bobAmount,
     progress,
     progressPercent,
-    streak,
+    streak: growth.streak,
     reachedGoal: steps >= goal,
     source: todayRecord?.source ?? "mock",
-    totalXp: progression.totalXp,
-    level: progression.level,
-    xpIntoLevel: progression.xpIntoLevel,
-    xpToNext: progression.xpToNext,
-    levelProgress: progression.progress,
+    totalXp: growth.xp,
+    level: growth.level,
+    xpIntoLevel: growth.xpIntoLevel,
+    xpToNext: growth.nextLevelXp,
+    levelProgress: growth.levelProgress,
+    growth,
+    personality,
+    memories,
   };
 }

@@ -50,3 +50,28 @@ export function getStreak(history = [], goal = DEFAULT_STEP_GOAL) {
 
   return streak;
 }
+
+export function getLifetimeSteps(history = []) {
+  return history.reduce((sum, record) => sum + (record?.steps ?? 0), 0);
+}
+
+export function getAchievedDays(history = [], goal = DEFAULT_STEP_GOAL) {
+  return history.reduce((count, record) => count + ((record?.steps ?? 0) >= goal ? 1 : 0), 0);
+}
+
+export function getGrowthProgress(history = [], goal = DEFAULT_STEP_GOAL) {
+  const xp = getTotalXp(history, goal);
+  const level = getLevelFromXp(xp);
+  const xpIntoLevel = xp % LEVEL_XP;
+
+  return {
+    level,
+    xp,
+    nextLevelXp: LEVEL_XP - xpIntoLevel,
+    lifetimeSteps: getLifetimeSteps(history),
+    achievedDays: getAchievedDays(history, goal),
+    streak: getStreak(history, goal),
+    xpIntoLevel,
+    levelProgress: xpIntoLevel / LEVEL_XP,
+  };
+}
