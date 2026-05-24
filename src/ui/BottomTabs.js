@@ -26,8 +26,8 @@ export function BottomTabs({ items, activeId, onChange }) {
 const styles = StyleSheet.create({
   shell: {
     borderTopWidth: 1,
-    borderTopColor: "#e6ebf2",
-    backgroundColor: "rgba(255,255,255,0.98)",
+    borderTopColor: "rgba(214, 207, 197, 0.8)",
+    backgroundColor: "rgba(248,247,244,0.96)",
     paddingHorizontal: 12,
     paddingTop: 10,
     paddingBottom: 18,
@@ -38,28 +38,30 @@ const styles = StyleSheet.create({
   },
   item: {
     flex: 1,
-    minHeight: 62,
-    borderRadius: 18,
+    minHeight: 60,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#dfe6ef",
-    backgroundColor: "#f9fbfd",
+    borderColor: "#e3ddd4",
+    backgroundColor: "#ffffff",
     alignItems: "center",
     justifyContent: "center",
     gap: 3,
   },
   itemActive: {
-    backgroundColor: "#27364d",
-    borderColor: "#27364d",
+    backgroundColor: "#253247",
+    borderColor: "#253247",
   },
   emoji: {
     fontSize: 16,
+    color: "#68778c",
   },
   emojiActive: {
     transform: [{ translateY: -1 }],
+    color: "#ffffff",
   },
   label: {
-    color: "#607085",
-    fontSize: 12,
+    color: "#68778c",
+    fontSize: 11,
     fontWeight: "900",
   },
   labelActive: {

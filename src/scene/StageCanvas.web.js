@@ -1,3 +1,4 @@
+import { StyleSheet } from "react-native";
 import { Canvas } from "@react-three/fiber";
 
 import { StageLights } from "./StageLights.js";
@@ -8,11 +9,17 @@ export function StageCanvas({ children }) {
     <Canvas
       camera={{ position: STAGE_LAYOUT.cameraPosition, fov: STAGE_LAYOUT.fov }}
       dpr={[1, 2]}
+      gl={{ alpha: true, antialias: true }}
+      style={styles.canvas}
     >
-      <color attach="background" args={[STAGE_LAYOUT.background]} />
-      <fog attach="fog" args={[STAGE_LAYOUT.background, 8, 16]} />
       <StageLights />
       {children}
     </Canvas>
   );
 }
+
+const styles = StyleSheet.create({
+  canvas: {
+    backgroundColor: "transparent",
+  },
+});

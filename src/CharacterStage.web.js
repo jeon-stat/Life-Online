@@ -65,15 +65,15 @@ export function CharacterStage({ character, onInteractionChange }) {
 const styles = StyleSheet.create({
   stage: {
     flex: 1,
-    backgroundColor: STAGE_LAYOUT.background,
+    backgroundColor: "transparent",
   },
   gestureHotspot: {
     position: "absolute",
     left: "50%",
-    top: 66,
-    width: 250,
-    height: 300,
-    marginLeft: -125,
+    top: 20,
+    width: 270,
+    height: 320,
+    marginLeft: -135,
     backgroundColor: "transparent",
     cursor: "grab",
     touchAction: "none",

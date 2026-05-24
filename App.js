@@ -1,108 +1,97 @@
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 
 import { CharacterStage } from "./src/CharacterStage";
 import { CHARACTER_CLASSES } from "./src/characters.js";
 import { ACTION_LIST, CATEGORY_LIMITS, DAILY_EXP_CAP, applyAction, createGameState } from "./src/game.js";
-import { STAGE_LAYOUT } from "./src/scene/stageConfig.js";
-import { ActionGrid } from "./src/ui/ActionGrid.js";
 import { BottomTabs } from "./src/ui/BottomTabs.js";
-import { StatRow } from "./src/ui/StatRow.js";
 
 const NAV_ITEMS = [
-  { id: "today", label: "Today", icon: "O" },
-  { id: "focus", label: "Focus", icon: "[]" },
-  { id: "journey", label: "Journey", icon: "~" },
-  { id: "avatar", label: "Avatar", icon: "*" },
+  { id: "today", label: "Today", icon: "○" },
+  { id: "focus", label: "Focus", icon: "┃" },
+  { id: "journey", label: "Journey", icon: "≈" },
+  { id: "avatar", label: "Avatar", icon: "✦" },
 ];
 
-const TODAY_PLAN = [
-  { id: "morning", title: "아침 리셋", text: "기상 후 물, 햇빛, 가벼운 정리로 하루 시작" },
-  { id: "focus", title: "집중 블록", text: "25~50분 깊은 집중 세션 1회 이상 달성" },
-  { id: "night", title: "밤 마감", text: "수면 준비와 회고로 하루를 부드럽게 종료" },
+const WEEK_DAYS = ["월", "화", "수", "목", "금", "토", "일"];
+
+const DATE_ITEMS = [
+  { day: "10", active: false },
+  { day: "11", active: true },
+  { day: "12", active: false },
+  { day: "13", active: false },
+  { day: "14", active: false },
+  { day: "15", active: false },
+  { day: "16", active: false },
 ];
 
-const FOCUS_STACK = [
-  { title: "오늘의 메인 세션", detail: "오전 9:00 - 10:00 / 공부 또는 딥워크 1회" },
-  { title: "집중 규칙", detail: "허용 앱만 사용, 끝나면 한 줄 회고 남기기" },
-  { title: "권장 흐름", detail: "25분 집중 -> 5분 쉬기 -> 25분 집중" },
+const FOCUS_GUIDE = [
+  "한 번에 하나만 끝내기",
+  "25분 집중 후 5분 쉬기",
+  "끝난 뒤 한 줄 회고 남기기",
 ];
 
-const AVATAR_UNLOCKS = [
-  { level: 2, reward: "기본 의상 색상 해금" },
-  { level: 3, reward: "표정 변화와 모션 강화" },
-  { level: 4, reward: "방 배경 슬롯 해금" },
-  { level: 5, reward: "작은 펫 또는 소품 해금" },
+const JOURNEY_POINTS = [
+  "몸, 집중, 마음, 생활의 균형 보기",
+  "오늘 한 행동이 어떤 하루를 만들었는지 기록",
+  "일주일 흐름을 캐릭터 성장과 함께 보기",
+];
+
+const AVATAR_POINTS = [
+  "레벨이 오르면 표정과 분위기 변화",
+  "의상, 방 배경, 작은 소품 해금",
+  "현실 루틴이 캐릭터 개성으로 이어짐",
 ];
 
 export default function App() {
   const [state, setState] = useState(() => createGameState());
-  const [selectedId] = useState(CHARACTER_CLASSES[0]?.id ?? "pongo");
   const [activeTab, setActiveTab] = useState("today");
   const [isStageDragging, setIsStageDragging] = useState(false);
 
-  const selectedCharacter =
-    CHARACTER_CLASSES.find((item) => item.id === selectedId) ?? CHARACTER_CLASSES[0];
-
+  const character = CHARACTER_CLASSES[0];
   const dailyProgress = Math.round((state.dailyExp / DAILY_EXP_CAP) * 100);
-  const nextLevelExp = state.level * 60;
-  const levelProgress = Math.round(((state.exp % 60) / 60) * 100);
 
-  const avatarStage = useMemo(() => {
-    if (state.level >= 5) return "빛나는 성장형";
-    if (state.level >= 3) return "루틴 안정형";
-    return "새싹 시작형";
-  }, [state.level]);
+  const statusCopy = useMemo(() => {
+    if (state.dailyExp >= 70) return "오늘 흐름이 아주 좋아요";
+    if (state.dailyExp >= 35) return "조금씩 리듬이 올라오고 있어요";
+    return "작은 행동 하나로 오늘을 시작해보세요";
+  }, [state.dailyExp]);
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.appShell}>
+        <FixedCharacterBackdrop
+          character={character}
+          level={state.level}
+          statusCopy={statusCopy}
+          onInteractionChange={setIsStageDragging}
+        />
+
         <ScrollView
+          style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           scrollEnabled={!isStageDragging}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.screen}>
-            <View style={styles.topbar}>
-              <View>
-                <Text style={styles.brand}>Life Online</Text>
-                <Text style={styles.brandSub}>Healthy growth game prototype · build 2026-05-24-b</Text>
-              </View>
-              <View style={styles.levelPill}>
-                <Text style={styles.levelText}>LV {state.level}</Text>
-              </View>
-            </View>
+          <View style={styles.stageSpacer} />
+
+          <View style={styles.sheet}>
+            <View style={styles.sheetHandle} />
+            <TopSummaryCard level={state.level} dailyProgress={dailyProgress} statusCopy={statusCopy} />
 
             {activeTab === "today" ? (
-              <TodayTab
-                character={selectedCharacter}
-                dailyProgress={dailyProgress}
-                levelProgress={levelProgress}
-                nextLevelExp={nextLevelExp}
-                state={state}
-                onAction={(action) => setState((current) => applyAction(current, action))}
-                onInteractionChange={setIsStageDragging}
-              />
+              <TodayTab state={state} onAction={(action) => setState((current) => applyAction(current, action))} />
             ) : null}
 
             {activeTab === "focus" ? (
-              <FocusTab
-                state={state}
-                onAction={(action) => setState((current) => applyAction(current, action))}
-              />
+              <FocusTab state={state} onAction={(action) => setState((current) => applyAction(current, action))} />
             ) : null}
 
             {activeTab === "journey" ? <JourneyTab state={state} /> : null}
 
-            {activeTab === "avatar" ? (
-              <AvatarTab
-                character={selectedCharacter}
-                state={state}
-                avatarStage={avatarStage}
-                onInteractionChange={setIsStageDragging}
-              />
-            ) : null}
+            {activeTab === "avatar" ? <AvatarTab state={state} /> : null}
           </View>
         </ScrollView>
 
@@ -113,61 +102,85 @@ export default function App() {
   );
 }
 
-function TodayTab({ character, dailyProgress, levelProgress, nextLevelExp, state, onAction, onInteractionChange }) {
+function FixedCharacterBackdrop({ character, level, statusCopy, onInteractionChange }) {
   return (
-    <>
-      <Text style={styles.heading}>오늘의 성장</Text>
-      <Text style={styles.subtitle}>{character.label}</Text>
-      <Text style={styles.blurb}>
-        현실에서 실제 도움이 되는 행동을 채우고, 하루 XP 상한 안에서 균형 있게 성장하세요.
-      </Text>
+    <View style={styles.fixedStageLayer}>
+      <LinearGradient
+        colors={["#fbfaf8", "#f5f3ef", "#eef1f8"]}
+        start={{ x: 0.15, y: 0 }}
+        end={{ x: 0.85, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+      <View style={styles.glowLarge} />
+      <View style={styles.glowSmall} />
 
-      <SectionCard style={styles.heroCard}>
-        <View style={[styles.heroStage, { height: STAGE_LAYOUT.heroHeight }]}>
-          <CharacterStage character={character} onInteractionChange={onInteractionChange} />
+      <View style={styles.headerBar}>
+        <View>
+          <Text style={styles.brand}>Life Online</Text>
+          <Text style={styles.brandSub}>growth companion</Text>
         </View>
-        <Text style={styles.helperText}>
-          캐릭터 주변을 드래그해서 회전할 수 있어요. 성장 표현은 레벨과 해금 요소로 확장됩니다.
-        </Text>
-      </SectionCard>
-
-      <SectionCard>
-        <SectionLabel overline="DAILY LOOP" title="오늘의 성장 바" />
-        <ProgressBar value={dailyProgress} />
-        <Text style={styles.progressCopy}>오늘 성장치 {state.dailyExp} / {DAILY_EXP_CAP}</Text>
-        <ProgressBar value={levelProgress} tone="dark" />
-        <Text style={styles.progressCopy}>다음 레벨 목표 총 XP {nextLevelExp}</Text>
-      </SectionCard>
-
-      <View style={styles.surface}>
-        <StatRow
-          items={[
-            { label: "XP TODAY", value: `${state.dailyExp}` },
-            { label: "MOOD", value: state.mood },
-            { label: "ACTIONS", value: String(state.count) },
-          ]}
-        />
+        <View style={styles.levelBubble}>
+          <Text style={styles.levelBubbleText}>LV {level}</Text>
+        </View>
       </View>
 
-      <SectionCard>
-        <SectionLabel overline="PLAN" title="오늘 추천 루틴" />
-        {TODAY_PLAN.map((item) => (
-          <InfoRow key={item.id} title={item.title} text={item.text} />
-        ))}
-      </SectionCard>
+      <View style={styles.stageCopyBlock}>
+        <Text style={styles.heroTitle}>오늘의 성장</Text>
+        <Text style={styles.heroSubtitle}>{character.label}</Text>
+        <Text style={styles.heroCopy}>{statusCopy}</Text>
+      </View>
 
-      <SectionCard>
-        <SectionLabel overline="VERIFY" title="현실 행동 기록" />
-        <ActionGrid actions={ACTION_LIST} onAction={onAction} />
-        <Text style={styles.smallNote}>
-          프로토타입에서는 버튼으로 시뮬레이션하지만, 실제 서비스는 자동/반자동 인증 구조를 목표로 합니다.
-        </Text>
-      </SectionCard>
+      <View style={styles.fixedStage}>
+        <CharacterStage character={character} onInteractionChange={onInteractionChange} />
+      </View>
+    </View>
+  );
+}
 
-      <SectionCard>
-        <SectionLabel overline="STATUS" title="지금의 한 줄 로그" />
+function TopSummaryCard({ level, dailyProgress, statusCopy }) {
+  return (
+    <View style={styles.summaryCard}>
+      <View>
+        <Text style={styles.summaryOverline}>TODAY STATUS</Text>
+        <Text style={styles.summaryTitle}>{statusCopy}</Text>
+      </View>
+      <View style={styles.summaryRight}>
+        <Text style={styles.summaryMetric}>{dailyProgress}%</Text>
+        <Text style={styles.summaryMeta}>LV {level}</Text>
+      </View>
+    </View>
+  );
+}
+
+function TodayTab({ state, onAction }) {
+  return (
+    <>
+      <DateStrip />
+
+      <TaskCard
+        title="오늘 루프"
+        tone="blue"
+        items={[
+          { label: "집중 세션 1회", checked: state.categoryTotals.focus > 0 },
+          { label: "물 마시기", checked: false },
+          { label: "짧은 회고 남기기", checked: state.categoryTotals.mind > 0 },
+        ]}
+      />
+
+      <TaskCard
+        title="실행 가능한 행동"
+        tone="peach"
+        items={ACTION_LIST.map((action) => ({
+          label: action.label,
+          checked: false,
+          action,
+        }))}
+        onAction={onAction}
+      />
+
+      <SoftCard title="오늘 성장 로그" overline="RECAP">
         <Text style={styles.logText}>{state.log}</Text>
-      </SectionCard>
+      </SoftCard>
     </>
   );
 }
@@ -175,46 +188,24 @@ function TodayTab({ character, dailyProgress, levelProgress, nextLevelExp, state
 function FocusTab({ state, onAction }) {
   return (
     <>
-      <Text style={styles.heading}>집중</Text>
-      <Text style={styles.blurb}>
-        공부를 직접 증명하려 하기보다, 집중 세션과 끝난 뒤의 짧은 회고를 중심으로 설계합니다.
-      </Text>
-
-      <SectionCard>
-        <SectionLabel overline="FOCUS LOOP" title="오늘의 집중 설계" />
-        {FOCUS_STACK.map((item) => (
-          <InfoRow key={item.title} title={item.title} text={item.detail} />
+      <SoftCard title="집중 플로우" overline="FOCUS">
+        {FOCUS_GUIDE.map((item) => (
+          <ChecklistRow key={item} label={item} checked={false} compact />
         ))}
-      </SectionCard>
+      </SoftCard>
 
-      <SectionCard>
-        <SectionLabel overline="READY" title="지금 할 수 있는 세션" />
-        <View style={styles.focusActionRow}>
-          <PrimaryAction
-            title="집중 세션 완료"
-            subtitle="25~50분 딥워크 보상"
-            onPress={() => onAction(ACTION_LIST.find((item) => item.id === "focusSession"))}
-          />
-          <PrimaryAction
-            title="하루 회고 남기기"
-            subtitle="세션 종료 후 기록"
-            onPress={() => onAction(ACTION_LIST.find((item) => item.id === "reflection"))}
-          />
-        </View>
-      </SectionCard>
-
-      <SectionCard>
-        <SectionLabel overline="RULES" title="향후 인증 구조" />
-        <InfoRow title="자동" text="타이머, 앱 사용 패턴, 세션 길이 데이터를 함께 반영" />
-        <InfoRow title="반자동" text="시작 전에 목표를 정하고, 종료 후 한 줄 회고를 남김" />
-        <InfoRow title="악용 방지" text="같은 세션 반복 보상 감소, 하루 카테고리 상한 적용" />
-      </SectionCard>
-
-      <SectionCard>
-        <SectionLabel overline="PROGRESS" title="오늘의 집중 누적" />
-        <Text style={styles.bigMetric}>{state.categoryTotals.focus} / {CATEGORY_LIMITS.focus}</Text>
-        <Text style={styles.smallNote}>Focus 카테고리는 하루 최대 30 XP까지 반영됩니다.</Text>
-      </SectionCard>
+      <View style={styles.dualActions}>
+        <ActionPill
+          title="집중 세션 완료"
+          meta={`${state.categoryTotals.focus}/${CATEGORY_LIMITS.focus} XP`}
+          onPress={() => onAction(ACTION_LIST.find((item) => item.id === "focusSession"))}
+        />
+        <ActionPill
+          title="하루 회고 남기기"
+          meta="짧은 기록"
+          onPress={() => onAction(ACTION_LIST.find((item) => item.id === "reflection"))}
+        />
+      </View>
     </>
   );
 }
@@ -222,133 +213,117 @@ function FocusTab({ state, onAction }) {
 function JourneyTab({ state }) {
   return (
     <>
-      <Text style={styles.heading}>기록</Text>
-      <Text style={styles.blurb}>
-        단순한 통계보다, 내가 어떻게 살았는지 돌아볼 수 있는 라이프로그가 중요합니다.
-      </Text>
+      <SoftCard title="오늘의 균형" overline="JOURNEY">
+        <MetricRow label="Body" value={`${state.categoryTotals.body}/${CATEGORY_LIMITS.body}`} />
+        <MetricRow label="Focus" value={`${state.categoryTotals.focus}/${CATEGORY_LIMITS.focus}`} />
+        <MetricRow label="Mind" value={`${state.categoryTotals.mind}/${CATEGORY_LIMITS.mind}`} />
+        <MetricRow label="Life" value={`${state.categoryTotals.life}/${CATEGORY_LIMITS.life}`} />
+      </SoftCard>
 
-      <SectionCard>
-        <SectionLabel overline="BALANCE" title="카테고리 성장 현황" />
-        <CategoryMeter label="Body" value={state.categoryTotals.body} limit={CATEGORY_LIMITS.body} />
-        <CategoryMeter label="Focus" value={state.categoryTotals.focus} limit={CATEGORY_LIMITS.focus} />
-        <CategoryMeter label="Mind" value={state.categoryTotals.mind} limit={CATEGORY_LIMITS.mind} />
-        <CategoryMeter label="Life" value={state.categoryTotals.life} limit={CATEGORY_LIMITS.life} />
-      </SectionCard>
-
-      <SectionCard>
-        <SectionLabel overline="TIMELINE" title="최근 완료 기록" />
-        {state.history.length === 0 ? (
-          <Text style={styles.emptyCopy}>아직 오늘의 행동 기록이 없어요.</Text>
-        ) : (
-          state.history.map((item) => (
-            <InfoRow
-              key={item.id}
-              title={`${item.label} +${item.earned}`}
-              text={`${item.category.toUpperCase()} 카테고리에 반영됨`}
-            />
-          ))
-        )}
-      </SectionCard>
-
-      <SectionCard>
-        <SectionLabel overline="REFLECTION" title="주간 리포트 방향" />
-        <InfoRow title="균형 점수" text="한 가지 반복보다 여러 카테고리를 채우는 날을 더 높게 평가" />
-        <InfoRow title="회복 흐름" text="낮은 에너지 날에도 작은 행동으로 이어갈 수 있는 설계" />
-        <InfoRow title="기억 보관" text="사진, 한 줄 회고, 감정 흐름이 추억처럼 쌓이는 구조" />
-      </SectionCard>
+      <SoftCard title="기록 방향" overline="NOTES">
+        {JOURNEY_POINTS.map((item) => (
+          <ChecklistRow key={item} label={item} checked={true} compact />
+        ))}
+      </SoftCard>
     </>
   );
 }
 
-function AvatarTab({ character, state, avatarStage, onInteractionChange }) {
+function AvatarTab({ state }) {
   return (
     <>
-      <Text style={styles.heading}>아바타</Text>
-      <Text style={styles.blurb}>
-        처음에는 하나의 기본 캐릭터에 집중하고, 레벨과 플레이 스타일에 따라 진화와 꾸미기를 해금합니다.
-      </Text>
-
-      <SectionCard style={styles.heroCard}>
-        <View style={[styles.heroStage, { height: STAGE_LAYOUT.heroHeight }]}>
-          <CharacterStage character={character} onInteractionChange={onInteractionChange} />
-        </View>
-        <Text style={styles.helperText}>현재 성장 단계: {avatarStage}</Text>
-      </SectionCard>
-
-      <SectionCard>
-        <SectionLabel overline="EVOLUTION" title="다음 성장 보상" />
-        {AVATAR_UNLOCKS.map((item) => (
-          <InfoRow
-            key={item.level}
-            title={`LV ${item.level}`}
-            text={item.reward + (state.level >= item.level ? " · 해금됨" : " · 잠금 중")}
-          />
+      <SoftCard title="캐릭터 성장" overline="AVATAR">
+        <Text style={styles.avatarLead}>레벨 {state.level} 기준으로 캐릭터 분위기와 꾸미기 해금이 이어집니다.</Text>
+        {AVATAR_POINTS.map((item) => (
+          <ChecklistRow key={item} label={item} checked={true} compact />
         ))}
-      </SectionCard>
-
-      <SectionCard>
-        <SectionLabel overline="STYLE" title="장기 방향" />
-        <InfoRow title="초기" text="하나의 캐릭터를 완성도 있게 키우고 표정과 실루엣을 진화" />
-        <InfoRow title="중기" text="헤어, 의상, 방 배경, 작은 소품을 해금" />
-        <InfoRow title="후기" text="행동 패턴에 따라 성향형 진화 분기와 시즌 꾸미기 확장" />
-      </SectionCard>
+      </SoftCard>
     </>
   );
 }
 
-function SectionCard({ children, style }) {
-  return <View style={[styles.surfaceCard, style]}>{children}</View>;
+function DateStrip() {
+  return (
+    <SoftCard title="2025년 2월" overline="CALENDAR">
+      <View style={styles.calendarRow}>
+        {DATE_ITEMS.map((item, index) => (
+          <View key={`${item.day}-${index}`} style={styles.dayCol}>
+            <Text style={[styles.dayLabel, item.active && styles.dayLabelActive]}>{WEEK_DAYS[index]}</Text>
+            <View style={[styles.dayBubble, item.active && styles.dayBubbleActive]}>
+              <Text style={[styles.dayText, item.active && styles.dayTextActive]}>{item.day}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+    </SoftCard>
+  );
 }
 
-function SectionLabel({ overline, title }) {
+function TaskCard({ title, tone, items, onAction }) {
   return (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.overline}>{overline}</Text>
-      <Text style={styles.sectionTitle}>{title}</Text>
+    <SoftCard title={title} overline={tone === "blue" ? "TODAY" : "ACTION"} accentTone={tone}>
+      {items.map((item) => (
+        <ChecklistRow
+          key={item.label}
+          label={item.label}
+          checked={item.checked}
+          onPress={item.action && onAction ? () => onAction(item.action) : undefined}
+        />
+      ))}
+    </SoftCard>
+  );
+}
+
+function SoftCard({ title, overline, children, accentTone = "neutral" }) {
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <Text style={[styles.cardOverline, accentTone === "blue" && styles.cardOverlineBlue, accentTone === "peach" && styles.cardOverlinePeach]}>
+          {overline}
+        </Text>
+        <Text style={styles.cardTitle}>{title}</Text>
+      </View>
+      {children}
     </View>
   );
 }
 
-function InfoRow({ title, text }) {
-  return (
-    <View style={styles.infoRow}>
-      <Text style={styles.infoTitle}>{title}</Text>
-      <Text style={styles.infoText}>{text}</Text>
+function ChecklistRow({ label, checked, onPress, compact = false }) {
+  const row = (
+    <View style={[styles.checkRow, compact && styles.checkRowCompact]}>
+      <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+        {checked ? <Text style={styles.checkboxTick}>✓</Text> : null}
+      </View>
+      <Text style={styles.checkLabel}>{label}</Text>
+      <Text style={styles.rowDots}>⋯</Text>
     </View>
   );
+
+  if (onPress) {
+    return (
+      <Pressable onPress={onPress} style={({ pressed }) => [styles.rowButton, pressed && styles.rowButtonPressed]}>
+        {row}
+      </Pressable>
+    );
+  }
+
+  return row;
 }
 
-function ProgressBar({ value, tone = "light" }) {
+function ActionPill({ title, meta, onPress }) {
   return (
-    <View style={[styles.progressTrack, tone === "dark" && styles.progressTrackDark]}>
-      <View
-        style={[
-          styles.progressFill,
-          tone === "dark" && styles.progressFillDark,
-          { width: `${Math.max(6, Math.min(100, value))}%` },
-        ]}
-      />
-    </View>
-  );
-}
-
-function PrimaryAction({ title, subtitle, onPress }) {
-  return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.primaryAction, pressed && styles.primaryActionPressed]}>
-      <Text style={styles.primaryActionTitle}>{title}</Text>
-      <Text style={styles.primaryActionText}>{subtitle}</Text>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.actionPill, pressed && styles.rowButtonPressed]}>
+      <Text style={styles.actionPillTitle}>{title}</Text>
+      <Text style={styles.actionPillMeta}>{meta}</Text>
     </Pressable>
   );
 }
 
-function CategoryMeter({ label, value, limit }) {
+function MetricRow({ label, value }) {
   return (
-    <View style={styles.categoryMeter}>
-      <View style={styles.categoryMeterTop}>
-        <Text style={styles.categoryLabel}>{label}</Text>
-        <Text style={styles.categoryValue}>{value} / {limit}</Text>
-      </View>
-      <ProgressBar value={(value / limit) * 100} />
+    <View style={styles.metricRow}>
+      <Text style={styles.metricLabel}>{label}</Text>
+      <Text style={styles.metricValue}>{value}</Text>
     </View>
   );
 }
@@ -356,221 +331,333 @@ function CategoryMeter({ label, value, limit }) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#f5f7fb",
+    backgroundColor: "#f4f2ee",
   },
   appShell: {
     flex: 1,
-    backgroundColor: "#f5f7fb",
+    backgroundColor: "#f4f2ee",
   },
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 20,
-    backgroundColor: "#f5f7fb",
+  fixedStageLayer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 420,
+    zIndex: 3,
+    overflow: "hidden",
   },
-  screen: {
-    width: "100%",
-    maxWidth: 460,
-    alignSelf: "center",
-    backgroundColor: "#f5f7fb",
+  glowLarge: {
+    position: "absolute",
+    top: 92,
+    right: -32,
+    width: 188,
+    height: 188,
+    borderRadius: 999,
+    backgroundColor: "rgba(244, 209, 187, 0.28)",
   },
-  topbar: {
+  glowSmall: {
+    position: "absolute",
+    top: 170,
+    left: -18,
+    width: 126,
+    height: 126,
+    borderRadius: 999,
+    backgroundColor: "rgba(184, 198, 229, 0.22)",
+  },
+  headerBar: {
+    paddingHorizontal: 18,
+    paddingTop: 12,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 12,
   },
   brand: {
-    color: "#243042",
-    fontSize: 14,
+    color: "#253247",
+    fontSize: 15,
     fontWeight: "900",
   },
   brandSub: {
     marginTop: 2,
-    color: "#7a8799",
-    fontSize: 12,
+    color: "#7d8797",
+    fontSize: 11,
     fontWeight: "700",
   },
-  levelPill: {
-    minWidth: 84,
-    paddingHorizontal: 14,
+  levelBubble: {
+    minWidth: 86,
     paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 999,
-    backgroundColor: "#27364d",
+    backgroundColor: "#253247",
     alignItems: "center",
   },
-  levelText: {
+  levelBubbleText: {
     color: "#ffffff",
-    fontWeight: "900",
     fontSize: 16,
+    fontWeight: "900",
   },
-  heading: {
-    marginTop: 18,
+  stageCopyBlock: {
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    maxWidth: 280,
+  },
+  heroTitle: {
+    color: "#243042",
     fontSize: 34,
     lineHeight: 38,
-    color: "#243042",
-    fontWeight: "800",
+    fontWeight: "900",
   },
-  subtitle: {
-    marginTop: 8,
-    color: "#243042",
-    fontSize: 22,
-    fontWeight: "800",
-  },
-  blurb: {
+  heroSubtitle: {
     marginTop: 6,
-    color: "#627182",
-    fontSize: 15,
-    lineHeight: 22,
-    maxWidth: 360,
+    color: "#253247",
+    fontSize: 18,
+    fontWeight: "800",
   },
-  surface: {
-    marginTop: 10,
+  heroCopy: {
+    marginTop: 8,
+    color: "#697789",
+    fontSize: 14,
+    lineHeight: 20,
   },
-  surfaceCard: {
-    marginTop: 12,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: "#e7edf4",
+  fixedStage: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: -12,
+    height: 290,
+  },
+  scroll: {
+    flex: 1,
+    zIndex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 120,
+  },
+  stageSpacer: {
+    height: 300,
+  },
+  sheet: {
+    marginTop: 8,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    backgroundColor: "rgba(248, 247, 244, 0.96)",
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 16,
+    minHeight: 720,
+  },
+  sheetHandle: {
+    alignSelf: "center",
+    width: 46,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: "#d8d2c9",
+    marginBottom: 14,
+  },
+  summaryCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 24,
     backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#ebe5dc",
     paddingHorizontal: 16,
     paddingVertical: 16,
   },
-  heroCard: {
-    paddingHorizontal: 0,
-    overflow: "hidden",
-  },
-  heroStage: {
-    width: "100%",
-    overflow: "hidden",
-    backgroundColor: "#ffffff",
-  },
-  sectionHeader: {
-    marginBottom: 12,
-  },
-  overline: {
-    color: "#7c8796",
+  summaryOverline: {
+    color: "#8d97a6",
     fontSize: 11,
     fontWeight: "900",
     letterSpacing: 1.2,
   },
-  sectionTitle: {
+  summaryTitle: {
     marginTop: 4,
-    color: "#1f2c42",
-    fontSize: 20,
+    color: "#243042",
+    fontSize: 17,
     fontWeight: "800",
   },
-  progressTrack: {
-    height: 12,
-    borderRadius: 999,
-    backgroundColor: "#eaf0f6",
-    overflow: "hidden",
-    marginTop: 6,
+  summaryRight: {
+    alignItems: "flex-end",
   },
-  progressTrackDark: {
-    backgroundColor: "#e8ecf3",
+  summaryMetric: {
+    color: "#243042",
+    fontSize: 24,
+    fontWeight: "900",
   },
-  progressFill: {
-    height: "100%",
-    borderRadius: 999,
-    backgroundColor: "#7fb1ff",
+  summaryMeta: {
+    marginTop: 2,
+    color: "#8a95a5",
+    fontSize: 12,
+    fontWeight: "800",
   },
-  progressFillDark: {
-    backgroundColor: "#27364d",
+  card: {
+    marginTop: 12,
+    borderRadius: 24,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#ebe5dc",
+    paddingHorizontal: 14,
+    paddingVertical: 14,
   },
-  progressCopy: {
-    marginTop: 8,
+  cardHeader: {
     marginBottom: 6,
-    color: "#657286",
+  },
+  cardOverline: {
+    color: "#999082",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1.1,
+  },
+  cardOverlineBlue: {
+    color: "#7891c6",
+  },
+  cardOverlinePeach: {
+    color: "#d29a87",
+  },
+  cardTitle: {
+    marginTop: 4,
+    color: "#283346",
+    fontSize: 17,
+    fontWeight: "800",
+  },
+  calendarRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 6,
+    marginTop: 4,
+  },
+  dayCol: {
+    alignItems: "center",
+    flex: 1,
+  },
+  dayLabel: {
+    color: "#8b95a3",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  dayLabelActive: {
+    color: "#5c8af7",
+  },
+  dayBubble: {
+    marginTop: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f1f3f7",
+  },
+  dayBubbleActive: {
+    backgroundColor: "#5c8af7",
+  },
+  dayText: {
+    color: "#334055",
     fontSize: 13,
+    fontWeight: "900",
+  },
+  dayTextActive: {
+    color: "#ffffff",
+  },
+  rowButton: {
+    borderRadius: 16,
+  },
+  rowButtonPressed: {
+    opacity: 0.88,
+  },
+  checkRow: {
+    minHeight: 52,
+    borderRadius: 18,
+    backgroundColor: "#faf9f6",
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  checkRowCompact: {
+    minHeight: 46,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 7,
+    borderWidth: 1.5,
+    borderColor: "#d3d9e4",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#ffffff",
+  },
+  checkboxChecked: {
+    backgroundColor: "#5c8af7",
+    borderColor: "#5c8af7",
+  },
+  checkboxTick: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  checkLabel: {
+    flex: 1,
+    marginLeft: 10,
+    color: "#2a3345",
+    fontSize: 14,
     fontWeight: "700",
   },
-  helperText: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-    color: "#6a7585",
-    fontSize: 13,
+  rowDots: {
+    color: "#a9b0bc",
+    fontSize: 18,
     lineHeight: 18,
   },
-  smallNote: {
+  dualActions: {
     marginTop: 12,
-    color: "#778597",
-    fontSize: 12,
-    lineHeight: 17,
-  },
-  logText: {
-    color: "#5d6879",
-    fontSize: 14,
-    fontWeight: "800",
-    lineHeight: 20,
-  },
-  infoRow: {
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#eef2f7",
-  },
-  infoTitle: {
-    color: "#243042",
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  infoText: {
-    marginTop: 4,
-    color: "#667487",
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  focusActionRow: {
     gap: 10,
   },
-  primaryAction: {
-    borderRadius: 18,
-    backgroundColor: "#27364d",
+  actionPill: {
+    borderRadius: 22,
+    backgroundColor: "#253247",
     paddingHorizontal: 16,
-    paddingVertical: 15,
+    paddingVertical: 16,
   },
-  primaryActionPressed: {
-    opacity: 0.9,
-  },
-  primaryActionTitle: {
+  actionPillTitle: {
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "900",
   },
-  primaryActionText: {
+  actionPillMeta: {
     marginTop: 4,
-    color: "rgba(255,255,255,0.78)",
+    color: "rgba(255,255,255,0.76)",
     fontSize: 12,
-    lineHeight: 17,
+    fontWeight: "700",
   },
-  bigMetric: {
-    color: "#1f2c42",
-    fontSize: 34,
-    fontWeight: "900",
-  },
-  categoryMeter: {
+  metricRow: {
     marginTop: 8,
-  },
-  categoryMeterTop: {
+    minHeight: 46,
+    borderRadius: 16,
+    backgroundColor: "#faf9f6",
+    paddingHorizontal: 12,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 6,
   },
-  categoryLabel: {
-    color: "#243042",
+  metricLabel: {
+    color: "#2a3345",
     fontSize: 14,
     fontWeight: "800",
   },
-  categoryValue: {
-    color: "#6b7888",
+  metricValue: {
+    color: "#7d8797",
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: "900",
   },
-  emptyCopy: {
-    color: "#778597",
-    fontSize: 13,
-    lineHeight: 18,
+  avatarLead: {
+    color: "#657286",
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  logText: {
+    color: "#5f6a7a",
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "700",
   },
 });
