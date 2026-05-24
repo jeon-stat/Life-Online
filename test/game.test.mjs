@@ -28,7 +28,7 @@ test("repeated actions lose efficiency and respect category caps", () => {
 test("daily growth loop uses one imported Blender character for now", () => {
   assert.equal(STAGE_MODE, "character-only");
   assert.deepEqual(CHARACTER_CLASSES.map((item) => item.id), ["custom-chibi"]);
-  assert.equal(CHARACTER_CLASSES[0].modelUrl, "/models/character.glb");
+  assert.equal(CHARACTER_CLASSES[0].modelUrl, "models/character.glb");
 });
 
 test("scene config stays in open stage mode", () => {

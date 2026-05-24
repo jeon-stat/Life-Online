@@ -7,7 +7,7 @@ export const CHARACTER_CLASSES = [
     blurb:
       "Your Blender-made character imported into the Life Online stage for direct app testing.",
     modelSignature: ["custom-glb", "blender-import"],
-    modelUrl: "/models/character.glb",
+    modelUrl: "models/character.glb",
     modelTargetHeight: 4.3,
     modelOffset: [0, -0.1, 0],
     palette: {
