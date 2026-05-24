@@ -3,7 +3,7 @@ export const STAGE_MODE = "character-only";
 export const CHARACTER_CLASSES = [
   {
     id: "custom-chibi",
-    label: "My Chibi Character",
+    label: "\uB0B4 \uCE90\uB9AD\uD130",
     blurb:
       "Your Blender-made character imported into the Life Online stage for direct app testing.",
     modelSignature: ["custom-glb", "blender-import"],

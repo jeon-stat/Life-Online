@@ -9,89 +9,127 @@ import { ACTION_LIST, CATEGORY_LIMITS, DAILY_EXP_CAP, applyAction, createGameSta
 import { BottomTabs } from "./src/ui/BottomTabs.js";
 
 const NAV_ITEMS = [
-  { id: "today", label: "Today", icon: "○" },
-  { id: "focus", label: "Focus", icon: "┃" },
-  { id: "journey", label: "Journey", icon: "≈" },
-  { id: "avatar", label: "Avatar", icon: "✦" },
+  { id: "today", label: "Today", icon: "Home" },
+  { id: "focus", label: "Focus", icon: "Timer" },
+  { id: "journey", label: "Journey", icon: "Log" },
+  { id: "avatar", label: "Avatar", icon: "Style" },
 ];
 
-const WEEK_DAYS = ["월", "화", "수", "목", "금", "토", "일"];
+const WEEK_DAYS = ["M", "T", "W", "T", "F", "S", "S"];
 
 const DATE_ITEMS = [
-  { day: "10", active: false },
   { day: "11", active: true },
   { day: "12", active: false },
   { day: "13", active: false },
   { day: "14", active: false },
   { day: "15", active: false },
   { day: "16", active: false },
+  { day: "17", active: false },
 ];
 
-const FOCUS_GUIDE = [
-  "한 번에 하나만 끝내기",
-  "25분 집중 후 5분 쉬기",
-  "끝난 뒤 한 줄 회고 남기기",
+const AVATAR_MOODS = [
+  { id: "calm", label: "Calm" },
+  { id: "bright", label: "Bright" },
+  { id: "focus", label: "Focus" },
 ];
 
-const JOURNEY_POINTS = [
-  "몸, 집중, 마음, 생활의 균형 보기",
-  "오늘 한 행동이 어떤 하루를 만들었는지 기록",
-  "일주일 흐름을 캐릭터 성장과 함께 보기",
+const SCENE_THEMES = [
+  { id: "morning", label: "Morning" },
+  { id: "study", label: "Study" },
+  { id: "rest", label: "Rest" },
 ];
 
-const AVATAR_POINTS = [
-  "레벨이 오르면 표정과 분위기 변화",
-  "의상, 방 배경, 작은 소품 해금",
-  "현실 루틴이 캐릭터 개성으로 이어짐",
-];
+const ACTION_COPY = {
+  walkGoal: "Walk Goal",
+  focusSession: "Focus Session",
+  windDown: "Wind Down",
+  tidyReset: "Tidy Reset",
+  reflection: "Reflection",
+};
+
+const ACTION_HELP = {
+  walkGoal: "Wake up the body with a simple move",
+  focusSession: "A clean 25 minute deep-focus loop",
+  windDown: "Close the day with a gentle night routine",
+  tidyReset: "Reset the space before the next step",
+  reflection: "Leave one line about today",
+};
+
+const CATEGORY_COPY = {
+  body: "Body",
+  focus: "Focus",
+  mind: "Mind",
+  life: "Life",
+};
 
 export default function App() {
   const [state, setState] = useState(() => createGameState());
   const [activeTab, setActiveTab] = useState("today");
   const [isStageDragging, setIsStageDragging] = useState(false);
+  const [selectedMood, setSelectedMood] = useState("calm");
+  const [selectedTheme, setSelectedTheme] = useState("morning");
 
   const character = CHARACTER_CLASSES[0];
   const dailyProgress = Math.round((state.dailyExp / DAILY_EXP_CAP) * 100);
+  const recentActionIds = state.history.map((item) => item.id.split("-")[0]);
 
-  const statusCopy = useMemo(() => {
-    if (state.dailyExp >= 70) return "오늘 흐름이 아주 좋아요";
-    if (state.dailyExp >= 35) return "조금씩 리듬이 올라오고 있어요";
-    return "작은 행동 하나로 오늘을 시작해보세요";
+  const heroStatus = useMemo(() => {
+    if (state.dailyExp >= 70) return "Your rhythm is strong today. One more action will push growth forward.";
+    if (state.dailyExp >= 35) return "Momentum is building. Keep the day feeling clean and intentional.";
+    return "Start with one small helpful action and let the character grow with you.";
   }, [state.dailyExp]);
+
+  const focusCount = state.history.filter((item) => item.category === "focus").length;
+  const reflectionCount = state.history.filter((item) => item.id.startsWith("reflection")).length;
+  const topActions = ACTION_LIST.slice(0, 3);
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.appShell}>
-        <FixedCharacterBackdrop
-          character={character}
-          level={state.level}
-          statusCopy={statusCopy}
-          onInteractionChange={setIsStageDragging}
-        />
-
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.scrollContent}
           scrollEnabled={!isStageDragging}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.stageSpacer} />
+          <HeroSection
+            character={character}
+            level={state.level}
+            statusCopy={heroStatus}
+            progress={dailyProgress}
+            onInteractionChange={setIsStageDragging}
+          />
 
           <View style={styles.sheet}>
-            <View style={styles.sheetHandle} />
-            <TopSummaryCard level={state.level} dailyProgress={dailyProgress} statusCopy={statusCopy} />
+            <QuickStatusRow level={state.level} dailyProgress={dailyProgress} actionCount={state.count} />
+            <DateStrip />
 
             {activeTab === "today" ? (
-              <TodayTab state={state} onAction={(action) => setState((current) => applyAction(current, action))} />
+              <TodayTab
+                state={state}
+                topActions={topActions}
+                recentActionIds={recentActionIds}
+                onAction={(action) => setState((current) => applyAction(current, action))}
+              />
             ) : null}
 
             {activeTab === "focus" ? (
-              <FocusTab state={state} onAction={(action) => setState((current) => applyAction(current, action))} />
+              <FocusTab state={state} focusCount={focusCount} onAction={(action) => setState((current) => applyAction(current, action))} />
             ) : null}
 
             {activeTab === "journey" ? <JourneyTab state={state} /> : null}
 
-            {activeTab === "avatar" ? <AvatarTab state={state} /> : null}
+            {activeTab === "avatar" ? (
+              <AvatarTab
+                state={state}
+                selectedMood={selectedMood}
+                selectedTheme={selectedTheme}
+                onMoodChange={setSelectedMood}
+                onThemeChange={setSelectedTheme}
+              />
+            ) : null}
+
+            <FooterSpace reflectionCount={reflectionCount} />
           </View>
         </ScrollView>
 
@@ -102,110 +140,152 @@ export default function App() {
   );
 }
 
-function FixedCharacterBackdrop({ character, level, statusCopy, onInteractionChange }) {
+function HeroSection({ character, level, statusCopy, progress, onInteractionChange }) {
   return (
-    <View style={styles.fixedStageLayer}>
-      <LinearGradient
-        colors={["#fbfaf8", "#f5f3ef", "#eef1f8"]}
-        start={{ x: 0.15, y: 0 }}
-        end={{ x: 0.85, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={styles.glowLarge} />
-      <View style={styles.glowSmall} />
+    <LinearGradient
+      colors={["#fbfaf8", "#f4f1eb", "#eef2f8"]}
+      start={{ x: 0.15, y: 0 }}
+      end={{ x: 0.85, y: 1 }}
+      style={styles.heroSection}
+    >
+      <View style={styles.heroGlowLarge} />
+      <View style={styles.heroGlowSmall} />
 
       <View style={styles.headerBar}>
         <View>
           <Text style={styles.brand}>Life Online</Text>
-          <Text style={styles.brandSub}>growth companion</Text>
+          <Text style={styles.brandSub}>healthy growth game</Text>
         </View>
         <View style={styles.levelBubble}>
           <Text style={styles.levelBubbleText}>LV {level}</Text>
         </View>
       </View>
 
-      <View style={styles.stageCopyBlock}>
-        <Text style={styles.heroTitle}>오늘의 성장</Text>
-        <Text style={styles.heroSubtitle}>{character.label}</Text>
+      <View style={styles.heroCopyBlock}>
+        <Text style={styles.heroTitle}>{"\uB0B4 \uCE90\uB9AD\uD130"}</Text>
         <Text style={styles.heroCopy}>{statusCopy}</Text>
+        <View style={styles.heroBadgeRow}>
+          <Badge text={`Today XP ${progress}%`} />
+          <Badge text={character.label} />
+        </View>
       </View>
 
-      <View style={styles.fixedStage}>
+      <View style={styles.characterStageArea}>
         <CharacterStage character={character} onInteractionChange={onInteractionChange} />
       </View>
-    </View>
+
+      <Text style={styles.heroHint}>Drag around the character to rotate it.</Text>
+    </LinearGradient>
   );
 }
 
-function TopSummaryCard({ level, dailyProgress, statusCopy }) {
+function QuickStatusRow({ level, dailyProgress, actionCount }) {
   return (
-    <View style={styles.summaryCard}>
-      <View>
-        <Text style={styles.summaryOverline}>TODAY STATUS</Text>
-        <Text style={styles.summaryTitle}>{statusCopy}</Text>
-      </View>
-      <View style={styles.summaryRight}>
-        <Text style={styles.summaryMetric}>{dailyProgress}%</Text>
-        <Text style={styles.summaryMeta}>LV {level}</Text>
-      </View>
+    <View style={styles.quickStatusRow}>
+      <SmallMetricCard label="Level" value={`LV ${level}`} />
+      <SmallMetricCard label="Today XP" value={`${dailyProgress}%`} />
+      <SmallMetricCard label="Done" value={`${actionCount}`} />
     </View>
   );
 }
 
-function TodayTab({ state, onAction }) {
+function TodayTab({ state, topActions, recentActionIds, onAction }) {
+  const primaryFocusAction = ACTION_LIST.find((item) => item.id === "focusSession");
+
   return (
     <>
-      <DateStrip />
+      <InteractiveCard
+        overline="NOW"
+        title="What to do next"
+        description="The goal is to make the first helpful action feel immediate."
+      >
+        <View style={styles.quickActionRow}>
+          {topActions.map((action) => (
+            <QuickActionChip
+              key={action.id}
+              title={ACTION_COPY[action.id] ?? action.label}
+              active={recentActionIds.includes(action.id)}
+              onPress={() => onAction(action)}
+            />
+          ))}
+        </View>
+        <PrimaryActionButton
+          title="Start a focus loop"
+          subtitle="Log a clean 25 minute session"
+          onPress={() => onAction(primaryFocusAction)}
+        />
+      </InteractiveCard>
 
-      <TaskCard
-        title="오늘 루프"
-        tone="blue"
-        items={[
-          { label: "집중 세션 1회", checked: state.categoryTotals.focus > 0 },
-          { label: "물 마시기", checked: false },
-          { label: "짧은 회고 남기기", checked: state.categoryTotals.mind > 0 },
-        ]}
-      />
+      <InteractiveCard
+        overline="ROUTINE"
+        title="Today's actions"
+        description="Each row is a real tap target so the screen feels alive, not static."
+      >
+        {ACTION_LIST.map((action) => (
+          <ActionRow
+            key={action.id}
+            title={ACTION_COPY[action.id] ?? action.label}
+            meta={ACTION_HELP[action.id]}
+            value={`+${action.points}`}
+            onPress={() => onAction(action)}
+          />
+        ))}
+      </InteractiveCard>
 
-      <TaskCard
-        title="실행 가능한 행동"
-        tone="peach"
-        items={ACTION_LIST.map((action) => ({
-          label: action.label,
-          checked: false,
-          action,
-        }))}
-        onAction={onAction}
-      />
-
-      <SoftCard title="오늘 성장 로그" overline="RECAP">
-        <Text style={styles.logText}>{state.log}</Text>
-      </SoftCard>
+      <InteractiveCard overline="RECAP" title="Recent activity" description={state.log}>
+        {state.history.length === 0 ? (
+          <EmptyState text="No log yet. Tap one action above to create the first growth entry." />
+        ) : (
+          state.history.map((item) => (
+            <HistoryRow
+              key={item.id}
+              title={ACTION_COPY[item.id.split("-")[0]] ?? item.label}
+              meta={`${CATEGORY_COPY[item.category]} · +${item.earned} XP`}
+            />
+          ))
+        )}
+      </InteractiveCard>
     </>
   );
 }
 
-function FocusTab({ state, onAction }) {
+function FocusTab({ state, focusCount, onAction }) {
+  const focusAction = ACTION_LIST.find((item) => item.id === "focusSession");
+  const reflectionAction = ACTION_LIST.find((item) => item.id === "reflection");
+  const tidyAction = ACTION_LIST.find((item) => item.id === "tidyReset");
+
   return (
     <>
-      <SoftCard title="집중 플로우" overline="FOCUS">
-        {FOCUS_GUIDE.map((item) => (
-          <ChecklistRow key={item} label={item} checked={false} compact />
-        ))}
-      </SoftCard>
+      <InteractiveCard
+        overline="FOCUS"
+        title="Focus mode"
+        description="This tab is built around actions you can actually press right now."
+      >
+        <View style={styles.dualActionGrid}>
+          <PrimaryActionButton
+            title="Complete focus session"
+            subtitle={`Focus reward ${state.categoryTotals.focus}/${CATEGORY_LIMITS.focus}`}
+            onPress={() => onAction(focusAction)}
+          />
+          <SecondaryActionButton
+            title="Add reflection"
+            subtitle="Leave one line after the session"
+            onPress={() => onAction(reflectionAction)}
+          />
+          <SecondaryActionButton
+            title="Desk reset"
+            subtitle="Clear the space and continue"
+            onPress={() => onAction(tidyAction)}
+          />
+        </View>
+      </InteractiveCard>
 
-      <View style={styles.dualActions}>
-        <ActionPill
-          title="집중 세션 완료"
-          meta={`${state.categoryTotals.focus}/${CATEGORY_LIMITS.focus} XP`}
-          onPress={() => onAction(ACTION_LIST.find((item) => item.id === "focusSession"))}
-        />
-        <ActionPill
-          title="하루 회고 남기기"
-          meta="짧은 기록"
-          onPress={() => onAction(ACTION_LIST.find((item) => item.id === "reflection"))}
-        />
-      </View>
+      <InteractiveCard overline="INSIGHT" title="Today's focus flow" description="The structure now shows rhythm and progression, not just a static screen.">
+        <MetricBar label="Focus" value={state.categoryTotals.focus} max={CATEGORY_LIMITS.focus} />
+        <MetricBar label="Mind" value={state.categoryTotals.mind} max={CATEGORY_LIMITS.mind} />
+        <MetricBar label="Life" value={state.categoryTotals.life} max={CATEGORY_LIMITS.life} />
+        <Text style={styles.noteText}>Focus loops completed today: {focusCount}</Text>
+      </InteractiveCard>
     </>
   );
 }
@@ -213,38 +293,79 @@ function FocusTab({ state, onAction }) {
 function JourneyTab({ state }) {
   return (
     <>
-      <SoftCard title="오늘의 균형" overline="JOURNEY">
-        <MetricRow label="Body" value={`${state.categoryTotals.body}/${CATEGORY_LIMITS.body}`} />
-        <MetricRow label="Focus" value={`${state.categoryTotals.focus}/${CATEGORY_LIMITS.focus}`} />
-        <MetricRow label="Mind" value={`${state.categoryTotals.mind}/${CATEGORY_LIMITS.mind}`} />
-        <MetricRow label="Life" value={`${state.categoryTotals.life}/${CATEGORY_LIMITS.life}`} />
-      </SoftCard>
+      <InteractiveCard overline="JOURNEY" title="Growth log" description="Balance across body, focus, mind, and life is easier to read here.">
+        <MetricBar label="Body" value={state.categoryTotals.body} max={CATEGORY_LIMITS.body} />
+        <MetricBar label="Focus" value={state.categoryTotals.focus} max={CATEGORY_LIMITS.focus} />
+        <MetricBar label="Mind" value={state.categoryTotals.mind} max={CATEGORY_LIMITS.mind} />
+        <MetricBar label="Life" value={state.categoryTotals.life} max={CATEGORY_LIMITS.life} />
+      </InteractiveCard>
 
-      <SoftCard title="기록 방향" overline="NOTES">
-        {JOURNEY_POINTS.map((item) => (
-          <ChecklistRow key={item} label={item} checked={true} compact />
-        ))}
-      </SoftCard>
+      <InteractiveCard overline="TIMELINE" title="Recent history" description="Helpful actions should feel like they leave a visible trail.">
+        {state.history.length === 0 ? (
+          <EmptyState text="No history yet." />
+        ) : (
+          state.history.map((item) => (
+            <HistoryRow
+              key={item.id}
+              title={ACTION_COPY[item.id.split("-")[0]] ?? item.label}
+              meta={`${CATEGORY_COPY[item.category]} · +${item.earned} XP`}
+            />
+          ))
+        )}
+      </InteractiveCard>
     </>
   );
 }
 
-function AvatarTab({ state }) {
+function AvatarTab({ state, selectedMood, selectedTheme, onMoodChange, onThemeChange }) {
   return (
     <>
-      <SoftCard title="캐릭터 성장" overline="AVATAR">
-        <Text style={styles.avatarLead}>레벨 {state.level} 기준으로 캐릭터 분위기와 꾸미기 해금이 이어집니다.</Text>
-        {AVATAR_POINTS.map((item) => (
-          <ChecklistRow key={item} label={item} checked={true} compact />
-        ))}
-      </SoftCard>
+      <InteractiveCard overline="AVATAR" title="Character settings" description="This tab now includes simple selectable states so it feels interactive right away.">
+        <Text style={styles.sectionLabel}>Mood</Text>
+        <View style={styles.selectionRow}>
+          {AVATAR_MOODS.map((item) => (
+            <SelectionChip
+              key={item.id}
+              label={item.label}
+              active={selectedMood === item.id}
+              onPress={() => onMoodChange(item.id)}
+            />
+          ))}
+        </View>
+
+        <Text style={styles.sectionLabel}>Scene</Text>
+        <View style={styles.selectionRow}>
+          {SCENE_THEMES.map((item) => (
+            <SelectionChip
+              key={item.id}
+              label={item.label}
+              active={selectedTheme === item.id}
+              onPress={() => onThemeChange(item.id)}
+            />
+          ))}
+        </View>
+      </InteractiveCard>
+
+      <InteractiveCard overline="PROGRESS" title="Unlock direction" description="Growth should unlock style and expression over time.">
+        <HistoryRow title="Current level" meta={`LV ${state.level} · growing toward the next reward`} />
+        <HistoryRow title="Next unlock" meta="Outfit tone, expression set, and background props" />
+        <HistoryRow title="Long-term edge" meta="Good real-life days shape the character's identity" />
+      </InteractiveCard>
     </>
+  );
+}
+
+function FooterSpace({ reflectionCount }) {
+  return (
+    <View style={styles.footerSpace}>
+      <Text style={styles.footerText}>Reflections today: {reflectionCount}</Text>
+    </View>
   );
 }
 
 function DateStrip() {
   return (
-    <SoftCard title="2025년 2월" overline="CALENDAR">
+    <InteractiveCard overline="CALENDAR" title="Weekly rhythm" description="A short calendar card keeps the app feeling mobile and compact.">
       <View style={styles.calendarRow}>
         {DATE_ITEMS.map((item, index) => (
           <View key={`${item.day}-${index}`} style={styles.dayCol}>
@@ -255,77 +376,116 @@ function DateStrip() {
           </View>
         ))}
       </View>
-    </SoftCard>
+    </InteractiveCard>
   );
 }
 
-function TaskCard({ title, tone, items, onAction }) {
-  return (
-    <SoftCard title={title} overline={tone === "blue" ? "TODAY" : "ACTION"} accentTone={tone}>
-      {items.map((item) => (
-        <ChecklistRow
-          key={item.label}
-          label={item.label}
-          checked={item.checked}
-          onPress={item.action && onAction ? () => onAction(item.action) : undefined}
-        />
-      ))}
-    </SoftCard>
-  );
-}
-
-function SoftCard({ title, overline, children, accentTone = "neutral" }) {
+function InteractiveCard({ overline, title, description, children }) {
   return (
     <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={[styles.cardOverline, accentTone === "blue" && styles.cardOverlineBlue, accentTone === "peach" && styles.cardOverlinePeach]}>
-          {overline}
-        </Text>
-        <Text style={styles.cardTitle}>{title}</Text>
-      </View>
+      <Text style={styles.cardOverline}>{overline}</Text>
+      <Text style={styles.cardTitle}>{title}</Text>
+      <Text style={styles.cardDescription}>{description}</Text>
       {children}
     </View>
   );
 }
 
-function ChecklistRow({ label, checked, onPress, compact = false }) {
-  const row = (
-    <View style={[styles.checkRow, compact && styles.checkRowCompact]}>
-      <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
-        {checked ? <Text style={styles.checkboxTick}>✓</Text> : null}
-      </View>
-      <Text style={styles.checkLabel}>{label}</Text>
-      <Text style={styles.rowDots}>⋯</Text>
-    </View>
-  );
-
-  if (onPress) {
-    return (
-      <Pressable onPress={onPress} style={({ pressed }) => [styles.rowButton, pressed && styles.rowButtonPressed]}>
-        {row}
-      </Pressable>
-    );
-  }
-
-  return row;
-}
-
-function ActionPill({ title, meta, onPress }) {
+function QuickActionChip({ title, active, onPress }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.actionPill, pressed && styles.rowButtonPressed]}>
-      <Text style={styles.actionPillTitle}>{title}</Text>
-      <Text style={styles.actionPillMeta}>{meta}</Text>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.quickChip, active && styles.quickChipActive, pressed && styles.pressDown]}>
+      <Text style={[styles.quickChipText, active && styles.quickChipTextActive]}>{title}</Text>
     </Pressable>
   );
 }
 
-function MetricRow({ label, value }) {
+function PrimaryActionButton({ title, subtitle, onPress }) {
   return (
-    <View style={styles.metricRow}>
-      <Text style={styles.metricLabel}>{label}</Text>
-      <Text style={styles.metricValue}>{value}</Text>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.primaryAction, pressed && styles.pressDown]}>
+      <Text style={styles.primaryActionTitle}>{title}</Text>
+      <Text style={styles.primaryActionSubtitle}>{subtitle}</Text>
+    </Pressable>
+  );
+}
+
+function SecondaryActionButton({ title, subtitle, onPress }) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.secondaryAction, pressed && styles.pressDown]}>
+      <Text style={styles.secondaryActionTitle}>{title}</Text>
+      <Text style={styles.secondaryActionSubtitle}>{subtitle}</Text>
+    </Pressable>
+  );
+}
+
+function ActionRow({ title, meta, value, onPress }) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.actionRow, pressed && styles.pressDown]}>
+      <View>
+        <Text style={styles.actionRowTitle}>{title}</Text>
+        <Text style={styles.actionRowMeta}>{meta}</Text>
+      </View>
+      <View style={styles.actionRowBadge}>
+        <Text style={styles.actionRowBadgeText}>{value}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function HistoryRow({ title, meta }) {
+  return (
+    <View style={styles.historyRow}>
+      <View style={styles.historyDot} />
+      <View style={styles.historyCopy}>
+        <Text style={styles.historyTitle}>{title}</Text>
+        <Text style={styles.historyMeta}>{meta}</Text>
+      </View>
     </View>
   );
+}
+
+function MetricBar({ label, value, max }) {
+  const ratio = Math.max(0, Math.min(1, value / max));
+
+  return (
+    <View style={styles.metricBlock}>
+      <View style={styles.metricHeader}>
+        <Text style={styles.metricLabel}>{label}</Text>
+        <Text style={styles.metricValue}>{value}/{max}</Text>
+      </View>
+      <View style={styles.metricTrack}>
+        <View style={[styles.metricFill, { width: `${ratio * 100}%` }]} />
+      </View>
+    </View>
+  );
+}
+
+function SelectionChip({ label, active, onPress }) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.selectionChip, active && styles.selectionChipActive, pressed && styles.pressDown]}>
+      <Text style={[styles.selectionChipText, active && styles.selectionChipTextActive]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function SmallMetricCard({ label, value }) {
+  return (
+    <View style={styles.smallMetricCard}>
+      <Text style={styles.smallMetricLabel}>{label}</Text>
+      <Text style={styles.smallMetricValue}>{value}</Text>
+    </View>
+  );
+}
+
+function Badge({ text }) {
+  return (
+    <View style={styles.badge}>
+      <Text style={styles.badgeText}>{text}</Text>
+    </View>
+  );
+}
+
+function EmptyState({ text }) {
+  return <Text style={styles.emptyText}>{text}</Text>;
 }
 
 const styles = StyleSheet.create({
@@ -337,43 +497,45 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f4f2ee",
   },
-  fixedStageLayer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 420,
-    zIndex: 3,
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 18,
+  },
+  heroSection: {
+    minHeight: 470,
+    paddingTop: 12,
+    paddingBottom: 16,
     overflow: "hidden",
   },
-  glowLarge: {
+  heroGlowLarge: {
     position: "absolute",
-    top: 92,
-    right: -32,
-    width: 188,
-    height: 188,
+    top: 96,
+    right: -42,
+    width: 190,
+    height: 190,
     borderRadius: 999,
-    backgroundColor: "rgba(244, 209, 187, 0.28)",
+    backgroundColor: "rgba(244, 209, 187, 0.26)",
   },
-  glowSmall: {
+  heroGlowSmall: {
     position: "absolute",
-    top: 170,
-    left: -18,
-    width: 126,
-    height: 126,
+    top: 166,
+    left: -20,
+    width: 128,
+    height: 128,
     borderRadius: 999,
     backgroundColor: "rgba(184, 198, 229, 0.22)",
   },
   headerBar: {
     paddingHorizontal: 18,
-    paddingTop: 12,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
   },
   brand: {
-    color: "#253247",
-    fontSize: 15,
+    color: "#243247",
+    fontSize: 16,
     fontWeight: "900",
   },
   brandSub: {
@@ -383,11 +545,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   levelBubble: {
-    minWidth: 86,
+    minWidth: 88,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 999,
-    backgroundColor: "#253247",
+    backgroundColor: "#243247",
     alignItems: "center",
   },
   levelBubbleText: {
@@ -395,269 +557,370 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "900",
   },
-  stageCopyBlock: {
+  heroCopyBlock: {
     paddingHorizontal: 18,
     paddingTop: 18,
-    maxWidth: 280,
+    gap: 8,
   },
   heroTitle: {
-    color: "#243042",
-    fontSize: 34,
-    lineHeight: 38,
+    color: "#243247",
+    fontSize: 32,
     fontWeight: "900",
-  },
-  heroSubtitle: {
-    marginTop: 6,
-    color: "#253247",
-    fontSize: 18,
-    fontWeight: "800",
+    letterSpacing: -1,
   },
   heroCopy: {
-    marginTop: 8,
-    color: "#697789",
-    fontSize: 14,
-    lineHeight: 20,
+    color: "#536074",
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: "600",
+    maxWidth: 320,
   },
-  fixedStage: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: -12,
-    height: 290,
+  heroBadgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginTop: 4,
   },
-  scroll: {
-    flex: 1,
-    zIndex: 1,
+  badge: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.74)",
+    borderWidth: 1,
+    borderColor: "rgba(214, 207, 197, 0.7)",
   },
-  scrollContent: {
-    paddingBottom: 120,
+  badgeText: {
+    color: "#49586e",
+    fontSize: 12,
+    fontWeight: "800",
   },
-  stageSpacer: {
-    height: 300,
+  characterStageArea: {
+    height: 260,
+    marginTop: 12,
+  },
+  heroHint: {
+    marginTop: 6,
+    paddingHorizontal: 18,
+    color: "#7d8797",
+    fontSize: 12,
+    fontWeight: "700",
   },
   sheet: {
-    marginTop: 8,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    backgroundColor: "rgba(248, 247, 244, 0.96)",
+    marginTop: -10,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    backgroundColor: "#f8f7f4",
     paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 16,
-    minHeight: 720,
+    paddingTop: 14,
+    paddingBottom: 8,
   },
-  sheetHandle: {
-    alignSelf: "center",
-    width: 46,
-    height: 5,
-    borderRadius: 999,
-    backgroundColor: "#d8d2c9",
+  quickStatusRow: {
+    flexDirection: "row",
+    gap: 10,
     marginBottom: 14,
   },
-  summaryCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderRadius: 24,
+  smallMetricCard: {
+    flex: 1,
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
     backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "#ebe5dc",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    borderColor: "#e6e0d7",
   },
-  summaryOverline: {
-    color: "#8d97a6",
+  smallMetricLabel: {
+    color: "#8994a4",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  smallMetricValue: {
+    marginTop: 6,
+    color: "#243247",
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  card: {
+    borderRadius: 24,
+    padding: 18,
+    marginBottom: 14,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e6e0d7",
+  },
+  cardOverline: {
+    color: "#d27d69",
     fontSize: 11,
     fontWeight: "900",
     letterSpacing: 1.2,
   },
-  summaryTitle: {
-    marginTop: 4,
-    color: "#243042",
-    fontSize: 17,
-    fontWeight: "800",
-  },
-  summaryRight: {
-    alignItems: "flex-end",
-  },
-  summaryMetric: {
-    color: "#243042",
+  cardTitle: {
+    marginTop: 8,
+    color: "#243247",
     fontSize: 24,
     fontWeight: "900",
+    letterSpacing: -0.6,
   },
-  summaryMeta: {
-    marginTop: 2,
-    color: "#8a95a5",
+  cardDescription: {
+    marginTop: 6,
+    marginBottom: 14,
+    color: "#68778c",
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: "600",
+  },
+  quickActionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 14,
+  },
+  quickChip: {
+    borderRadius: 999,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: "#f4f1eb",
+    borderWidth: 1,
+    borderColor: "#e8dfd3",
+  },
+  quickChipActive: {
+    backgroundColor: "#243247",
+    borderColor: "#243247",
+  },
+  quickChipText: {
+    color: "#55657a",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  quickChipTextActive: {
+    color: "#ffffff",
+  },
+  primaryAction: {
+    borderRadius: 22,
+    paddingVertical: 18,
+    paddingHorizontal: 18,
+    backgroundColor: "#243247",
+  },
+  primaryActionTitle: {
+    color: "#ffffff",
+    fontSize: 17,
+    fontWeight: "900",
+  },
+  primaryActionSubtitle: {
+    marginTop: 6,
+    color: "#d6dfef",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  dualActionGrid: {
+    gap: 10,
+  },
+  secondaryAction: {
+    borderRadius: 20,
+    paddingVertical: 15,
+    paddingHorizontal: 16,
+    backgroundColor: "#f4f1eb",
+    borderWidth: 1,
+    borderColor: "#e6e0d7",
+  },
+  secondaryActionTitle: {
+    color: "#243247",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  secondaryActionSubtitle: {
+    marginTop: 5,
+    color: "#68778c",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  actionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    backgroundColor: "#faf8f3",
+    borderWidth: 1,
+    borderColor: "#ece4d9",
+    marginBottom: 10,
+  },
+  actionRowTitle: {
+    color: "#243247",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  actionRowMeta: {
+    marginTop: 4,
+    color: "#7b8797",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  actionRowBadge: {
+    minWidth: 54,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    alignItems: "center",
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#e1d8cb",
+  },
+  actionRowBadgeText: {
+    color: "#d27d69",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  historyRow: {
+    flexDirection: "row",
+    gap: 12,
+    alignItems: "flex-start",
+    paddingVertical: 10,
+  },
+  historyDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 999,
+    marginTop: 6,
+    backgroundColor: "#d27d69",
+  },
+  historyCopy: {
+    flex: 1,
+  },
+  historyTitle: {
+    color: "#243247",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  historyMeta: {
+    marginTop: 4,
+    color: "#6e7d91",
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 19,
+  },
+  metricBlock: {
+    marginBottom: 14,
+  },
+  metricHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  metricLabel: {
+    color: "#243247",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  metricValue: {
+    color: "#68778c",
     fontSize: 12,
     fontWeight: "800",
   },
-  card: {
-    marginTop: 12,
-    borderRadius: 24,
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#ebe5dc",
-    paddingHorizontal: 14,
-    paddingVertical: 14,
+  metricTrack: {
+    height: 10,
+    borderRadius: 999,
+    overflow: "hidden",
+    backgroundColor: "#ece8e1",
   },
-  cardHeader: {
-    marginBottom: 6,
+  metricFill: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: "#243247",
   },
-  cardOverline: {
-    color: "#999082",
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 1.1,
-  },
-  cardOverlineBlue: {
-    color: "#7891c6",
-  },
-  cardOverlinePeach: {
-    color: "#d29a87",
-  },
-  cardTitle: {
+  sectionLabel: {
     marginTop: 4,
-    color: "#283346",
-    fontSize: 17,
+    marginBottom: 10,
+    color: "#6e7d91",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  selectionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 14,
+  },
+  selectionChip: {
+    borderRadius: 999,
+    paddingVertical: 11,
+    paddingHorizontal: 14,
+    backgroundColor: "#f4f1eb",
+    borderWidth: 1,
+    borderColor: "#e7dfd5",
+  },
+  selectionChipActive: {
+    backgroundColor: "#243247",
+    borderColor: "#243247",
+  },
+  selectionChipText: {
+    color: "#59687d",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  selectionChipTextActive: {
+    color: "#ffffff",
+  },
+  noteText: {
+    marginTop: 4,
+    color: "#7d8797",
+    fontSize: 12,
     fontWeight: "800",
+  },
+  emptyText: {
+    color: "#7d8797",
+    fontSize: 13,
+    lineHeight: 20,
+    fontWeight: "700",
+  },
+  footerSpace: {
+    alignItems: "center",
+    paddingTop: 6,
+    paddingBottom: 8,
+  },
+  footerText: {
+    color: "#8a94a2",
+    fontSize: 12,
+    fontWeight: "700",
   },
   calendarRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 6,
-    marginTop: 4,
   },
   dayCol: {
     alignItems: "center",
-    flex: 1,
+    gap: 8,
   },
   dayLabel: {
-    color: "#8b95a3",
+    color: "#98a1af",
     fontSize: 11,
     fontWeight: "800",
   },
   dayLabelActive: {
-    color: "#5c8af7",
+    color: "#4d5d74",
   },
   dayBubble: {
-    marginTop: 8,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 38,
+    height: 38,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f1f3f7",
+    backgroundColor: "#f4f1eb",
   },
   dayBubbleActive: {
-    backgroundColor: "#5c8af7",
+    backgroundColor: "#243247",
   },
   dayText: {
-    color: "#334055",
+    color: "#5c6b7f",
     fontSize: 13,
     fontWeight: "900",
   },
   dayTextActive: {
     color: "#ffffff",
   },
-  rowButton: {
-    borderRadius: 16,
-  },
-  rowButtonPressed: {
+  pressDown: {
     opacity: 0.88,
-  },
-  checkRow: {
-    minHeight: 52,
-    borderRadius: 18,
-    backgroundColor: "#faf9f6",
-    paddingHorizontal: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-  },
-  checkRowCompact: {
-    minHeight: 46,
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 7,
-    borderWidth: 1.5,
-    borderColor: "#d3d9e4",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#ffffff",
-  },
-  checkboxChecked: {
-    backgroundColor: "#5c8af7",
-    borderColor: "#5c8af7",
-  },
-  checkboxTick: {
-    color: "#ffffff",
-    fontSize: 12,
-    fontWeight: "900",
-  },
-  checkLabel: {
-    flex: 1,
-    marginLeft: 10,
-    color: "#2a3345",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  rowDots: {
-    color: "#a9b0bc",
-    fontSize: 18,
-    lineHeight: 18,
-  },
-  dualActions: {
-    marginTop: 12,
-    gap: 10,
-  },
-  actionPill: {
-    borderRadius: 22,
-    backgroundColor: "#253247",
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-  },
-  actionPillTitle: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  actionPillMeta: {
-    marginTop: 4,
-    color: "rgba(255,255,255,0.76)",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  metricRow: {
-    marginTop: 8,
-    minHeight: 46,
-    borderRadius: 16,
-    backgroundColor: "#faf9f6",
-    paddingHorizontal: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  metricLabel: {
-    color: "#2a3345",
-    fontSize: 14,
-    fontWeight: "800",
-  },
-  metricValue: {
-    color: "#7d8797",
-    fontSize: 12,
-    fontWeight: "900",
-  },
-  avatarLead: {
-    color: "#657286",
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: 4,
-  },
-  logText: {
-    color: "#5f6a7a",
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: "700",
+    transform: [{ scale: 0.985 }],
   },
 });
