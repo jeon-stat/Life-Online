@@ -4,6 +4,7 @@ import test from "node:test";
 
 import { ACTIONS, CATEGORY_LIMITS, DAILY_EXP_CAP, applyAction, createGameState } from "../src/game.js";
 import { CHARACTER_CLASSES, STAGE_MODE } from "../src/characters.js";
+import { buildHomeDatePanels } from "../src/home/buildHomeDatePanels.js";
 import { CHARACTER_SCALE, STAGE_LAYOUT } from "../src/scene/stageConfig.js";
 import { getRotationFromDrag } from "../src/scene/rotationMath.js";
 
@@ -30,6 +31,7 @@ test("daily growth loop uses one imported Blender character for now", () => {
   assert.equal(STAGE_MODE, "character-only");
   assert.deepEqual(CHARACTER_CLASSES.map((item) => item.id), ["custom-chibi"]);
   assert.equal(CHARACTER_CLASSES[0].modelUrl, "models/character.glb");
+  assert.deepEqual(CHARACTER_CLASSES[0].modelRotation, [0, Math.PI, 0]);
 });
 
 test("scene config stays in open stage mode", () => {
@@ -76,4 +78,18 @@ test("App.js does not ship JSX unicode escape literals that render as raw text",
 
   assert.equal(/=\s*"\\u[0-9A-Fa-f]{4}/.test(appSource), false);
   assert.equal(/>\s*\\u[0-9A-Fa-f]{4}/.test(appSource), false);
+});
+
+test("home date panels put today first and include live today state", () => {
+  let state = createGameState();
+  state = applyAction(state, ACTIONS.walkGoal);
+  state = applyAction(state, ACTIONS.reflection);
+
+  const panels = buildHomeDatePanels(new Date("2026-05-24T09:00:00+09:00"), state);
+
+  assert.equal(panels[0].isToday, true);
+  assert.equal(panels[0].xp, state.dailyExp);
+  assert.equal(panels[0].count, state.count);
+  assert.equal(panels[0].entries.length, state.history.length);
+  assert.equal(panels.length >= 5, true);
 });

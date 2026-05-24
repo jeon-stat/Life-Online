@@ -1,22 +1,32 @@
 import { StatusBar } from "expo-status-bar";
+import { LinearGradient } from "expo-linear-gradient";
 import { useMemo, useState } from "react";
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 
 import { CharacterStage } from "./src/CharacterStage";
 import { CHARACTER_CLASSES } from "./src/characters.js";
-import { ACTION_LIST, CATEGORY_LIMITS, DAILY_EXP_CAP, applyAction, createGameState } from "./src/game.js";
+import {
+  ACTION_LIST,
+  ACTIONS,
+  CATEGORY_LIMITS,
+  DAILY_EXP_CAP,
+  applyAction,
+  createGameState,
+} from "./src/game.js";
+import { buildHomeDatePanels } from "./src/home/buildHomeDatePanels.js";
 import { BottomTabs } from "./src/ui/BottomTabs.js";
+import { DateAccordion } from "./src/ui/DateAccordion.js";
 
 const NAV_ITEMS = [
-  { id: "today", label: "오늘", icon: "H" },
+  { id: "home", label: "홈", icon: "H" },
+  { id: "today", label: "실행", icon: "T" },
   { id: "focus", label: "집중", icon: "F" },
   { id: "journey", label: "기록", icon: "J" },
   { id: "avatar", label: "꾸미기", icon: "A" },
 ];
 
 const ACTION_HELP = {
-  walkGoal: "가벽게 몸을 깨우는 기본 행동",
+  walkGoal: "가볍게 몸을 깨우는 기본 행동",
   focusSession: "25분 동안 한 가지에 몰입",
   windDown: "밤 루틴을 정리하는 행동",
   tidyReset: "공간을 비우고 다시 시작",
@@ -44,24 +54,17 @@ const THEME_OPTIONS = [
 
 export default function App() {
   const [state, setState] = useState(() => createGameState());
-  const [activeTab, setActiveTab] = useState("today");
+  const [activeTab, setActiveTab] = useState("home");
   const [isStageDragging, setIsStageDragging] = useState(false);
   const [selectedMood, setSelectedMood] = useState("soft");
   const [selectedTheme, setSelectedTheme] = useState("morning");
 
   const character = CHARACTER_CLASSES[0];
-  const calendar = useMemo(() => buildCalendar(new Date()), []);
+  const now = useMemo(() => new Date(), []);
+  const headerDate = formatHeaderDate(now);
   const dailyProgress = Math.round((state.dailyExp / DAILY_EXP_CAP) * 100);
-
-  const heroStatus = useMemo(() => {
-    if (state.dailyExp >= 70) {
-      return "오늘 흐름이 좋아요. 한 번만 더 행동하면 성장 폭이 커져요.";
-    }
-    if (state.dailyExp >= 35) {
-      return "리듬이 올라오고 있어요. 지금 텐션을 이어가면 좋아요.";
-    }
-    return "작은 행동 하나만 시작해도 캐릭터가 바로 반응하게 만들어요.";
-  }, [state.dailyExp]);
+  const homeDatePanels = useMemo(() => buildHomeDatePanels(now, state), [now, state]);
+  const [expandedDateId, setExpandedDateId] = useState(homeDatePanels[0]?.id ?? null);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -72,50 +75,49 @@ export default function App() {
           scrollEnabled={!isStageDragging}
           showsVerticalScrollIndicator={false}
         >
-          <HeroSection
-            character={character}
-            level={state.level}
-            dailyProgress={dailyProgress}
-            calendar={calendar}
-            statusCopy={heroStatus}
-            onInteractionChange={setIsStageDragging}
-          />
-
-          <View style={styles.sheet}>
-            <SectionHeader
-              title="오늘 통계"
-              caption="누르는 버튼이 아니라 상태를 보는 영역"
+          {activeTab === "home" ? (
+            <HomeTab
+              character={character}
+              headerDate={headerDate}
+              level={state.level}
+              dailyProgress={dailyProgress}
+              state={state}
+              datePanels={homeDatePanels}
+              expandedDateId={expandedDateId}
+              onExpandDate={setExpandedDateId}
+              onInteractionChange={setIsStageDragging}
             />
-            <StatsRow
-              items={[
-                { label: "레벨", value: `LV ${state.level}` },
-                { label: "오늘 XP", value: `${dailyProgress}%` },
-                { label: "완료 수", value: `${state.count}회` },
-              ]}
-            />
+          ) : null}
 
-            <CalendarCard calendar={calendar} />
+          {activeTab !== "home" ? (
+            <View style={styles.sheet}>
+              {activeTab === "today" ? (
+                <TodayTab
+                  state={state}
+                  onAction={(action) => setState((current) => applyAction(current, action))}
+                />
+              ) : null}
 
-            {activeTab === "today" ? (
-              <TodayTab state={state} onAction={(action) => setState((current) => applyAction(current, action))} />
-            ) : null}
+              {activeTab === "focus" ? (
+                <FocusTab
+                  state={state}
+                  onAction={(action) => setState((current) => applyAction(current, action))}
+                />
+              ) : null}
 
-            {activeTab === "focus" ? (
-              <FocusTab state={state} onAction={(action) => setState((current) => applyAction(current, action))} />
-            ) : null}
+              {activeTab === "journey" ? <JourneyTab state={state} /> : null}
 
-            {activeTab === "journey" ? <JourneyTab state={state} /> : null}
-
-            {activeTab === "avatar" ? (
-              <AvatarTab
-                state={state}
-                selectedMood={selectedMood}
-                selectedTheme={selectedTheme}
-                onMoodChange={setSelectedMood}
-                onThemeChange={setSelectedTheme}
-              />
-            ) : null}
-          </View>
+              {activeTab === "avatar" ? (
+                <AvatarTab
+                  state={state}
+                  selectedMood={selectedMood}
+                  selectedTheme={selectedTheme}
+                  onMoodChange={setSelectedMood}
+                  onThemeChange={setSelectedTheme}
+                />
+              ) : null}
+            </View>
+          ) : null}
         </ScrollView>
 
         <BottomTabs items={NAV_ITEMS} activeId={activeTab} onChange={setActiveTab} />
@@ -125,56 +127,81 @@ export default function App() {
   );
 }
 
-function HeroSection({ character, level, dailyProgress, calendar, statusCopy, onInteractionChange }) {
+function HomeTab({
+  character,
+  headerDate,
+  level,
+  dailyProgress,
+  state,
+  datePanels,
+  expandedDateId,
+  onExpandDate,
+  onInteractionChange,
+}) {
   return (
-    <LinearGradient
-      colors={["#fbfaf8", "#f4f1eb", "#eef2f8"]}
-      start={{ x: 0.15, y: 0 }}
-      end={{ x: 0.85, y: 1 }}
-      style={styles.heroSection}
-    >
-      <View style={styles.heroGlowLarge} />
-      <View style={styles.heroGlowSmall} />
+    <>
+      <LinearGradient
+        colors={["#fbfaf8", "#f4f1eb", "#eef2f8"]}
+        start={{ x: 0.15, y: 0 }}
+        end={{ x: 0.85, y: 1 }}
+        style={styles.heroSection}
+      >
+        <View style={styles.heroGlowLarge} />
+        <View style={styles.heroGlowSmall} />
 
-      <View style={styles.headerBar}>
-        <View>
-          <Text style={styles.brand}>Life Online</Text>
-          <Text style={styles.brandSub}>{calendar.headerDate}</Text>
+        <View style={styles.headerBar}>
+          <View>
+            <Text style={styles.brand}>Life Online</Text>
+            <Text style={styles.brandSub}>{headerDate}</Text>
+          </View>
+          <View style={styles.levelBubble}>
+            <Text style={styles.levelBubbleText}>LV {level}</Text>
+          </View>
         </View>
-        <View style={styles.levelBubble}>
-          <Text style={styles.levelBubbleText}>LV {level}</Text>
+
+        <View style={styles.heroCopyBlock}>
+          <Text style={styles.heroTitle}>내 캐릭터</Text>
+          <Text style={styles.heroCopy}>{getHeroStatus(state.dailyExp)}</Text>
+          <View style={styles.heroBadgeRow}>
+            <InfoBadge text={`오늘 XP ${dailyProgress}%`} />
+            <InfoBadge text={character.label} />
+          </View>
         </View>
-      </View>
 
-      <View style={styles.heroCopyBlock}>
-        <Text style={styles.heroTitle}>{"내 캐릭터"}</Text>
-        <Text style={styles.heroCopy}>{statusCopy}</Text>
-        <View style={styles.heroBadgeRow}>
-          <InfoBadge text={`오늘 XP ${dailyProgress}%`} />
-          <InfoBadge text={character.label} />
+        <View style={styles.characterStageArea}>
+          <CharacterStage character={character} onInteractionChange={onInteractionChange} />
         </View>
-      </View>
 
-      <View style={styles.characterStageArea}>
-        <CharacterStage character={character} onInteractionChange={onInteractionChange} />
-      </View>
+        <Text style={styles.heroHint}>
+          캐릭터를 드래그하면 회전해요. 홈에서 오늘 흐름과 날짜별 내용을 함께 볼 수 있어요.
+        </Text>
+      </LinearGradient>
 
-      <Text style={styles.heroHint}>
-        {
-          "캐릭터를 드래그하면 회전하고, 아래로 스크롤하면 함께 움직여요."
-        }
-      </Text>
-    </LinearGradient>
+      <View style={styles.sheet}>
+        <SectionHeader title={`${nowMonthLabel()} 통계`} caption="공통 정보는 홈에서만 확인해요" />
+        <StatsRow
+          items={[
+            { label: "레벨", value: `LV ${state.level}` },
+            { label: "오늘 XP", value: `${dailyProgress}%` },
+            { label: "완료 수", value: `${state.count}회` },
+          ]}
+        />
+
+        <SectionHeader title="날짜" caption="날짜를 누르면 그날의 정보와 기록이 펼쳐져요" />
+        <DateAccordion
+          items={datePanels}
+          expandedId={expandedDateId}
+          onToggle={onExpandDate}
+        />
+      </View>
+    </>
   );
 }
 
 function TodayTab({ state, onAction }) {
   return (
     <>
-      <SectionHeader
-        title="실행 버튼"
-        caption="경험치를 쌓는 버튼 영역"
-      />
+      <SectionHeader title="실행 버튼" caption="행동을 누르면 기록과 경험치가 쌓여요" />
       <View style={styles.actionGrid}>
         {ACTION_LIST.map((action) => {
           const used = state.actionCounts[action.id] ?? 0;
@@ -195,36 +222,18 @@ function TodayTab({ state, onAction }) {
         })}
       </View>
 
-      <SectionHeader
-        title="오늘 상태"
-        caption="실행 결과가 쌓이는 통계 영역"
-      />
-      <ContentCard>
-        <MetricBar label="바디" value={state.categoryTotals.body} max={CATEGORY_LIMITS.body} />
-        <MetricBar label="집중" value={state.categoryTotals.focus} max={CATEGORY_LIMITS.focus} />
-        <MetricBar label="마음" value={state.categoryTotals.mind} max={CATEGORY_LIMITS.mind} />
-        <MetricBar label="생활" value={state.categoryTotals.life} max={CATEGORY_LIMITS.life} />
-      </ContentCard>
-
-      <SectionHeader
-        title="최근 기록"
-        caption="방금 누른 결과를 확인하는 영역"
-      />
+      <SectionHeader title="최근 기록" caption="방금 누른 결과를 빠르게 확인해요" />
       <ContentCard>
         <Text style={styles.logText}>{state.log}</Text>
         <View style={styles.historyList}>
           {state.history.length === 0 ? (
-            <Text style={styles.emptyText}>
-              {
-                "아직 기록이 없어요. 위 버튼 중 하나를 눌러 시작해보세요."
-              }
-            </Text>
+            <Text style={styles.emptyText}>아직 기록이 없어요. 버튼을 눌러 시작해보세요.</Text>
           ) : (
             state.history.map((item) => (
               <HistoryRow
                 key={item.id}
                 title={item.label}
-                meta={`${CATEGORY_COPY[item.category]} · +${item.earned} XP`}
+                meta={`${CATEGORY_COPY[item.category]} · ${item.earned} XP`}
               />
             ))
           )}
@@ -235,16 +244,13 @@ function TodayTab({ state, onAction }) {
 }
 
 function FocusTab({ state, onAction }) {
-  const focusAction = ACTION_LIST.find((item) => item.id === "focusSession");
-  const reflectionAction = ACTION_LIST.find((item) => item.id === "reflection");
-  const tidyAction = ACTION_LIST.find((item) => item.id === "tidyReset");
+  const focusAction = ACTIONS.focusSession;
+  const reflectionAction = ACTIONS.reflection;
+  const tidyAction = ACTIONS.tidyReset;
 
   return (
     <>
-      <SectionHeader
-        title="집중 실행"
-        caption="지금 바로 누를 수 있는 핵심 버튼"
-      />
+      <SectionHeader title="집중 실행" caption="몰입과 회고에 맞춘 빠른 실행 영역" />
       <View style={styles.focusStack}>
         <WideActionCard
           title="집중 세션 완료"
@@ -269,10 +275,7 @@ function FocusTab({ state, onAction }) {
         </View>
       </View>
 
-      <SectionHeader
-        title="집중 통계"
-        caption="눌리는 버튼과 구분된 결과 영역"
-      />
+      <SectionHeader title="집중 통계" caption="집중 카테고리의 흐름만 따로 봐요" />
       <ContentCard>
         <MetricBar label="집중 XP" value={state.categoryTotals.focus} max={CATEGORY_LIMITS.focus} />
         <MetricBar label="마음 XP" value={state.categoryTotals.mind} max={CATEGORY_LIMITS.mind} />
@@ -285,10 +288,7 @@ function FocusTab({ state, onAction }) {
 function JourneyTab({ state }) {
   return (
     <>
-      <SectionHeader
-        title="성장 통계"
-        caption="오늘 누적된 결과를 보는 영역"
-      />
+      <SectionHeader title="성장 통계" caption="누적 결과와 최근 이력을 보는 영역" />
       <ContentCard>
         <StatsRow
           items={[
@@ -299,10 +299,7 @@ function JourneyTab({ state }) {
         />
       </ContentCard>
 
-      <SectionHeader
-        title="기록 이력"
-        caption="행동 순서대로 확인하는 영역"
-      />
+      <SectionHeader title="기록 이력" caption="행동 순서대로 쌓인 내용을 확인해요" />
       <ContentCard>
         {state.history.length === 0 ? (
           <Text style={styles.emptyText}>아직 쌓인 기록이 없어요.</Text>
@@ -311,7 +308,7 @@ function JourneyTab({ state }) {
             <HistoryRow
               key={item.id}
               title={item.label}
-              meta={`${CATEGORY_COPY[item.category]} · +${item.earned} XP`}
+              meta={`${CATEGORY_COPY[item.category]} · ${item.earned} XP`}
             />
           ))
         )}
@@ -323,10 +320,7 @@ function JourneyTab({ state }) {
 function AvatarTab({ state, selectedMood, selectedTheme, onMoodChange, onThemeChange }) {
   return (
     <>
-      <SectionHeader
-        title="캐릭터 반응"
-        caption="경험치와는 별개인 선택형 영역"
-      />
+      <SectionHeader title="캐릭터 반응" caption="무드와 테마를 미리 보는 선택형 영역" />
       <ContentCard>
         <Text style={styles.subLabel}>무드 선택</Text>
         <View style={styles.selectionRow}>
@@ -353,43 +347,13 @@ function AvatarTab({ state, selectedMood, selectedTheme, onMoodChange, onThemeCh
         </View>
       </ContentCard>
 
-      <SectionHeader
-        title="성장 방향"
-        caption="다음 해금 포인트를 보는 영역"
-      />
+      <SectionHeader title="성장 방향" caption="다음 해금 포인트를 보는 영역" />
       <ContentCard>
         <HistoryRow title="현재 레벨" meta={`LV ${state.level} · ${state.title}`} />
         <HistoryRow
           title="다음 보상"
           meta="의상 톤 변화 · 표정 세트 · 배경 소품"
         />
-      </ContentCard>
-    </>
-  );
-}
-
-function CalendarCard({ calendar }) {
-  return (
-    <>
-      <SectionHeader
-        title="현재 날짜"
-        caption="오늘 날짜에 맞춰 자동으로 바뀼는 영역"
-      />
-      <ContentCard>
-        <View style={styles.calendarHeader}>
-          <Text style={styles.calendarTitle}>{calendar.monthLabel}</Text>
-          <Text style={styles.calendarMeta}>{calendar.todayLabel}</Text>
-        </View>
-        <View style={styles.calendarRow}>
-          {calendar.weekDays.map((item) => (
-            <View key={`${item.label}-${item.day}`} style={styles.dayCol}>
-              <Text style={[styles.dayLabel, item.active && styles.dayLabelActive]}>{item.label}</Text>
-              <View style={[styles.dayBubble, item.active && styles.dayBubbleActive]}>
-                <Text style={[styles.dayText, item.active && styles.dayTextActive]}>{item.day}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
       </ContentCard>
     </>
   );
@@ -433,9 +397,13 @@ function ActionCard({ title, help, xp, countText, disabled, onPress }) {
       ]}
     >
       <View style={styles.actionCardTop}>
-        <Text style={[styles.actionCardTitle, disabled && styles.actionCardTitleDisabled]}>{title}</Text>
+        <Text style={[styles.actionCardTitle, disabled && styles.actionCardTitleDisabled]}>
+          {title}
+        </Text>
         <View style={[styles.countBadge, disabled && styles.countBadgeDisabled]}>
-          <Text style={[styles.countBadgeText, disabled && styles.countBadgeTextDisabled]}>{countText}</Text>
+          <Text style={[styles.countBadgeText, disabled && styles.countBadgeTextDisabled]}>
+            {countText}
+          </Text>
         </View>
       </View>
       <Text style={[styles.actionHelp, disabled && styles.actionHelpDisabled]}>{help}</Text>
@@ -461,12 +429,18 @@ function WideActionCard({ title, subtitle, countText, disabled, onPress }) {
       ]}
     >
       <View style={styles.actionCardTop}>
-        <Text style={[styles.wideActionTitle, disabled && styles.actionCardTitleDisabled]}>{title}</Text>
+        <Text style={[styles.wideActionTitle, disabled && styles.actionCardTitleDisabled]}>
+          {title}
+        </Text>
         <View style={[styles.countBadge, disabled && styles.countBadgeDisabled]}>
-          <Text style={[styles.countBadgeText, disabled && styles.countBadgeTextDisabled]}>{countText}</Text>
+          <Text style={[styles.countBadgeText, disabled && styles.countBadgeTextDisabled]}>
+            {countText}
+          </Text>
         </View>
       </View>
-      <Text style={[styles.wideActionSubtitle, disabled && styles.actionHelpDisabled]}>{subtitle}</Text>
+      <Text style={[styles.wideActionSubtitle, disabled && styles.actionHelpDisabled]}>
+        {subtitle}
+      </Text>
     </Pressable>
   );
 }
@@ -482,9 +456,13 @@ function MiniActionCard({ title, countText, disabled, onPress }) {
         pressed && !disabled && styles.actionCardPressed,
       ]}
     >
-      <Text style={[styles.miniActionTitle, disabled && styles.actionCardTitleDisabled]}>{title}</Text>
+      <Text style={[styles.miniActionTitle, disabled && styles.actionCardTitleDisabled]}>
+        {title}
+      </Text>
       <View style={[styles.countBadge, disabled && styles.countBadgeDisabled]}>
-        <Text style={[styles.countBadgeText, disabled && styles.countBadgeTextDisabled]}>{countText}</Text>
+        <Text style={[styles.countBadgeText, disabled && styles.countBadgeTextDisabled]}>
+          {countText}
+        </Text>
       </View>
     </Pressable>
   );
@@ -524,9 +502,15 @@ function SelectionChip({ label, active, onPress }) {
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.selectionChip, active && styles.selectionChipActive, pressed && styles.selectionChipPressed]}
+      style={({ pressed }) => [
+        styles.selectionChip,
+        active && styles.selectionChipActive,
+        pressed && styles.selectionChipPressed,
+      ]}
     >
-      <Text style={[styles.selectionChipText, active && styles.selectionChipTextActive]}>{label}</Text>
+      <Text style={[styles.selectionChipText, active && styles.selectionChipTextActive]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -539,39 +523,25 @@ function InfoBadge({ text }) {
   );
 }
 
-function buildCalendar(date) {
-  const weekLabels = ["월", "화", "수", "목", "금", "토", "일"];
-  const current = new Date(date);
-  const day = current.getDay();
-  const mondayOffset = day === 0 ? -6 : 1 - day;
-  const monday = new Date(current);
-  monday.setDate(current.getDate() + mondayOffset);
+function getHeroStatus(dailyExp) {
+  if (dailyExp >= 70) {
+    return "오늘 흐름이 좋아요. 한 번만 더 행동하면 성장 폭이 커져요.";
+  }
 
-  const weekDays = Array.from({ length: 7 }, (_, index) => {
-    const next = new Date(monday);
-    next.setDate(monday.getDate() + index);
+  if (dailyExp >= 35) {
+    return "리듬이 올라오고 있어요. 지금 텐션을 이어가면 좋아요.";
+  }
 
-    return {
-      label: weekLabels[index],
-      day: String(next.getDate()),
-      active: sameDay(next, current),
-    };
-  });
-
-  return {
-    headerDate: `${current.getFullYear()}년 ${current.getMonth() + 1}월 ${current.getDate()}일`,
-    monthLabel: `${current.getFullYear()}년 ${current.getMonth() + 1}월`,
-    todayLabel: `오늘 ${weekLabels[day === 0 ? 6 : day - 1]}`,
-    weekDays,
-  };
+  return "작은 행동 하나만 시작해도 캐릭터가 바로 반응하게 만들어요.";
 }
 
-function sameDay(left, right) {
-  return (
-    left.getFullYear() === right.getFullYear() &&
-    left.getMonth() === right.getMonth() &&
-    left.getDate() === right.getDate()
-  );
+function formatHeaderDate(date) {
+  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+}
+
+function nowMonthLabel() {
+  const today = new Date();
+  return `${today.getMonth() + 1}월 ${today.getDate()}일`;
 }
 
 const styles = StyleSheet.create({
@@ -652,7 +622,6 @@ const styles = StyleSheet.create({
     color: "#243247",
     fontSize: 32,
     fontWeight: "900",
-    letterSpacing: -1,
   },
   heroCopy: {
     color: "#536074",
@@ -708,7 +677,6 @@ const styles = StyleSheet.create({
     color: "#243247",
     fontSize: 20,
     fontWeight: "900",
-    letterSpacing: -0.4,
   },
   sectionCaption: {
     marginTop: 4,
@@ -748,57 +716,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: "#e6e0d7",
-  },
-  calendarHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 14,
-  },
-  calendarTitle: {
-    color: "#243247",
-    fontSize: 18,
-    fontWeight: "900",
-  },
-  calendarMeta: {
-    color: "#8a94a2",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  calendarRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  dayCol: {
-    alignItems: "center",
-    gap: 8,
-  },
-  dayLabel: {
-    color: "#98a1af",
-    fontSize: 11,
-    fontWeight: "800",
-  },
-  dayLabelActive: {
-    color: "#4d5d74",
-  },
-  dayBubble: {
-    width: 38,
-    height: 38,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#f4f1eb",
-  },
-  dayBubbleActive: {
-    backgroundColor: "#243247",
-  },
-  dayText: {
-    color: "#5c6b7f",
-    fontSize: 13,
-    fontWeight: "900",
-  },
-  dayTextActive: {
-    color: "#ffffff",
   },
   actionGrid: {
     gap: 12,
