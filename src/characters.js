@@ -8,8 +8,9 @@ export const CHARACTER_CLASSES = [
       "Your Blender-made character imported into the Life Online stage for direct app testing.",
     modelSignature: ["custom-glb", "blender-import"],
     modelUrl: "models/character.glb",
-    modelTargetHeight: 4.3,
-    modelOffset: [0, -0.1, 0],
+    modelScale: [3.25, 3.25, 3.25],
+    modelOffset: [0, -1.18, 0],
+    modelRotation: [0, Math.PI, 0],
     palette: {
       primary: "#f3f4f6",
       secondary: "#ffffff",
