@@ -80,6 +80,13 @@ test("App.js does not ship JSX unicode escape literals that render as raw text",
   assert.equal(/>\s*\\u[0-9A-Fa-f]{4}/.test(appSource), false);
 });
 
+test("DateAccordion.js does not ship JSX unicode escape literals that render as raw text", () => {
+  const source = readFileSync(new URL("../src/ui/DateAccordion.js", import.meta.url), "utf8");
+
+  assert.equal(/=\s*"\\u[0-9A-Fa-f]{4}/.test(source), false);
+  assert.equal(/>\s*\\u[0-9A-Fa-f]{4}/.test(source), false);
+});
+
 test("home date panels put today first and include live today state", () => {
   let state = createGameState();
   state = applyAction(state, ACTIONS.walkGoal);
@@ -92,4 +99,16 @@ test("home date panels put today first and include live today state", () => {
   assert.equal(panels[0].count, state.count);
   assert.equal(panels[0].entries.length, state.history.length);
   assert.equal(panels.length >= 5, true);
+});
+
+test("date selector stays as a horizontal circle rail with a separate detail panel", () => {
+  const dateAccordionSource = readFileSync(
+    new URL("../src/ui/DateAccordion.js", import.meta.url),
+    "utf8",
+  );
+
+  assert.equal(dateAccordionSource.includes("horizontal"), true);
+  assert.equal(dateAccordionSource.includes("showsHorizontalScrollIndicator={false}"), true);
+  assert.equal(dateAccordionSource.includes("borderRadius: 999"), true);
+  assert.equal(dateAccordionSource.includes("styles.panel"), true);
 });

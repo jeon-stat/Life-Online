@@ -1,51 +1,70 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 export function DateAccordion({ items, expandedId, onToggle }) {
+  const activeItem = items.find((item) => item.id === expandedId) ?? items[0] ?? null;
+
   return (
-    <View style={styles.stack}>
-      {items.map((item) => {
-        const expanded = item.id === expandedId;
+    <View style={styles.shell}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.datesRail}
+      >
+        {items.map((item) => {
+          const active = item.id === expandedId;
 
-        return (
-          <View key={item.id} style={styles.card}>
-            <Pressable onPress={() => onToggle(expanded ? null : item.id)} style={styles.header}>
-              <View style={styles.headerCopy}>
-                <Text style={styles.dateText}>
-                  {item.dateLabel} {item.isToday ? "· 오늘" : `· ${item.weekdayLabel}`}
-                </Text>
-                <Text style={styles.summaryText}>{item.summary}</Text>
-              </View>
-              <Text style={styles.chevron}>{expanded ? "−" : "+"}</Text>
+          return (
+            <Pressable
+              key={item.id}
+              onPress={() => onToggle(active ? null : item.id)}
+              style={[styles.dayChip, active && styles.dayChipActive]}
+            >
+              <Text style={[styles.dayNumber, active && styles.dayNumberActive]}>
+                {getDayNumber(item.dateLabel)}
+              </Text>
+              <Text style={[styles.dayMeta, active && styles.dayMetaActive]}>
+                {item.isToday ? "\uC624\uB298" : item.weekdayLabel}
+              </Text>
             </Pressable>
+          );
+        })}
+      </ScrollView>
 
-            {expanded ? (
-              <View style={styles.body}>
-                <View style={styles.metricsRow}>
-                  <MetricPill label="획득 XP" value={`${item.xp}`} />
-                  <MetricPill label="완료 수" value={`${item.count}회`} />
-                  <MetricPill label="상태" value={item.mood} />
-                </View>
-
-                <View style={styles.entryList}>
-                  {item.entries.length === 0 ? (
-                    <Text style={styles.emptyText}>이 날짜에는 아직 기록이 없어요.</Text>
-                  ) : (
-                    item.entries.map((entry) => (
-                      <View key={entry.id} style={styles.entryRow}>
-                        <View style={styles.dot} />
-                        <View style={styles.entryCopy}>
-                          <Text style={styles.entryTitle}>{entry.label}</Text>
-                          <Text style={styles.entryMeta}>{entry.meta}</Text>
-                        </View>
-                      </View>
-                    ))
-                  )}
-                </View>
-              </View>
-            ) : null}
+      {activeItem ? (
+        <View key={`${activeItem.id}-panel`} style={styles.panel}>
+          <View style={styles.panelHeader}>
+            <Text style={styles.panelTitle}>
+              {activeItem.dateLabel}{" "}
+              {activeItem.isToday ? "\u00B7 \uC624\uB298" : `\u00B7 ${activeItem.weekdayLabel}`}
+            </Text>
+            <Text style={styles.panelSummary}>{activeItem.summary}</Text>
           </View>
-        );
-      })}
+
+          <View style={styles.metricsRow}>
+            <MetricPill label={"\uD68D\uB4DD XP"} value={`${activeItem.xp}`} />
+            <MetricPill label={"\uC644\uB8CC \uC218"} value={`${activeItem.count}\uD68C`} />
+            <MetricPill label={"\uC0C1\uD0DC"} value={activeItem.mood} />
+          </View>
+
+          <View style={styles.entryList}>
+            {activeItem.entries.length === 0 ? (
+              <Text style={styles.emptyText}>
+                {"\uC774 \uB0A0\uC9DC\uC5D0\uB294 \uC544\uC9C1 \uAE30\uB85D\uC774 \uC5C6\uC5B4\uC694."}
+              </Text>
+            ) : (
+              activeItem.entries.map((entry) => (
+                <View key={entry.id} style={styles.entryRow}>
+                  <View style={styles.dot} />
+                  <View style={styles.entryCopy}>
+                    <Text style={styles.entryTitle}>{entry.label}</Text>
+                    <Text style={styles.entryMeta}>{entry.meta}</Text>
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -59,50 +78,70 @@ function MetricPill({ label, value }) {
   );
 }
 
+function getDayNumber(dateLabel) {
+  return dateLabel.split("\uC6D4 ")[1]?.replace("\uC77C", "") ?? dateLabel;
+}
+
 const styles = StyleSheet.create({
-  stack: {
+  shell: {
+    gap: 14,
+  },
+  datesRail: {
+    paddingRight: 8,
     gap: 10,
   },
-  card: {
-    borderRadius: 20,
+  dayChip: {
+    width: 58,
+    height: 58,
+    borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#e3ddd4",
+    borderColor: "#e5e7eb",
     backgroundColor: "#ffffff",
-    overflow: "hidden",
-  },
-  header: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
+    justifyContent: "center",
   },
-  headerCopy: {
-    flex: 1,
+  dayChipActive: {
+    backgroundColor: "#111827",
+    borderColor: "#111827",
   },
-  dateText: {
-    color: "#243247",
-    fontSize: 14,
+  dayNumber: {
+    color: "#111827",
+    fontSize: 17,
     fontWeight: "900",
   },
-  summaryText: {
-    marginTop: 4,
-    color: "#6c7888",
-    fontSize: 12,
-    lineHeight: 18,
+  dayNumberActive: {
+    color: "#ffffff",
+  },
+  dayMeta: {
+    marginTop: 2,
+    color: "#9ca3af",
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  dayMetaActive: {
+    color: "#e5e7eb",
+  },
+  panel: {
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    backgroundColor: "#ffffff",
+    padding: 18,
+  },
+  panelHeader: {
+    marginBottom: 12,
+  },
+  panelTitle: {
+    color: "#111827",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  panelSummary: {
+    marginTop: 5,
+    color: "#6b7280",
+    fontSize: 13,
+    lineHeight: 19,
     fontWeight: "700",
-  },
-  chevron: {
-    color: "#243247",
-    fontSize: 22,
-    fontWeight: "600",
-  },
-  body: {
-    borderTopWidth: 1,
-    borderTopColor: "#ede7df",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
   },
   metricsRow: {
     flexDirection: "row",
@@ -111,18 +150,18 @@ const styles = StyleSheet.create({
   metricPill: {
     flex: 1,
     borderRadius: 14,
-    backgroundColor: "#f3f5f8",
+    backgroundColor: "#f8fafc",
     paddingVertical: 10,
     paddingHorizontal: 10,
   },
   metricLabel: {
-    color: "#7b8798",
+    color: "#9ca3af",
     fontSize: 11,
     fontWeight: "800",
   },
   metricValue: {
     marginTop: 4,
-    color: "#243247",
+    color: "#111827",
     fontSize: 14,
     fontWeight: "900",
   },
@@ -146,18 +185,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   entryTitle: {
-    color: "#243247",
+    color: "#111827",
     fontSize: 13,
     fontWeight: "900",
   },
   entryMeta: {
     marginTop: 2,
-    color: "#6e7d91",
+    color: "#6b7280",
     fontSize: 12,
     fontWeight: "700",
   },
   emptyText: {
-    color: "#7d8797",
+    color: "#9ca3af",
     fontSize: 12,
     fontWeight: "700",
   },
