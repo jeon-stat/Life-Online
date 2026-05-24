@@ -17,11 +17,15 @@ export function GLBCharacterModel({ character }) {
   }, [gltf.scene]);
 
   return (
-    <primitive
-      object={scene}
+    <group
       position={character.modelOffset ?? [0, -1, 0]}
       rotation={character.modelRotation ?? [0, Math.PI, 0]}
       scale={character.modelScale ?? [3, 3, 3]}
-    />
+    >
+      <primitive
+        object={scene}
+        position={[0, -(character.modelPivotY ?? 0), 0]}
+      />
+    </group>
   );
 }
