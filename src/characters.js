@@ -9,9 +9,9 @@ export const CHARACTER_CLASSES = [
     modelSignature: ["custom-glb", "blender-import"],
     modelUrl: "models/character.glb",
     modelScale: [3.25, 3.25, 3.25],
-    modelOffset: [0, 0.60, 0],
-    modelPivotY: 0.60,
-    modelRotation: [0, Math.PI, 0],
+    modelOffset: [0, 2.02, 0],
+    modelPivotY: 0.62,
+    modelRotation: [0, 0, 0],
     palette: {
       primary: "#f3f4f6",
       secondary: "#ffffff",

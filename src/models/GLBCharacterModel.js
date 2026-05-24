@@ -4,6 +4,8 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 export function GLBCharacterModel({ character }) {
   const gltf = useLoader(GLTFLoader, character.modelUrl);
+  const scale = character.modelScale ?? [3, 3, 3];
+  const pivotOffsetY = (character.modelPivotY ?? 0) * scale[1];
 
   const scene = useMemo(() => {
     const cloned = gltf.scene.clone(true);
@@ -20,11 +22,11 @@ export function GLBCharacterModel({ character }) {
     <group
       position={character.modelOffset ?? [0, -1, 0]}
       rotation={character.modelRotation ?? [0, Math.PI, 0]}
-      scale={character.modelScale ?? [3, 3, 3]}
     >
       <primitive
         object={scene}
-        position={[0, -(character.modelPivotY ?? 0), 0]}
+        position={[0, -pivotOffsetY, 0]}
+        scale={scale}
       />
     </group>
   );
