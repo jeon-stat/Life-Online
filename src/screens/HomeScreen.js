@@ -1,0 +1,58 @@
+import { ScrollView, StyleSheet, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+
+import { useStepData } from "../data/stepDataProvider.js";
+import { buildCharacterViewModel } from "../game/characterState.js";
+import { CHARACTER_CLASSES } from "../characters.js";
+import { CharacterStage } from "../components/CharacterStage";
+import { CharacterStatusBubble } from "../components/CharacterStatusBubble.js";
+import { DailySummaryCard } from "../components/DailySummaryCard.js";
+import { StepProgressCard } from "../components/StepProgressCard.js";
+import { theme } from "../constants/theme.js";
+
+export function HomeScreen() {
+  const { today, history, goal } = useStepData();
+  const character = CHARACTER_CLASSES[0];
+  const viewState = buildCharacterViewModel({ todayRecord: today, history, goal });
+
+  return (
+    <LinearGradient colors={viewState.background} style={styles.screen}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <CharacterStatusBubble text={viewState.bubbleText} bubbleSurface={viewState.bubbleSurface} />
+
+        <View style={styles.stageWrap}>
+          <CharacterStage character={character} state={viewState} />
+        </View>
+
+        <StepProgressCard
+          steps={viewState.steps}
+          goal={viewState.goal}
+          progressPercent={viewState.progressPercent}
+          statusLabel={viewState.statusLabel}
+        />
+
+        <DailySummaryCard
+          title={"\uC624\uB298 \uC0C1\uD0DC"}
+          primary={viewState.statusLabel}
+          secondary={viewState.statusDescription}
+          accent
+        />
+      </ScrollView>
+    </LinearGradient>
+  );
+}
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  content: {
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
+    gap: theme.spacing.md,
+  },
+  stageWrap: {
+    marginTop: theme.spacing.sm,
+  },
+});
