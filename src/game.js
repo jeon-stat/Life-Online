@@ -56,18 +56,16 @@ export function applyAction(state, action) {
   const dailyRemaining = Math.max(0, DAILY_EXP_CAP - state.dailyExp);
   const earned = Math.max(0, Math.min(baseGain, categoryRemaining, dailyRemaining));
 
-  if (earned === 0) {
-    return {
-      ...state,
-      mood: "\uCC28\uBD84",
-      log: `${action.label} \uBCF4\uC0C1\uC740 \uC9C0\uAE08 \uBC1B\uC744 \uC218 \uC5C6\uC5B4\uC694. \uB2E4\uB978 \uD589\uB3D9\uC73C\uB85C \uADE0\uD615\uC744 \uCC44\uC6CC\uBCF4\uC138\uC694.`,
-    };
-  }
-
   const exp = state.exp + earned;
   const dailyExp = state.dailyExp + earned;
   const level = Math.floor(exp / 60) + 1;
   const title = getTitleFromLevel(level);
+  const completedCount = actionCount + 1;
+  const reachedDailyLimit = completedCount >= dailyLimit;
+  const completionLog =
+    earned === 0
+      ? `${action.label} \uAE30\uB85D \uC644\uB8CC! \uC774\uBC88\uC5D4 XP \uBCF4\uC0C1 \uC5C6\uC774 ${completedCount}/${dailyLimit}\uAE4C\uC9C0 \uCC44\uC6E0\uC5B4\uC694.`
+      : `${action.label} \uC644\uB8CC! ${earned} XP\uB97C \uD68D\uB4DD\uD588\uC5B4\uC694.`;
 
   return {
     ...state,
@@ -76,11 +74,11 @@ export function applyAction(state, action) {
     count: state.count + 1,
     level,
     title,
-    mood: getMoodFromCategory(action.category),
-    log: `${action.label} \uC644\uB8CC! ${earned} XP\uB97C \uD68D\uB4DD\uD588\uC5B4\uC694.`,
+    mood: reachedDailyLimit ? "\uCC28\uBD84" : getMoodFromCategory(action.category),
+    log: completionLog,
     actionCounts: {
       ...state.actionCounts,
-      [action.id]: actionCount + 1,
+      [action.id]: completedCount,
     },
     categoryTotals: {
       ...state.categoryTotals,

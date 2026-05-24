@@ -27,6 +27,35 @@ test("repeated actions lose efficiency and respect category caps", () => {
   assert.equal(state.dailyExp, CATEGORY_LIMITS.focus);
 });
 
+test("every action can be completed three times before disabling", () => {
+  for (const action of Object.values(ACTIONS)) {
+    let state = createGameState();
+
+    state = applyAction(state, action);
+    state = applyAction(state, action);
+    state = applyAction(state, action);
+
+    assert.equal(state.actionCounts[action.id], 3, action.id);
+    assert.equal(state.history.length, 3, action.id);
+    assert.equal(state.count, 3, action.id);
+  }
+});
+
+test("a fourth click stays blocked after an action reaches 3/3", () => {
+  let state = createGameState();
+
+  state = applyAction(state, ACTIONS.reflection);
+  state = applyAction(state, ACTIONS.reflection);
+  state = applyAction(state, ACTIONS.reflection);
+
+  const completedState = state;
+  state = applyAction(state, ACTIONS.reflection);
+
+  assert.equal(state.actionCounts.reflection, 3);
+  assert.equal(state.count, completedState.count);
+  assert.match(state.log, /3/);
+});
+
 test("daily growth loop uses one imported Blender character for now", () => {
   assert.equal(STAGE_MODE, "character-only");
   assert.deepEqual(CHARACTER_CLASSES.map((item) => item.id), ["custom-chibi"]);
