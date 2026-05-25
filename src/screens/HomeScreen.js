@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { useStepData } from "../data/stepDataProvider.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
 import { CHARACTER_CLASSES } from "../characters.js";
+import { AdminPanel } from "../components/AdminPanel.js";
 import { CharacterStage } from "../components/CharacterStage";
 import { CharacterStatusBubble } from "../components/CharacterStatusBubble.js";
 import { DailySummaryCard } from "../components/DailySummaryCard.js";
