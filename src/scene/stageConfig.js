@@ -6,9 +6,9 @@ export const STAGE_LAYOUT = {
   background: "#ffffff",
   interaction: "drag-rotate",
   heroHeight: 462,
-  cameraPosition: [0, 0.84, 8.55],
+  cameraPosition: [0, 0.76, 8.55],
   fov: 32,
-  modelBaseY: -0.34,
+  modelBaseY: -0.56,
   defaultRotation: {
     x: 0.02,
     y: 0,
