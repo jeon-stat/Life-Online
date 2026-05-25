@@ -10,9 +10,14 @@ import { StepProgressCard } from "../components/StepProgressCard.js";
 import { theme } from "../constants/theme.js";
 
 export function HomeScreen() {
-  const { today, history, goal } = useStepData();
+  const { today, history, goal, admin } = useStepData();
   const character = CHARACTER_CLASSES[0];
-  const viewState = buildCharacterViewModel({ todayRecord: today, history, goal });
+  const viewState = buildCharacterViewModel({
+    todayRecord: today,
+    history,
+    goal,
+    motionOverride: admin?.motionOverride ?? null,
+  });
 
   return (
     <View style={styles.screen}>
@@ -36,6 +41,8 @@ export function HomeScreen() {
           secondary={viewState.statusDescription}
           accent
         />
+
+        <AdminPanel admin={admin} />
       </ScrollView>
     </View>
   );

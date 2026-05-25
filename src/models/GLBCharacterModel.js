@@ -1,6 +1,6 @@
 import { useFrame, useLoader } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { AnimationMixer, LoopRepeat } from "three";
+import { AnimationClip, AnimationMixer, LoopRepeat } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 function pickAnimationClip(clips = [], animationMap = {}, stateKey = "idle", defaultAnimation = "idle") {
@@ -57,13 +57,38 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
     [animationState, character.animationMap, character.defaultAnimation, gltf.animations],
   );
 
+  const inPlaceClip = useMemo(() => {
+    if (!selectedClip) return null;
+
+    const clone = selectedClip.clone();
+    clone.name = selectedClip.name;
+    clone.tracks = clone.tracks.map((track) => {
+      if (!track.name.toLowerCase().includes("hips.position")) {
+        return track;
+      }
+
+      const values = [...track.values];
+      const baseX = values[0] ?? 0;
+      const baseY = values[1] ?? 0;
+
+      for (let index = 0; index < values.length; index += 3) {
+        values[index] -= baseX;
+        values[index + 1] -= baseY;
+      }
+
+      return new track.constructor(track.name, [...track.times], values);
+    });
+
+    return AnimationClip.parse(AnimationClip.toJSON(clone));
+  }, [selectedClip]);
+
   useEffect(() => {
-    if (!selectedClip || !scene) return undefined;
+    if (!inPlaceClip || !scene) return undefined;
 
     const mixer = new AnimationMixer(scene);
     mixerRef.current = mixer;
 
-    const action = mixer.clipAction(selectedClip);
+    const action = mixer.clipAction(inPlaceClip);
     action.reset();
     action.enabled = true;
     action.setLoop(LoopRepeat, Infinity);
@@ -78,7 +103,7 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
       mixer.stopAllAction();
       mixerRef.current = null;
     };
-  }, [scene, selectedClip]);
+  }, [inPlaceClip, scene]);
 
   useFrame((_, delta) => {
     mixerRef.current?.update(delta);

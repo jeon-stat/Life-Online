@@ -16,6 +16,7 @@ export function AdminPanel({ admin }) {
         }
       </Text>
       <Text style={styles.source}>{`source: ${admin.source}`}</Text>
+      <Text style={styles.source}>{`motion: ${admin.motionOverride ?? "auto"}`}</Text>
 
       <View style={styles.row}>
         {admin.presets.map((preset) => (
@@ -23,6 +24,20 @@ export function AdminPanel({ admin }) {
             <Text style={styles.buttonLabel}>{preset.label}</Text>
           </Pressable>
         ))}
+      </View>
+
+      <View style={styles.motionSection}>
+        <Text style={styles.motionTitle}>{"\uBAA8\uC158 \uD14C\uC2A4\uD2B8"}</Text>
+        <View style={styles.row}>
+          {admin.motionStates.map((state) => (
+            <Pressable key={state} onPress={() => admin.setMotionOverride(state)} style={styles.button}>
+              <Text style={styles.buttonLabel}>{state}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Pressable onPress={admin.resetMotionOverride} style={styles.resetButton}>
+          <Text style={styles.resetLabel}>{"\uBAA8\uC158 override \uD574\uC81C"}</Text>
+        </Pressable>
       </View>
 
       <Pressable onPress={admin.resetMock} style={styles.resetButton}>
@@ -64,6 +79,14 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
     marginTop: 14,
+  },
+  motionSection: {
+    marginTop: 14,
+  },
+  motionTitle: {
+    color: theme.colors.ink,
+    fontSize: 13,
+    fontWeight: "900",
   },
   button: {
     borderRadius: theme.radius.pill,

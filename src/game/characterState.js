@@ -1,10 +1,11 @@
 import { theme } from "../constants/theme.js";
+import { resolveAnimationState } from "./animationState.js";
 import { getMemories } from "./memories.js";
 import { getPersonality } from "./personality.js";
 import { getGrowthProgress } from "./progression.js";
 import { DEFAULT_STEP_GOAL, getCharacterStatus, getStepProgress } from "./stepRules.js";
 
-export function buildCharacterViewModel({ todayRecord, history, goal = DEFAULT_STEP_GOAL }) {
+export function buildCharacterViewModel({ todayRecord, history, goal = DEFAULT_STEP_GOAL, motionOverride = null }) {
   const steps = todayRecord?.steps ?? 0;
   const status = getCharacterStatus(steps, goal);
   const statusTheme = theme.status[status];
@@ -13,6 +14,7 @@ export function buildCharacterViewModel({ todayRecord, history, goal = DEFAULT_S
   const growth = getGrowthProgress(history, goal);
   const personality = getPersonality(history, goal);
   const memories = getMemories(history, goal);
+  const animationState = resolveAnimationState(status, motionOverride);
 
   return {
     steps,
@@ -27,6 +29,8 @@ export function buildCharacterViewModel({ todayRecord, history, goal = DEFAULT_S
     effect: statusTheme.effect,
     animationSpeed: statusTheme.animationSpeed,
     bobAmount: statusTheme.bobAmount,
+    animationState,
+    motionOverride,
     progress,
     progressPercent,
     streak: growth.streak,

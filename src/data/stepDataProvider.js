@@ -7,6 +7,7 @@ const StepDataContext = createContext(null);
 
 export function StepDataProvider({ children, mode = "mock", adminEnabled = false }) {
   const [mockState, setMockState] = useState(() => createMockStepSnapshot());
+  const [motionOverride, setMotionOverride] = useState(null);
   const isMockMode = mode === "mock";
   const history = isMockMode ? mockState.history : [];
   const today = history[0] ?? {
@@ -27,9 +28,19 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
         canOverride: Boolean(adminEnabled && isMockMode),
         source: today.source,
         presets: ADMIN_STEP_PRESETS,
+        motionOverride,
+        motionStates: ["idle", "walk", "happy", "tired"],
         setPreset: (preset) => {
           if (!adminEnabled || !isMockMode) return;
           setMockState(applyAdminOverride(preset.steps));
+        },
+        setMotionOverride: (nextState) => {
+          if (!adminEnabled) return;
+          setMotionOverride(nextState);
+        },
+        resetMotionOverride: () => {
+          if (!adminEnabled) return;
+          setMotionOverride(null);
         },
         resetMock: () => {
           if (!adminEnabled || !isMockMode) return;
@@ -37,7 +48,7 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
         },
       },
     }),
-    [adminEnabled, history, isMockMode, mode, today],
+    [adminEnabled, history, isMockMode, mode, motionOverride, today],
   );
 
   return <StepDataContext.Provider value={value}>{children}</StepDataContext.Provider>;

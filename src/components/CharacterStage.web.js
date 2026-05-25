@@ -77,7 +77,7 @@ function AnimatedCharacter({ character, rotation, state }) {
 
   return (
     <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY, 0]}>
-      <GLBCharacterModel character={character} animationState="idle" />
+      <GLBCharacterModel character={character} animationState={state.animationState} />
     </group>
   );
 }
