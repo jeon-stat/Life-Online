@@ -12,12 +12,12 @@ export const CHARACTER_CLASSES = [
     modelPivotY: 0.62,
     modelRotation: [0, 0, 0],
     animationMap: {
-      idle: "Natural idle",
+      idle: "idle",
       walk: "walk",
       happy: "happy",
       tired: "tired",
     },
-    defaultAnimation: "Natural idle",
+    defaultAnimation: "idle",
     palette: {
       primary: "#f3f4f6",
       secondary: "#ffffff",
