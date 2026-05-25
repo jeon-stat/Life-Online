@@ -1,5 +1,4 @@
 import { ScrollView, StyleSheet, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 
 import { useStepData } from "../data/stepDataProvider.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
@@ -16,7 +15,7 @@ export function HomeScreen() {
   const viewState = buildCharacterViewModel({ todayRecord: today, history, goal });
 
   return (
-    <LinearGradient colors={viewState.background} style={styles.screen}>
+    <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <CharacterStatusBubble text={viewState.bubbleText} bubbleSurface={viewState.bubbleSurface} />
 
@@ -38,21 +37,24 @@ export function HomeScreen() {
           accent
         />
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    backgroundColor: "#ffffff",
   },
   content: {
     paddingHorizontal: theme.spacing.md,
     paddingTop: theme.spacing.md,
     paddingBottom: theme.spacing.xl,
     gap: theme.spacing.md,
+    backgroundColor: "#ffffff",
   },
   stageWrap: {
     marginTop: theme.spacing.sm,
+    marginHorizontal: -theme.spacing.xs,
   },
 });

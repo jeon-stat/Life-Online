@@ -113,10 +113,8 @@ function StageEffect({ effect }) {
 const styles = StyleSheet.create({
   shell: {
     height: 360,
-    borderRadius: theme.radius.xl,
-    overflow: "hidden",
     position: "relative",
-    backgroundColor: "#ffffff",
+    backgroundColor: "transparent",
   },
   glowBack: {
     position: "absolute",
@@ -135,9 +133,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: "50%",
     top: 16,
-    width: 280,
+    width: 224,
     height: 320,
-    marginLeft: -140,
+    marginLeft: -112,
     backgroundColor: "transparent",
     cursor: "grab",
     touchAction: "none",

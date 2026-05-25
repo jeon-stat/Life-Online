@@ -18,11 +18,9 @@ export function CharacterStage({ character }) {
 const styles = StyleSheet.create({
   shell: {
     height: 340,
-    borderRadius: theme.radius.xl,
-    overflow: "hidden",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#ffffff",
+    backgroundColor: "transparent",
   },
   placeholder: {
     alignItems: "center",
