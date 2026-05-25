@@ -1,4 +1,4 @@
-import { SafeAreaView, StyleSheet, View } from "react-native";
+import { Platform, SafeAreaView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
 
@@ -17,7 +17,17 @@ const TABS = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState("home");
-  const adminEnabled = useMemo(() => typeof __DEV__ !== "undefined" && __DEV__ === true, []);
+  const adminEnabled = useMemo(() => {
+    if (typeof __DEV__ !== "undefined" && __DEV__ === true) {
+      return true;
+    }
+
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      return new URLSearchParams(window.location.search).get("dev") === "1";
+    }
+
+    return false;
+  }, []);
 
   return (
     <StepDataProvider mode="mock" adminEnabled={adminEnabled}>
