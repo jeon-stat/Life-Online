@@ -5,10 +5,10 @@ export const STAGE_LAYOUT = {
   surface: "full-bleed",
   background: "#ffffff",
   interaction: "drag-rotate",
-  heroHeight: 462,
-  cameraPosition: [0, 0.76, 8.55],
-  fov: 32,
-  modelBaseY: -0.56,
+  heroHeight: 392,
+  cameraPosition: [0, 0.58, 8.55],
+  fov: 34,
+  modelBaseY: -1.02,
   defaultRotation: {
     x: 0.02,
     y: 0,
@@ -19,3 +19,4 @@ export const STAGE_LAYOUT = {
     xStep: 0.01,
   },
 };
+
