@@ -29,7 +29,7 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
         source: today.source,
         presets: ADMIN_STEP_PRESETS,
         motionOverride,
-        motionStates: ["idle", "walk", "happy", "tired"],
+        motionStates: ["idle", "walk", "run", "tired"],
         setPreset: (preset) => {
           if (!adminEnabled || !isMockMode) return;
           setMockState(applyAdminOverride(preset.steps));

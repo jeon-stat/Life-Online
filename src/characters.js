@@ -14,7 +14,7 @@ export const CHARACTER_CLASSES = [
     animationMap: {
       idle: "idle",
       walk: "walk",
-      happy: "happy",
+      run: "run",
       tired: "tired",
     },
     defaultAnimation: "idle",
