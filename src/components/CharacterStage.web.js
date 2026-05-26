@@ -112,13 +112,13 @@ function StageEffect({ effect }) {
 
 const styles = StyleSheet.create({
   shell: {
-    height: 308,
+    height: 292,
     position: "relative",
     backgroundColor: "transparent",
   },
   glowBack: {
     position: "absolute",
-    top: 18,
+    top: 14,
     left: "50%",
     marginLeft: -92,
     width: 184,
@@ -132,9 +132,9 @@ const styles = StyleSheet.create({
   gestureHotspot: {
     position: "absolute",
     left: "50%",
-    top: 10,
+    top: 6,
     width: 224,
-    height: 288,
+    height: 272,
     marginLeft: -112,
     backgroundColor: "transparent",
     cursor: "grab",
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   },
   statusChip: {
     position: "absolute",
-    top: 10,
+    top: 6,
     right: 16,
     paddingHorizontal: 12,
     paddingVertical: 8,
