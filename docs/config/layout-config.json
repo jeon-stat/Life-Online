@@ -1,0 +1,37 @@
+{
+  "stage": {
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "width": 0,
+    "height": 292
+  },
+  "glow": {
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "width": 184,
+    "height": 184
+  },
+  "bubble": {
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "width": 140,
+    "height": 56
+  },
+  "stepsCard": {
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "width": 0,
+    "height": 0
+  },
+  "summaryCard": {
+    "x": 0,
+    "y": 0,
+    "scale": 1,
+    "width": 0,
+    "height": 0
+  }
+}
