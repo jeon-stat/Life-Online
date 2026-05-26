@@ -56,9 +56,9 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.sm,
-    paddingBottom: theme.spacing.xl,
-    gap: theme.spacing.md,
+    paddingTop: theme.spacing.xs,
+    paddingBottom: theme.spacing.lg,
+    gap: 12,
     backgroundColor: "#ffffff",
   },
   updatedAt: {
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   stageWrap: {
-    marginTop: theme.spacing.xs,
-    marginHorizontal: -theme.spacing.xs,
+    marginTop: 0,
+    marginHorizontal: -theme.spacing.sm,
   },
 });

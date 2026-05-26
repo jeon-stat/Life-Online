@@ -11,17 +11,15 @@ import { STAGE_LAYOUT } from "../scene/stageConfig.js";
 const MINI_WORLD_THEME = {
   grass: "#9acb7c",
   grassShade: "#7daf64",
-  path: "#e7d2ad",
-  pathEdge: "#cfb287",
+  path: "#b9782f",
+  pathEdge: "#8e5c26",
 };
 
 const MINI_WORLD_LAYOUT = {
   radius: 4.48,
-  centerY: -4.46,
-  pathInset: 0.26,
+  centerY: -4.4,
+  pathRadius: 4.44,
   pathLift: 0.04,
-  basePhi: 0.46,
-  anchorTheta: -Math.PI / 2,
 };
 
 export function CharacterStage({ character, state, onInteractionChange }) {
@@ -138,11 +136,11 @@ function MiniWorld({ motionState, animationSpeed }) {
           <meshStandardMaterial color={MINI_WORLD_THEME.grass} />
         </mesh>
         <mesh position={[0, -0.018, 0]} renderOrder={0}>
-          <tubeGeometry args={[pathCurve, 180, 0.24, 16, true]} />
+          <tubeGeometry args={[pathCurve, 220, 0.27, 18, true]} />
           <meshStandardMaterial color={MINI_WORLD_THEME.pathEdge} />
         </mesh>
         <mesh renderOrder={1}>
-          <tubeGeometry args={[pathCurve, 180, 0.17, 16, true]} />
+          <tubeGeometry args={[pathCurve, 220, 0.19, 18, true]} />
           <meshStandardMaterial color={MINI_WORLD_THEME.path} />
         </mesh>
       </group>
@@ -152,32 +150,27 @@ function MiniWorld({ motionState, animationSpeed }) {
 
 function buildPathCurve() {
   const points = [];
-  const totalSteps = 32;
+  const totalSteps = 48;
 
   for (let step = 0; step < totalSteps; step += 1) {
-    const theta =
-      MINI_WORLD_LAYOUT.anchorTheta + (step / totalSteps) * Math.PI * 2;
+    const theta = (step / totalSteps) * Math.PI * 2;
     points.push(getPathPoint(theta));
   }
 
   return {
-    anchorPoint: getPathPoint(MINI_WORLD_LAYOUT.anchorTheta),
+    anchorPoint: getPathPoint(0),
     pathCurve: new CatmullRomCurve3(points, true, "catmullrom", 0.5),
   };
 }
 
 function getPathPoint(theta) {
-  const surfaceRadius = MINI_WORLD_LAYOUT.radius - MINI_WORLD_LAYOUT.pathInset;
-  const phi =
-    MINI_WORLD_LAYOUT.basePhi +
-    Math.sin(theta * 2) * 0.04 +
-    Math.cos(theta * 3) * 0.015;
-  const x = Math.sin(phi) * Math.cos(theta) * surfaceRadius;
-  const z = Math.sin(phi) * Math.sin(theta) * surfaceRadius;
+  const travelRadius = MINI_WORLD_LAYOUT.pathRadius;
+  const x = 0;
   const y =
     MINI_WORLD_LAYOUT.centerY +
-    Math.cos(phi) * surfaceRadius +
+    Math.cos(theta) * travelRadius +
     MINI_WORLD_LAYOUT.pathLift;
+  const z = Math.sin(theta) * travelRadius;
 
   return new Vector3(x, y, z);
 }
@@ -232,11 +225,11 @@ const styles = StyleSheet.create({
   },
   glowBack: {
     position: "absolute",
-    top: 18,
+    top: 24,
     left: "50%",
-    marginLeft: -112,
-    width: 224,
-    height: 224,
+    marginLeft: -126,
+    width: 252,
+    height: 252,
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.48)",
   },
@@ -247,9 +240,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: "50%",
     top: 6,
-    width: 252,
+    width: 270,
     height: STAGE_LAYOUT.heroHeight - 16,
-    marginLeft: -126,
+    marginLeft: -135,
     backgroundColor: "transparent",
     cursor: "grab",
     touchAction: "none",

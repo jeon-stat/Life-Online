@@ -29,7 +29,8 @@ export function StepProgressCard({ steps, goal, progressPercent, statusLabel }) 
 const styles = StyleSheet.create({
   card: {
     borderRadius: theme.radius.lg,
-    padding: theme.spacing.lg,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -46,30 +47,30 @@ const styles = StyleSheet.create({
   },
   status: {
     color: theme.colors.inkSoft,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "800",
   },
   valueRow: {
     flexDirection: "row",
     alignItems: "flex-end",
-    marginTop: 14,
+    marginTop: 10,
   },
   steps: {
     color: theme.colors.ink,
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: "900",
     letterSpacing: -1,
   },
   goal: {
     marginLeft: 6,
-    marginBottom: 5,
+    marginBottom: 4,
     color: theme.colors.muted,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "800",
   },
   track: {
-    marginTop: 18,
-    height: 12,
+    marginTop: 14,
+    height: 10,
     borderRadius: theme.radius.pill,
     overflow: "hidden",
     backgroundColor: "#ebe6de",
@@ -80,9 +81,9 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.accent,
   },
   caption: {
-    marginTop: 10,
+    marginTop: 8,
     color: theme.colors.inkSoft,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "700",
   },
 });
