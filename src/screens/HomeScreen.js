@@ -7,9 +7,8 @@ import { StepProgressCard } from "../components/StepProgressCard.js";
 import { CHARACTER_CLASSES } from "../characters.js";
 import { theme } from "../constants/theme.js";
 import { useStepData } from "../data/stepDataProvider.js";
+import { LAST_UPDATED_LABEL } from "../generated/buildInfo.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
-
-const LAST_UPDATED_LABEL = "\uC218\uC815 2026-05-26 20:05";
 
 export function HomeScreen() {
   const { today, history, goal, admin } = useStepData();

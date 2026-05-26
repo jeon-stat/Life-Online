@@ -8,9 +8,10 @@
     "start": "expo start",
     "start:dev": "expo start --dev-client",
     "web": "expo start --web",
-    "export:web": "node ./node_modules/expo/bin/cli export --platform web",
+    "prepare:build-info": "node ./tools/write-build-info.mjs",
+    "export:web": "node ./tools/write-build-info.mjs && node ./node_modules/expo/bin/cli export --platform web",
     "sync:pages": "node ./tools/sync-pages.mjs",
-    "deploy:pages": "node ./node_modules/expo/bin/cli export --platform web && node ./tools/sync-pages.mjs",
+    "deploy:pages": "node ./tools/write-build-info.mjs && node ./node_modules/expo/bin/cli export --platform web && node ./tools/sync-pages.mjs",
     "build:ios:dev": "eas build --platform ios --profile development",
     "test": "node --test"
   },

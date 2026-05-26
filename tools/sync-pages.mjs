@@ -39,6 +39,7 @@ if (!fs.existsSync(distDir)) {
 }
 
 removeIfExists(path.join(docsDir, "_expo"));
+removeIfExists(path.join(docsDir, "build-info.json"));
 removeIfExists(path.join(docsDir, "index.html"));
 removeIfExists(path.join(docsDir, "metadata.json"));
 removeIfExists(path.join(docsDir, ".nojekyll"));

@@ -1,4 +1,4 @@
-import { createPortal, useFrame, useLoader } from "@react-three/fiber";
+import { useFrame, useLoader } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { AnimationMixer, DoubleSide, LoopRepeat, SRGBColorSpace, TextureLoader } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -56,11 +56,6 @@ export function GLBCharacterModel({ character, animationState = "idle", faceExpr
       ),
     [animationState, character.animationMap, character.defaultAnimation, gltf.animations],
   );
-  const faceAnchor = useMemo(() => {
-    if (!faceExpression?.anchorBone) return null;
-
-    return gltf.scene.getObjectByName(faceExpression.anchorBone) ?? null;
-  }, [faceExpression?.anchorBone, gltf.scene]);
 
   useEffect(() => {
     if (!selectedClip || !scene) return undefined;
@@ -94,36 +89,31 @@ export function GLBCharacterModel({ character, animationState = "idle", faceExpr
       position={character.modelOffset ?? [0, -1, 0]}
       rotation={character.modelRotation ?? [0, Math.PI, 0]}
     >
-      {faceExpression ? (
-        <FaceExpressionPlane anchor={faceAnchor} faceExpression={faceExpression} />
-      ) : null}
-      <primitive
-        object={scene}
-        position={[0, -pivotOffsetY, 0]}
-        scale={scale}
-      />
+      <group position={[0, -pivotOffsetY, 0]} scale={scale}>
+        {faceExpression ? <FaceExpressionPlane faceExpression={faceExpression} /> : null}
+        <primitive object={scene} />
+      </group>
     </group>
   );
 }
 
-function FaceExpressionPlane({ anchor, faceExpression }) {
+function FaceExpressionPlane({ faceExpression }) {
   const textureSource = faceExpression.image?.uri ?? faceExpression.image;
   const texture = useLoader(TextureLoader, textureSource);
-  const size = faceExpression.size ?? [2.18, 1.34];
-  const position = anchor
-    ? (faceExpression.anchorPosition ?? [0, 0.12, 0.14])
-    : (faceExpression.position ?? [0, 0.92, 0.74]);
+  const size = faceExpression.size ?? [0.28, 0.17];
+  const position = faceExpression.position ?? [0, 0.43, 0.214];
 
   useEffect(() => {
     texture.colorSpace = SRGBColorSpace;
     texture.needsUpdate = true;
   }, [texture]);
 
-  const faceMesh = (
+  return (
     <mesh position={position} renderOrder={8}>
       <planeGeometry args={size} />
       <meshBasicMaterial
         alphaTest={0.05}
+        depthTest={false}
         depthWrite={false}
         map={texture}
         side={DoubleSide}
@@ -132,6 +122,4 @@ function FaceExpressionPlane({ anchor, faceExpression }) {
       />
     </mesh>
   );
-
-  return anchor ? createPortal(faceMesh, anchor) : faceMesh;
 }
