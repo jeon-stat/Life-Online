@@ -2,22 +2,12 @@ import { useMemo, useRef, useState } from "react";
 import { PanResponder, StyleSheet, View } from "react-native";
 import { useFrame } from "@react-three/fiber";
 
-import { EditableFrame } from "../admin/EditableFrame";
 import { GLBCharacterModel } from "../models/GLBCharacterModel.js";
 import { StageCanvas } from "../scene/StageCanvas.web.js";
 import { getRotationFromDrag } from "../scene/rotationMath.js";
 import { STAGE_LAYOUT } from "../scene/stageConfig.js";
 
-export function CharacterStage({
-  character,
-  state,
-  onInteractionChange,
-  glowLayout,
-  glowEditable = false,
-  glowSelected = false,
-  onSelectGlow,
-  onChangeGlow,
-}) {
+export function CharacterStage({ character, state, onInteractionChange }) {
   const [rotation, setRotation] = useState(STAGE_LAYOUT.defaultRotation);
   const rotationRef = useRef(STAGE_LAYOUT.defaultRotation);
   const dragStartRef = useRef(STAGE_LAYOUT.defaultRotation);
@@ -55,17 +45,7 @@ export function CharacterStage({
 
   return (
     <View style={styles.shell}>
-      <EditableFrame
-        id="glow"
-        label="배경 glow"
-        enabled={glowEditable}
-        selected={glowSelected}
-        layout={glowLayout ?? { x: 0, y: 0, scale: 1 }}
-        onSelect={onSelectGlow}
-        onChange={onChangeGlow}
-      >
-        <View style={styles.glowBack} />
-      </EditableFrame>
+      <View style={styles.glowBack} />
       <View style={styles.effectWrap} pointerEvents="none">
         <StageEffect effect={state.effect} />
       </View>
