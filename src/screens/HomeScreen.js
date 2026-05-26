@@ -9,7 +9,7 @@ import { theme } from "../constants/theme.js";
 import { useStepData } from "../data/stepDataProvider.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
 
-const LAST_UPDATED_LABEL = "수정 2026-05-26 18:12";
+const LAST_UPDATED_LABEL = "\uC218\uC815 2026-05-26 20:05";
 
 export function HomeScreen() {
   const { today, history, goal, admin } = useStepData();
@@ -38,7 +38,7 @@ export function HomeScreen() {
         />
 
         <DailySummaryCard
-          title="오늘 상태"
+          title="\uC624\uB298 \uC0C1\uD0DC"
           primary={viewState.statusLabel}
           secondary={viewState.statusDescription}
           accent
