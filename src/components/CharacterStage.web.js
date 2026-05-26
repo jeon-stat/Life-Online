@@ -1,8 +1,8 @@
-import { Suspense, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { PanResponder, StyleSheet, View } from "react-native";
 import { useFrame } from "@react-three/fiber";
 
-import { EditableFrame } from "../admin/EditableFrame.js";
+import { EditableFrame } from "../admin/EditableFrame";
 import { GLBCharacterModel } from "../models/GLBCharacterModel.js";
 import { StageCanvas } from "../scene/StageCanvas.web.js";
 import { getRotationFromDrag } from "../scene/rotationMath.js";
@@ -12,7 +12,6 @@ export function CharacterStage({
   character,
   state,
   onInteractionChange,
-  editing = false,
   glowLayout,
   glowEditable = false,
   glowSelected = false,
@@ -73,7 +72,7 @@ export function CharacterStage({
       <StageCanvas>
         <AnimatedCharacter character={character} rotation={rotation} state={state} />
       </StageCanvas>
-      {editing ? null : <View style={styles.gestureHotspot} {...panResponder.panHandlers} />}
+      <View style={styles.gestureHotspot} {...panResponder.panHandlers} />
     </View>
   );
 }
@@ -208,4 +207,3 @@ const styles = StyleSheet.create({
     right: 34,
   },
 });
-
