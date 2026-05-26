@@ -1,6 +1,6 @@
 import { useFrame, useLoader } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { AnimationMixer, DoubleSide, LoopRepeat, SRGBColorSpace, TextureLoader } from "three";
+import { AnimationMixer, LoopRepeat } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 function pickAnimationClip(clips = [], animationMap = {}, stateKey = "idle", defaultAnimation = "idle") {
@@ -29,7 +29,7 @@ function pickAnimationClip(clips = [], animationMap = {}, stateKey = "idle", def
   return clips[0];
 }
 
-export function GLBCharacterModel({ character, animationState = "idle", faceExpression = null }) {
+export function GLBCharacterModel({ character, animationState = "idle" }) {
   const gltf = useLoader(GLTFLoader, character.modelUrl);
   const mixerRef = useRef(null);
   const scale = character.modelScale ?? [3, 3, 3];
@@ -90,36 +90,8 @@ export function GLBCharacterModel({ character, animationState = "idle", faceExpr
       rotation={character.modelRotation ?? [0, Math.PI, 0]}
     >
       <group position={[0, -pivotOffsetY, 0]} scale={scale}>
-        {faceExpression ? <FaceExpressionPlane faceExpression={faceExpression} /> : null}
         <primitive object={scene} />
       </group>
     </group>
-  );
-}
-
-function FaceExpressionPlane({ faceExpression }) {
-  const textureSource = faceExpression.image?.uri ?? faceExpression.image;
-  const texture = useLoader(TextureLoader, textureSource);
-  const size = faceExpression.size ?? [0.28, 0.17];
-  const position = faceExpression.position ?? [0, 0.43, 0.214];
-
-  useEffect(() => {
-    texture.colorSpace = SRGBColorSpace;
-    texture.needsUpdate = true;
-  }, [texture]);
-
-  return (
-    <mesh position={position} renderOrder={8}>
-      <planeGeometry args={size} />
-      <meshBasicMaterial
-        alphaTest={0.05}
-        depthTest={false}
-        depthWrite={false}
-        map={texture}
-        side={DoubleSide}
-        toneMapped={false}
-        transparent
-      />
-    </mesh>
   );
 }

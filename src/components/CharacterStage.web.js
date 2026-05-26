@@ -1,18 +1,35 @@
 import { useMemo, useRef, useState } from "react";
 import { PanResponder, StyleSheet, View } from "react-native";
 import { useFrame } from "@react-three/fiber";
+import { CatmullRomCurve3, Vector3 } from "three";
 
-import { resolveFaceExpression } from "../faces/faceExpressions.js";
 import { GLBCharacterModel } from "../models/GLBCharacterModel.js";
 import { StageCanvas } from "../scene/StageCanvas.web.js";
 import { getRotationFromDrag } from "../scene/rotationMath.js";
 import { STAGE_LAYOUT } from "../scene/stageConfig.js";
 
+const MINI_WORLD_THEME = {
+  grass: "#9acb7c",
+  grassShade: "#7daf64",
+  path: "#e7d2ad",
+  pathEdge: "#cfb287",
+  trunk: "#7a5942",
+  leaf: "#7bb56a",
+  lampPost: "#667180",
+  lampLight: "#ffe9b2",
+  stone: "#d8dde5",
+};
+
+const MINI_WORLD_LAYOUT = {
+  radius: 3.42,
+  centerY: -3.38,
+  pathLift: 0.06,
+};
+
 export function CharacterStage({ character, state, onInteractionChange }) {
   const [rotation, setRotation] = useState(STAGE_LAYOUT.defaultRotation);
   const rotationRef = useRef(STAGE_LAYOUT.defaultRotation);
   const dragStartRef = useRef(STAGE_LAYOUT.defaultRotation);
-  const faceExpression = resolveFaceExpression(state);
 
   const panResponder = useMemo(
     () =>
@@ -54,7 +71,6 @@ export function CharacterStage({ character, state, onInteractionChange }) {
       <StageCanvas>
         <AnimatedCharacter
           character={character}
-          faceExpression={faceExpression}
           rotation={rotation}
           state={state}
         />
@@ -64,7 +80,7 @@ export function CharacterStage({ character, state, onInteractionChange }) {
   );
 }
 
-function AnimatedCharacter({ character, faceExpression, rotation, state }) {
+function AnimatedCharacter({ character, rotation, state }) {
   const rootRef = useRef(null);
 
   useFrame((frameState) => {
@@ -80,13 +96,136 @@ function AnimatedCharacter({ character, faceExpression, rotation, state }) {
 
   return (
     <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY, 0]}>
+      <MiniWorld motionState={state.animationState} />
       <GLBCharacterModel
         character={character}
         animationState={state.animationState}
-        faceExpression={faceExpression}
       />
     </group>
   );
+}
+
+function MiniWorld({ motionState }) {
+  const worldRef = useRef(null);
+  const pathCurve = useMemo(() => buildPathCurve(), []);
+
+  useFrame((_, delta) => {
+    if (!worldRef.current) return;
+    worldRef.current.rotation.y += getWorldRotationSpeed(motionState) * delta;
+  });
+
+  return (
+    <group ref={worldRef}>
+      <mesh position={[0, MINI_WORLD_LAYOUT.centerY, 0]} rotation={[0, 0, 0]}>
+        <sphereGeometry args={[MINI_WORLD_LAYOUT.radius, 40, 28, 0, Math.PI * 2, 0, Math.PI * 0.54]} />
+        <meshStandardMaterial color={MINI_WORLD_THEME.grass} />
+      </mesh>
+      <mesh renderOrder={1}>
+        <tubeGeometry args={[pathCurve, 72, 0.13, 10, true]} />
+        <meshStandardMaterial color={MINI_WORLD_THEME.path} />
+      </mesh>
+      <mesh renderOrder={0}>
+        <tubeGeometry args={[pathCurve, 72, 0.16, 10, true]} />
+        <meshStandardMaterial color={MINI_WORLD_THEME.pathEdge} />
+      </mesh>
+      <MiniTree position={getSurfacePoint(-1.18, 0.84, 0.02)} scale={0.96} />
+      <MiniTree position={getSurfacePoint(1.26, -0.72, 0.03)} scale={0.82} />
+      <MiniLamp position={getSurfacePoint(0.96, 1.18, 0.02)} />
+      <MiniStone position={getSurfacePoint(-0.94, -1.2, 0.01)} />
+    </group>
+  );
+}
+
+function MiniTree({ position, scale = 1 }) {
+  return (
+    <group position={position} scale={scale}>
+      <mesh position={[0, 0.18, 0]}>
+        <cylinderGeometry args={[0.04, 0.05, 0.34, 8]} />
+        <meshStandardMaterial color={MINI_WORLD_THEME.trunk} />
+      </mesh>
+      <mesh position={[0, 0.48, 0]}>
+        <sphereGeometry args={[0.2, 12, 12]} />
+        <meshStandardMaterial color={MINI_WORLD_THEME.leaf} />
+      </mesh>
+      <mesh position={[0.05, 0.62, 0.03]}>
+        <sphereGeometry args={[0.14, 10, 10]} />
+        <meshStandardMaterial color={MINI_WORLD_THEME.leaf} />
+      </mesh>
+    </group>
+  );
+}
+
+function MiniLamp({ position }) {
+  return (
+    <group position={position}>
+      <mesh position={[0, 0.19, 0]}>
+        <cylinderGeometry args={[0.03, 0.04, 0.38, 8]} />
+        <meshStandardMaterial color={MINI_WORLD_THEME.lampPost} />
+      </mesh>
+      <mesh position={[0, 0.43, 0]}>
+        <sphereGeometry args={[0.06, 10, 10]} />
+        <meshStandardMaterial color={MINI_WORLD_THEME.lampLight} emissive="#ffe5a0" emissiveIntensity={0.35} />
+      </mesh>
+      <pointLight position={[0, 0.43, 0]} intensity={0.18} distance={1.4} color="#ffe9b2" />
+    </group>
+  );
+}
+
+function MiniStone({ position }) {
+  return (
+    <mesh position={position}>
+      <sphereGeometry args={[0.08, 9, 9]} />
+      <meshStandardMaterial color={MINI_WORLD_THEME.stone} />
+    </mesh>
+  );
+}
+
+function buildPathCurve() {
+  const points = [];
+
+  for (let step = 0; step < 9; step += 1) {
+    const angle = (step / 8) * Math.PI * 2;
+    const radiusX = 1.28 + Math.sin(angle * 2) * 0.14;
+    const radiusZ = 1.02 + Math.cos(angle * 2) * 0.14;
+    const x = Math.cos(angle) * radiusX;
+    const z = Math.sin(angle) * radiusZ;
+
+    points.push(
+      new Vector3(
+        x,
+        getSurfaceY(x, z) + MINI_WORLD_LAYOUT.pathLift,
+        z,
+      ),
+    );
+  }
+
+  return new CatmullRomCurve3(points, true, "catmullrom", 0.35);
+}
+
+function getSurfacePoint(x, z, lift = 0) {
+  return [x, getSurfaceY(x, z) + lift, z];
+}
+
+function getSurfaceY(x, z) {
+  const radius = MINI_WORLD_LAYOUT.radius;
+  const centerY = MINI_WORLD_LAYOUT.centerY;
+  const height = Math.sqrt(Math.max(radius * radius - x * x - z * z, 0));
+
+  return centerY + height;
+}
+
+function getWorldRotationSpeed(motionState) {
+  switch (motionState) {
+    case "run":
+      return 0.42;
+    case "walk":
+      return 0.18;
+    case "tired":
+      return 0.015;
+    case "idle":
+    default:
+      return 0.03;
+  }
 }
 
 function StageEffect({ effect }) {
