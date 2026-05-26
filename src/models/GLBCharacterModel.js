@@ -1,6 +1,6 @@
 import { useFrame, useLoader } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { AnimationMixer, Box3, LoopRepeat, Vector3 } from "three";
+import { AnimationMixer, Box3, LoopRepeat } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 function pickAnimationClip(clips = [], animationMap = {}, stateKey = "idle", defaultAnimation = "idle") {
@@ -51,13 +51,10 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
     scene.updateMatrixWorld(true);
 
     const bounds = new Box3().setFromObject(scene);
-    const min = new Vector3();
-    bounds.getMin(min);
-
     const bottomY =
       basePosition[1] -
       pivotOffsetY +
-      min.y * scale[1];
+      bounds.min.y * scale[1];
 
     return [basePosition[0], basePosition[1] - bottomY, basePosition[2]];
   }, [basePosition, pivotOffsetY, scale, scene]);
