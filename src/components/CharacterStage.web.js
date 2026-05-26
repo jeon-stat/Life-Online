@@ -16,10 +16,12 @@ const MINI_WORLD_THEME = {
 };
 
 const MINI_WORLD_LAYOUT = {
-  radius: 4.48,
-  centerY: -4.4,
-  pathRadius: 4.44,
-  pathLift: 0.04,
+  radius: 6.8,
+  centerY: -6.76,
+  pathRadius: 6.72,
+  pathLift: 0.02,
+  footClearance: 0.14,
+  characterScale: 0.82,
 };
 
 export function CharacterStage({ character, state, onInteractionChange }) {
@@ -101,10 +103,12 @@ function AnimatedCharacter({ character, rotation, state }) {
         motionState={state.animationState}
         animationSpeed={state.animationSpeed}
       />
-      <GLBCharacterModel
-        character={character}
-        animationState={state.animationState}
-      />
+      <group scale={MINI_WORLD_LAYOUT.characterScale}>
+        <GLBCharacterModel
+          character={character}
+          animationState={state.animationState}
+        />
+      </group>
     </group>
   );
 }
@@ -115,32 +119,38 @@ function MiniWorld({ motionState, animationSpeed }) {
 
   useFrame((_, delta) => {
     if (!worldRef.current) return;
-    worldRef.current.rotation.y -= getWorldRotationSpeed(motionState, animationSpeed) * delta;
+    worldRef.current.rotation.x -= getWorldRotationSpeed(motionState, animationSpeed) * delta;
   });
 
   return (
-    <group position={[0, -anchorPoint.y, -anchorPoint.z]}>
+    <group
+      position={[
+        0,
+        -anchorPoint.y - MINI_WORLD_LAYOUT.footClearance,
+        -anchorPoint.z,
+      ]}
+    >
       <group ref={worldRef}>
         <mesh position={[0, MINI_WORLD_LAYOUT.centerY, 0]}>
           <sphereGeometry
             args={[
               MINI_WORLD_LAYOUT.radius,
-              56,
-              36,
+              64,
+              42,
               0,
               Math.PI * 2,
               0,
-              Math.PI * 0.48,
+              Math.PI * 0.34,
             ]}
           />
           <meshStandardMaterial color={MINI_WORLD_THEME.grass} />
         </mesh>
         <mesh position={[0, -0.018, 0]} renderOrder={0}>
-          <tubeGeometry args={[pathCurve, 220, 0.27, 18, true]} />
+          <tubeGeometry args={[pathCurve, 260, 0.42, 20, true]} />
           <meshStandardMaterial color={MINI_WORLD_THEME.pathEdge} />
         </mesh>
         <mesh renderOrder={1}>
-          <tubeGeometry args={[pathCurve, 220, 0.19, 18, true]} />
+          <tubeGeometry args={[pathCurve, 260, 0.33, 20, true]} />
           <meshStandardMaterial color={MINI_WORLD_THEME.path} />
         </mesh>
       </group>
@@ -225,11 +235,11 @@ const styles = StyleSheet.create({
   },
   glowBack: {
     position: "absolute",
-    top: 24,
+    top: 32,
     left: "50%",
-    marginLeft: -126,
-    width: 252,
-    height: 252,
+    marginLeft: -138,
+    width: 276,
+    height: 276,
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.48)",
   },
@@ -240,9 +250,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: "50%",
     top: 6,
-    width: 270,
+    width: 292,
     height: STAGE_LAYOUT.heroHeight - 16,
-    marginLeft: -135,
+    marginLeft: -146,
     backgroundColor: "transparent",
     cursor: "grab",
     touchAction: "none",
