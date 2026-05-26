@@ -21,7 +21,7 @@ const MINI_WORLD_LAYOUT = {
   sphereThetaLength: Math.PI,
   pathHalfWidth: 1.75,
   pathEdgeHalfWidth: 2.15,
-  pathLift: 0.12,
+  pathLift: 0.24,
 };
 
 export function CharacterStage({ character, state, onInteractionChange }) {
