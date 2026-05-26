@@ -1,6 +1,6 @@
 import { ScrollView, StyleSheet, View } from "react-native";
 
-import { useAuth } from "../auth/AuthProvider.js";
+import { EditableLayoutItem } from "../dev/EditableLayoutItem.js";
 import { useStepData } from "../data/stepDataProvider.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
 import { CHARACTER_CLASSES } from "../characters.js";
@@ -12,7 +12,6 @@ import { StepProgressCard } from "../components/StepProgressCard.js";
 import { theme } from "../constants/theme.js";
 
 export function HomeScreen() {
-  const { currentUser } = useAuth();
   const { today, history, goal, admin } = useStepData();
   const character = CHARACTER_CLASSES[0];
   const viewState = buildCharacterViewModel({
@@ -25,27 +24,48 @@ export function HomeScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.stageWrap}>
-          <CharacterStatusBubble
-            text={viewState.bubbleText}
-            bubbleSurface={viewState.bubbleSurface}
+        <EditableLayoutItem
+          id="home-stage"
+          enabled={admin?.visible}
+          label="캐릭터"
+          defaultLayout={{ x: 0, y: 0, scale: 1 }}
+        >
+          <View style={styles.stageWrap}>
+            <CharacterStatusBubble
+              text={viewState.bubbleText}
+              bubbleSurface={viewState.bubbleSurface}
+            />
+            <CharacterStage character={character} state={viewState} />
+          </View>
+        </EditableLayoutItem>
+
+        <EditableLayoutItem
+          id="home-steps"
+          enabled={admin?.visible}
+          label="오늘 산책"
+          defaultLayout={{ x: 0, y: 0, scale: 1 }}
+        >
+          <StepProgressCard
+            steps={viewState.steps}
+            goal={viewState.goal}
+            progressPercent={viewState.progressPercent}
+            statusLabel={viewState.statusLabel}
           />
-          <CharacterStage character={character} state={viewState} />
-        </View>
+        </EditableLayoutItem>
 
-        <StepProgressCard
-          steps={viewState.steps}
-          goal={viewState.goal}
-          progressPercent={viewState.progressPercent}
-          statusLabel={viewState.statusLabel}
-        />
-
-        <DailySummaryCard
-          title={"\uC624\uB298 \uC0C1\uD0DC"}
-          primary={viewState.statusLabel}
-          secondary={viewState.statusDescription}
-          accent
-        />
+        <EditableLayoutItem
+          id="home-summary"
+          enabled={admin?.visible}
+          label="오늘 상태"
+          defaultLayout={{ x: 0, y: 0, scale: 1 }}
+        >
+          <DailySummaryCard
+            title={"\uC624\uB298 \uC0C1\uD0DC"}
+            primary={viewState.statusLabel}
+            secondary={viewState.statusDescription}
+            accent
+          />
+        </EditableLayoutItem>
 
         <AdminPanel admin={admin} />
       </ScrollView>

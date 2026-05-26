@@ -1,5 +1,5 @@
 import { Suspense, useMemo, useRef, useState } from "react";
-import { PanResponder, StyleSheet, Text, View } from "react-native";
+import { PanResponder, StyleSheet, View } from "react-native";
 import { useFrame } from "@react-three/fiber";
 
 import { theme } from "../constants/theme.js";
@@ -54,9 +54,6 @@ export function CharacterStage({ character, state, onInteractionChange }) {
         <AnimatedCharacter character={character} rotation={rotation} state={state} />
       </StageCanvas>
       <View style={styles.gestureHotspot} {...panResponder.panHandlers} />
-      <View style={styles.statusChip}>
-        <Text style={styles.statusChipText}>{state.statusLabel}</Text>
-      </View>
     </View>
   );
 }
@@ -140,22 +137,6 @@ const styles = StyleSheet.create({
     cursor: "grab",
     touchAction: "none",
     userSelect: "none",
-  },
-  statusChip: {
-    position: "absolute",
-    top: 6,
-    right: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: theme.radius.pill,
-    backgroundColor: "rgba(255,255,255,0.74)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.7)",
-  },
-  statusChipText: {
-    color: theme.colors.ink,
-    fontSize: 12,
-    fontWeight: "900",
   },
   spark: {
     position: "absolute",
