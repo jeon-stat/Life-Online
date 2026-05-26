@@ -4,10 +4,10 @@ export const FACE_EXPRESSIONS = {
   normal: {
     id: "normal",
     image: normalEyesImage,
-    top: 74,
-    leftOffset: 0,
-    width: 126,
-    height: 84,
+    anchorBone: "mixamorigHead",
+    anchorPosition: [0, 0.12, 0.14],
+    position: [0, 0.92, 0.74],
+    size: [0.44, 0.27],
   },
 };
 

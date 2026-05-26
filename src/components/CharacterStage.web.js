@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { Image, PanResponder, StyleSheet, View } from "react-native";
+import { PanResponder, StyleSheet, View } from "react-native";
 import { useFrame } from "@react-three/fiber";
 
 import { resolveFaceExpression } from "../faces/faceExpressions.js";
@@ -10,7 +10,6 @@ import { STAGE_LAYOUT } from "../scene/stageConfig.js";
 
 export function CharacterStage({ character, state, onInteractionChange }) {
   const [rotation, setRotation] = useState(STAGE_LAYOUT.defaultRotation);
-  const [faceVisible, setFaceVisible] = useState(true);
   const rotationRef = useRef(STAGE_LAYOUT.defaultRotation);
   const dragStartRef = useRef(STAGE_LAYOUT.defaultRotation);
   const faceExpression = resolveFaceExpression(state);
@@ -52,32 +51,20 @@ export function CharacterStage({ character, state, onInteractionChange }) {
       <View style={styles.effectWrap} pointerEvents="none">
         <StageEffect effect={state.effect} />
       </View>
-      {faceVisible ? (
-        <Image
-          source={faceExpression.image}
-          onError={() => setFaceVisible(false)}
-          resizeMode="contain"
-          pointerEvents="none"
-          style={[
-            styles.faceOverlay,
-            {
-              top: faceExpression.top,
-              width: faceExpression.width,
-              height: faceExpression.height,
-              marginLeft: -(faceExpression.width / 2) + faceExpression.leftOffset,
-            },
-          ]}
-        />
-      ) : null}
       <StageCanvas>
-        <AnimatedCharacter character={character} rotation={rotation} state={state} />
+        <AnimatedCharacter
+          character={character}
+          faceExpression={faceExpression}
+          rotation={rotation}
+          state={state}
+        />
       </StageCanvas>
       <View style={styles.gestureHotspot} {...panResponder.panHandlers} />
     </View>
   );
 }
 
-function AnimatedCharacter({ character, rotation, state }) {
+function AnimatedCharacter({ character, faceExpression, rotation, state }) {
   const rootRef = useRef(null);
 
   useFrame((frameState) => {
@@ -93,7 +80,11 @@ function AnimatedCharacter({ character, rotation, state }) {
 
   return (
     <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY, 0]}>
-      <GLBCharacterModel character={character} animationState={state.animationState} />
+      <GLBCharacterModel
+        character={character}
+        animationState={state.animationState}
+        faceExpression={faceExpression}
+      />
     </group>
   );
 }
@@ -144,11 +135,6 @@ const styles = StyleSheet.create({
   },
   effectWrap: {
     ...StyleSheet.absoluteFillObject,
-  },
-  faceOverlay: {
-    position: "absolute",
-    left: "50%",
-    zIndex: 3,
   },
   gestureHotspot: {
     position: "absolute",
