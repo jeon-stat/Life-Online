@@ -13,17 +13,15 @@ const MINI_WORLD_THEME = {
   grassShade: "#7daf64",
   path: "#e7d2ad",
   pathEdge: "#cfb287",
-  trunk: "#7a5942",
-  leaf: "#7bb56a",
-  lampPost: "#667180",
-  lampLight: "#ffe9b2",
-  stone: "#d8dde5",
 };
 
 const MINI_WORLD_LAYOUT = {
-  radius: 3.42,
-  centerY: -3.38,
-  pathLift: 0.06,
+  radius: 4.48,
+  centerY: -4.46,
+  pathInset: 0.26,
+  pathLift: 0.04,
+  basePhi: 0.46,
+  anchorTheta: -Math.PI / 2,
 };
 
 export function CharacterStage({ character, state, onInteractionChange }) {
@@ -87,16 +85,24 @@ function AnimatedCharacter({ character, rotation, state }) {
     if (!rootRef.current) return;
 
     const t = frameState.clock.getElapsedTime() * state.animationSpeed;
+    const bobAmount =
+      state.animationState === "walk" || state.animationState === "run"
+        ? state.bobAmount * 0.12
+        : state.bobAmount * 0.08;
+
     rootRef.current.rotation.x = rotation.x;
     rootRef.current.rotation.y = rotation.y;
-    rootRef.current.position.y = STAGE_LAYOUT.modelBaseY + Math.sin(t * 1.2) * state.bobAmount;
+    rootRef.current.position.y = STAGE_LAYOUT.modelBaseY + Math.sin(t * 1.2) * bobAmount;
     const scalePulse = 1 + Math.sin(t * 0.7) * 0.015;
     rootRef.current.scale.set(scalePulse, scalePulse, scalePulse);
   });
 
   return (
     <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY, 0]}>
-      <MiniWorld motionState={state.animationState} />
+      <MiniWorld
+        motionState={state.animationState}
+        animationSpeed={state.animationSpeed}
+      />
       <GLBCharacterModel
         character={character}
         animationState={state.animationState}
@@ -105,126 +111,88 @@ function AnimatedCharacter({ character, rotation, state }) {
   );
 }
 
-function MiniWorld({ motionState }) {
+function MiniWorld({ motionState, animationSpeed }) {
   const worldRef = useRef(null);
-  const pathCurve = useMemo(() => buildPathCurve(), []);
+  const { anchorPoint, pathCurve } = useMemo(() => buildPathCurve(), []);
 
   useFrame((_, delta) => {
     if (!worldRef.current) return;
-    worldRef.current.rotation.y += getWorldRotationSpeed(motionState) * delta;
+    worldRef.current.rotation.y -= getWorldRotationSpeed(motionState, animationSpeed) * delta;
   });
 
   return (
-    <group ref={worldRef}>
-      <mesh position={[0, MINI_WORLD_LAYOUT.centerY, 0]} rotation={[0, 0, 0]}>
-        <sphereGeometry args={[MINI_WORLD_LAYOUT.radius, 40, 28, 0, Math.PI * 2, 0, Math.PI * 0.54]} />
-        <meshStandardMaterial color={MINI_WORLD_THEME.grass} />
-      </mesh>
-      <mesh renderOrder={1}>
-        <tubeGeometry args={[pathCurve, 72, 0.13, 10, true]} />
-        <meshStandardMaterial color={MINI_WORLD_THEME.path} />
-      </mesh>
-      <mesh renderOrder={0}>
-        <tubeGeometry args={[pathCurve, 72, 0.16, 10, true]} />
-        <meshStandardMaterial color={MINI_WORLD_THEME.pathEdge} />
-      </mesh>
-      <MiniTree position={getSurfacePoint(-1.18, 0.84, 0.02)} scale={0.96} />
-      <MiniTree position={getSurfacePoint(1.26, -0.72, 0.03)} scale={0.82} />
-      <MiniLamp position={getSurfacePoint(0.96, 1.18, 0.02)} />
-      <MiniStone position={getSurfacePoint(-0.94, -1.2, 0.01)} />
+    <group position={[0, -anchorPoint.y, -anchorPoint.z]}>
+      <group ref={worldRef}>
+        <mesh position={[0, MINI_WORLD_LAYOUT.centerY, 0]}>
+          <sphereGeometry
+            args={[
+              MINI_WORLD_LAYOUT.radius,
+              56,
+              36,
+              0,
+              Math.PI * 2,
+              0,
+              Math.PI * 0.48,
+            ]}
+          />
+          <meshStandardMaterial color={MINI_WORLD_THEME.grass} />
+        </mesh>
+        <mesh position={[0, -0.018, 0]} renderOrder={0}>
+          <tubeGeometry args={[pathCurve, 180, 0.24, 16, true]} />
+          <meshStandardMaterial color={MINI_WORLD_THEME.pathEdge} />
+        </mesh>
+        <mesh renderOrder={1}>
+          <tubeGeometry args={[pathCurve, 180, 0.17, 16, true]} />
+          <meshStandardMaterial color={MINI_WORLD_THEME.path} />
+        </mesh>
+      </group>
     </group>
-  );
-}
-
-function MiniTree({ position, scale = 1 }) {
-  return (
-    <group position={position} scale={scale}>
-      <mesh position={[0, 0.18, 0]}>
-        <cylinderGeometry args={[0.04, 0.05, 0.34, 8]} />
-        <meshStandardMaterial color={MINI_WORLD_THEME.trunk} />
-      </mesh>
-      <mesh position={[0, 0.48, 0]}>
-        <sphereGeometry args={[0.2, 12, 12]} />
-        <meshStandardMaterial color={MINI_WORLD_THEME.leaf} />
-      </mesh>
-      <mesh position={[0.05, 0.62, 0.03]}>
-        <sphereGeometry args={[0.14, 10, 10]} />
-        <meshStandardMaterial color={MINI_WORLD_THEME.leaf} />
-      </mesh>
-    </group>
-  );
-}
-
-function MiniLamp({ position }) {
-  return (
-    <group position={position}>
-      <mesh position={[0, 0.19, 0]}>
-        <cylinderGeometry args={[0.03, 0.04, 0.38, 8]} />
-        <meshStandardMaterial color={MINI_WORLD_THEME.lampPost} />
-      </mesh>
-      <mesh position={[0, 0.43, 0]}>
-        <sphereGeometry args={[0.06, 10, 10]} />
-        <meshStandardMaterial color={MINI_WORLD_THEME.lampLight} emissive="#ffe5a0" emissiveIntensity={0.35} />
-      </mesh>
-      <pointLight position={[0, 0.43, 0]} intensity={0.18} distance={1.4} color="#ffe9b2" />
-    </group>
-  );
-}
-
-function MiniStone({ position }) {
-  return (
-    <mesh position={position}>
-      <sphereGeometry args={[0.08, 9, 9]} />
-      <meshStandardMaterial color={MINI_WORLD_THEME.stone} />
-    </mesh>
   );
 }
 
 function buildPathCurve() {
   const points = [];
+  const totalSteps = 32;
 
-  for (let step = 0; step < 9; step += 1) {
-    const angle = (step / 8) * Math.PI * 2;
-    const radiusX = 1.28 + Math.sin(angle * 2) * 0.14;
-    const radiusZ = 1.02 + Math.cos(angle * 2) * 0.14;
-    const x = Math.cos(angle) * radiusX;
-    const z = Math.sin(angle) * radiusZ;
-
-    points.push(
-      new Vector3(
-        x,
-        getSurfaceY(x, z) + MINI_WORLD_LAYOUT.pathLift,
-        z,
-      ),
-    );
+  for (let step = 0; step < totalSteps; step += 1) {
+    const theta =
+      MINI_WORLD_LAYOUT.anchorTheta + (step / totalSteps) * Math.PI * 2;
+    points.push(getPathPoint(theta));
   }
 
-  return new CatmullRomCurve3(points, true, "catmullrom", 0.35);
+  return {
+    anchorPoint: getPathPoint(MINI_WORLD_LAYOUT.anchorTheta),
+    pathCurve: new CatmullRomCurve3(points, true, "catmullrom", 0.5),
+  };
 }
 
-function getSurfacePoint(x, z, lift = 0) {
-  return [x, getSurfaceY(x, z) + lift, z];
+function getPathPoint(theta) {
+  const surfaceRadius = MINI_WORLD_LAYOUT.radius - MINI_WORLD_LAYOUT.pathInset;
+  const phi =
+    MINI_WORLD_LAYOUT.basePhi +
+    Math.sin(theta * 2) * 0.04 +
+    Math.cos(theta * 3) * 0.015;
+  const x = Math.sin(phi) * Math.cos(theta) * surfaceRadius;
+  const z = Math.sin(phi) * Math.sin(theta) * surfaceRadius;
+  const y =
+    MINI_WORLD_LAYOUT.centerY +
+    Math.cos(phi) * surfaceRadius +
+    MINI_WORLD_LAYOUT.pathLift;
+
+  return new Vector3(x, y, z);
 }
 
-function getSurfaceY(x, z) {
-  const radius = MINI_WORLD_LAYOUT.radius;
-  const centerY = MINI_WORLD_LAYOUT.centerY;
-  const height = Math.sqrt(Math.max(radius * radius - x * x - z * z, 0));
-
-  return centerY + height;
-}
-
-function getWorldRotationSpeed(motionState) {
+function getWorldRotationSpeed(motionState, animationSpeed = 1) {
   switch (motionState) {
     case "run":
-      return 0.42;
+      return 0.34 * animationSpeed;
     case "walk":
-      return 0.18;
+      return 0.22 * animationSpeed;
     case "tired":
-      return 0.015;
+      return 0.002 * animationSpeed;
     case "idle":
     default:
-      return 0.03;
+      return 0.008 * animationSpeed;
   }
 }
 
@@ -258,17 +226,17 @@ function StageEffect({ effect }) {
 
 const styles = StyleSheet.create({
   shell: {
-    height: 292,
+    height: STAGE_LAYOUT.heroHeight,
     position: "relative",
     backgroundColor: "transparent",
   },
   glowBack: {
     position: "absolute",
-    top: 14,
+    top: 18,
     left: "50%",
-    marginLeft: -92,
-    width: 184,
-    height: 184,
+    marginLeft: -112,
+    width: 224,
+    height: 224,
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.48)",
   },
@@ -279,9 +247,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: "50%",
     top: 6,
-    width: 224,
-    height: 272,
-    marginLeft: -112,
+    width: 252,
+    height: STAGE_LAYOUT.heroHeight - 16,
+    marginLeft: -126,
     backgroundColor: "transparent",
     cursor: "grab",
     touchAction: "none",
