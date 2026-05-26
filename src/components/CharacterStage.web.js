@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from "react";
-import { PanResponder, StyleSheet, View } from "react-native";
+import { Image, PanResponder, StyleSheet, View } from "react-native";
 import { useFrame } from "@react-three/fiber";
 
+import { resolveFaceExpression } from "../faces/faceExpressions.js";
 import { GLBCharacterModel } from "../models/GLBCharacterModel.js";
 import { StageCanvas } from "../scene/StageCanvas.web.js";
 import { getRotationFromDrag } from "../scene/rotationMath.js";
@@ -9,8 +10,10 @@ import { STAGE_LAYOUT } from "../scene/stageConfig.js";
 
 export function CharacterStage({ character, state, onInteractionChange }) {
   const [rotation, setRotation] = useState(STAGE_LAYOUT.defaultRotation);
+  const [faceVisible, setFaceVisible] = useState(true);
   const rotationRef = useRef(STAGE_LAYOUT.defaultRotation);
   const dragStartRef = useRef(STAGE_LAYOUT.defaultRotation);
+  const faceExpression = resolveFaceExpression(state);
 
   const panResponder = useMemo(
     () =>
@@ -49,6 +52,23 @@ export function CharacterStage({ character, state, onInteractionChange }) {
       <View style={styles.effectWrap} pointerEvents="none">
         <StageEffect effect={state.effect} />
       </View>
+      {faceVisible ? (
+        <Image
+          source={faceExpression.image}
+          onError={() => setFaceVisible(false)}
+          resizeMode="contain"
+          pointerEvents="none"
+          style={[
+            styles.faceOverlay,
+            {
+              top: faceExpression.top,
+              width: faceExpression.width,
+              height: faceExpression.height,
+              marginLeft: -(faceExpression.width / 2) + faceExpression.leftOffset,
+            },
+          ]}
+        />
+      ) : null}
       <StageCanvas>
         <AnimatedCharacter character={character} rotation={rotation} state={state} />
       </StageCanvas>
@@ -124,6 +144,11 @@ const styles = StyleSheet.create({
   },
   effectWrap: {
     ...StyleSheet.absoluteFillObject,
+  },
+  faceOverlay: {
+    position: "absolute",
+    left: "50%",
+    zIndex: 3,
   },
   gestureHotspot: {
     position: "absolute",
