@@ -15,9 +15,8 @@ const MINI_WORLD_THEME = {
 
 const MINI_WORLD_LAYOUT = {
   radius: 8.4,
-  centerY: -8.38,
-  surfaceOffsetY: -0.08,
-  characterScale: 0.72,
+  centerOffsetY: -8.4,
+  characterScale: 0.68,
   capThetaLength: Math.PI * 0.3,
   pathPhiWidth: 1.4,
   pathEdgePhiWidth: 1.62,
@@ -114,12 +113,6 @@ function AnimatedCharacter({ character, rotation, state }) {
 
 function MiniWorld({ motionState, animationSpeed }) {
   const worldRef = useRef(null);
-  const worldOffsetY = useMemo(
-    () =>
-      -(MINI_WORLD_LAYOUT.centerY + MINI_WORLD_LAYOUT.radius) +
-      MINI_WORLD_LAYOUT.surfaceOffsetY,
-    [],
-  );
 
   useFrame((_, delta) => {
     if (!worldRef.current) return;
@@ -127,9 +120,9 @@ function MiniWorld({ motionState, animationSpeed }) {
   });
 
   return (
-    <group position={[0, worldOffsetY, 0]}>
+    <group position={[0, MINI_WORLD_LAYOUT.centerOffsetY, 0]}>
       <group ref={worldRef}>
-        <mesh position={[0, MINI_WORLD_LAYOUT.centerY, 0]}>
+        <mesh position={[0, 0, 0]}>
           <sphereGeometry
             args={[
               MINI_WORLD_LAYOUT.radius,
@@ -143,7 +136,7 @@ function MiniWorld({ motionState, animationSpeed }) {
           />
           <meshStandardMaterial color={MINI_WORLD_THEME.grass} />
         </mesh>
-        <mesh position={[0, MINI_WORLD_LAYOUT.centerY, 0]} renderOrder={1}>
+        <mesh position={[0, 0, 0]} renderOrder={1}>
           <sphereGeometry
             args={[
               MINI_WORLD_LAYOUT.radius,
@@ -162,7 +155,7 @@ function MiniWorld({ motionState, animationSpeed }) {
             polygonOffsetUnits={-1}
           />
         </mesh>
-        <mesh position={[0, MINI_WORLD_LAYOUT.centerY, 0]} renderOrder={2}>
+        <mesh position={[0, 0, 0]} renderOrder={2}>
           <sphereGeometry
             args={[
               MINI_WORLD_LAYOUT.radius,
