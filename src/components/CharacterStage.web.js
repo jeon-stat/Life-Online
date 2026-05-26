@@ -17,9 +17,10 @@ const MINI_WORLD_LAYOUT = {
   radius: 8.4,
   centerOffsetY: -8.4,
   characterScale: 0.68,
-  capThetaLength: Math.PI * 0.3,
-  pathPhiWidth: 1.4,
-  pathEdgePhiWidth: 1.62,
+  capThetaLength: Math.PI * 0.34,
+  pathRadius: 7.96,
+  pathWidth: 0.42,
+  pathEdgeWidth: 0.62,
 };
 
 export function CharacterStage({ character, state, onInteractionChange }) {
@@ -136,43 +137,27 @@ function MiniWorld({ motionState, animationSpeed }) {
           />
           <meshStandardMaterial color={MINI_WORLD_THEME.grass} />
         </mesh>
-        <mesh position={[0, 0, 0]} renderOrder={1}>
-          <sphereGeometry
+        <mesh rotation={[0, Math.PI / 2, 0]} renderOrder={1}>
+          <torusGeometry
             args={[
-              MINI_WORLD_LAYOUT.radius,
-              64,
-              42,
-              Math.PI / 2 - MINI_WORLD_LAYOUT.pathEdgePhiWidth / 2,
-              MINI_WORLD_LAYOUT.pathEdgePhiWidth,
-              0,
-              MINI_WORLD_LAYOUT.capThetaLength,
+              MINI_WORLD_LAYOUT.pathRadius,
+              MINI_WORLD_LAYOUT.pathEdgeWidth,
+              18,
+              96,
             ]}
           />
-          <meshStandardMaterial
-            color={MINI_WORLD_THEME.pathEdge}
-            polygonOffset
-            polygonOffsetFactor={-1}
-            polygonOffsetUnits={-1}
-          />
+          <meshStandardMaterial color={MINI_WORLD_THEME.pathEdge} />
         </mesh>
-        <mesh position={[0, 0, 0]} renderOrder={2}>
-          <sphereGeometry
+        <mesh rotation={[0, Math.PI / 2, 0]} renderOrder={2}>
+          <torusGeometry
             args={[
-              MINI_WORLD_LAYOUT.radius,
-              64,
-              42,
-              Math.PI / 2 - MINI_WORLD_LAYOUT.pathPhiWidth / 2,
-              MINI_WORLD_LAYOUT.pathPhiWidth,
-              0,
-              MINI_WORLD_LAYOUT.capThetaLength,
+              MINI_WORLD_LAYOUT.pathRadius + 0.02,
+              MINI_WORLD_LAYOUT.pathWidth,
+              18,
+              96,
             ]}
           />
-          <meshStandardMaterial
-            color={MINI_WORLD_THEME.path}
-            polygonOffset
-            polygonOffsetFactor={-2}
-            polygonOffsetUnits={-2}
-          />
+          <meshStandardMaterial color={MINI_WORLD_THEME.path} />
         </mesh>
       </group>
     </group>
