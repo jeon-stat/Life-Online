@@ -1,5 +1,6 @@
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { useAuth } from "../auth/AuthProvider.js";
 import { useStepData } from "../data/stepDataProvider.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
 import { AdminPanel } from "../components/AdminPanel.js";
@@ -7,6 +8,7 @@ import { DailySummaryCard } from "../components/DailySummaryCard.js";
 import { theme } from "../constants/theme.js";
 
 export function CharacterScreen() {
+  const { currentUser, signOut } = useAuth();
   const { today, history, goal, admin } = useStepData();
   const viewState = buildCharacterViewModel({ todayRecord: today, history, goal });
   const recentMemories = viewState.memories.slice(0, 2);
@@ -19,6 +21,15 @@ export function CharacterScreen() {
         secondary={`${viewState.totalXp} XP \u00B7 \uB2E4\uC74C \uC131\uC7A5\uAE4C\uC9C0 ${viewState.xpToNext} XP`}
         accent
       />
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>내 산책 파트너</Text>
+        <Text style={styles.status}>{currentUser?.nickname ?? "게스트"}</Text>
+        <Text style={styles.description}>{`@${currentUser?.handle ?? "walk"}`}</Text>
+        <Pressable onPress={signOut} style={styles.signOutButton}>
+          <Text style={styles.signOutLabel}>로그아웃</Text>
+        </Pressable>
+      </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{"\uC131\uACA9 \uD0C0\uC785"}</Text>
@@ -126,5 +137,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     fontWeight: "700",
+  },
+  signOutButton: {
+    marginTop: 14,
+    minHeight: 42,
+    borderRadius: theme.radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff2e8",
+    borderWidth: 1,
+    borderColor: "#f1d6bf",
+  },
+  signOutLabel: {
+    color: "#9f4e33",
+    fontSize: 12,
+    fontWeight: "900",
   },
 });

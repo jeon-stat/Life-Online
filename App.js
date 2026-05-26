@@ -2,7 +2,9 @@ import { Platform, SafeAreaView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
 
+import { AuthProvider, useAuth } from "./src/auth/AuthProvider.js";
 import { StepDataProvider } from "./src/data/stepDataProvider.js";
+import { AuthScreen } from "./src/screens/AuthScreen.js";
 import { HomeScreen } from "./src/screens/HomeScreen.js";
 import { HistoryScreen } from "./src/screens/HistoryScreen.js";
 import { CharacterScreen } from "./src/screens/CharacterScreen.js";
@@ -15,8 +17,19 @@ const TABS = [
   { id: "character", label: "\uCE90\uB9AD\uD130" },
 ];
 
+const STEP_DATA_MODE = Platform.OS === "web" ? "mock" : "auto";
+
 export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+}
+
+function AppContent() {
   const [activeTab, setActiveTab] = useState("home");
+  const { isAuthenticated } = useAuth();
   const adminEnabled = useMemo(() => {
     if (typeof __DEV__ !== "undefined" && __DEV__ === true) {
       return true;
@@ -29,8 +42,17 @@ export default function App() {
     return false;
   }, []);
 
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <AuthScreen />
+        <StatusBar style="dark" />
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <StepDataProvider mode="mock" adminEnabled={adminEnabled}>
+    <StepDataProvider mode={STEP_DATA_MODE} adminEnabled={adminEnabled}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.appShell}>
           <View style={styles.screenArea}>

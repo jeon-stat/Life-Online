@@ -1,5 +1,6 @@
 import { ScrollView, StyleSheet, View } from "react-native";
 
+import { useAuth } from "../auth/AuthProvider.js";
 import { useStepData } from "../data/stepDataProvider.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
 import { CHARACTER_CLASSES } from "../characters.js";
@@ -11,6 +12,7 @@ import { StepProgressCard } from "../components/StepProgressCard.js";
 import { theme } from "../constants/theme.js";
 
 export function HomeScreen() {
+  const { currentUser } = useAuth();
   const { today, history, goal, admin } = useStepData();
   const character = CHARACTER_CLASSES[0];
   const viewState = buildCharacterViewModel({
@@ -23,7 +25,10 @@ export function HomeScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <CharacterStatusBubble text={viewState.bubbleText} bubbleSurface={viewState.bubbleSurface} />
+        <CharacterStatusBubble
+          text={currentUser ? `${currentUser.nickname}, ${viewState.bubbleText}` : viewState.bubbleText}
+          bubbleSurface={viewState.bubbleSurface}
+        />
 
         <View style={styles.stageWrap}>
           <CharacterStage character={character} state={viewState} />
