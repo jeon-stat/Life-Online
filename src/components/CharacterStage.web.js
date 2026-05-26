@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { PanResponder, StyleSheet, View } from "react-native";
 import { useFrame } from "@react-three/fiber";
-import { CatmullRomCurve3, Vector3 } from "three";
 
 import { GLBCharacterModel } from "../models/GLBCharacterModel.js";
 import { StageCanvas } from "../scene/StageCanvas.web.js";
@@ -10,18 +9,18 @@ import { STAGE_LAYOUT } from "../scene/stageConfig.js";
 
 const MINI_WORLD_THEME = {
   grass: "#9acb7c",
-  grassShade: "#7daf64",
   path: "#b9782f",
   pathEdge: "#8e5c26",
 };
 
 const MINI_WORLD_LAYOUT = {
-  radius: 6.8,
-  centerY: -6.76,
-  pathRadius: 6.72,
-  pathLift: 0.02,
-  footClearance: 0.14,
+  radius: 8.4,
+  centerY: -8.38,
+  surfaceOffsetY: -0.02,
   characterScale: 0.82,
+  capThetaLength: Math.PI * 0.3,
+  pathPhiWidth: 0.72,
+  pathEdgePhiWidth: 0.86,
 };
 
 export function CharacterStage({ character, state, onInteractionChange }) {
@@ -115,7 +114,12 @@ function AnimatedCharacter({ character, rotation, state }) {
 
 function MiniWorld({ motionState, animationSpeed }) {
   const worldRef = useRef(null);
-  const { anchorPoint, pathCurve } = useMemo(() => buildPathCurve(), []);
+  const worldOffsetY = useMemo(
+    () =>
+      -(MINI_WORLD_LAYOUT.centerY + MINI_WORLD_LAYOUT.radius) +
+      MINI_WORLD_LAYOUT.surfaceOffsetY,
+    [],
+  );
 
   useFrame((_, delta) => {
     if (!worldRef.current) return;
@@ -123,13 +127,7 @@ function MiniWorld({ motionState, animationSpeed }) {
   });
 
   return (
-    <group
-      position={[
-        0,
-        -anchorPoint.y - MINI_WORLD_LAYOUT.footClearance,
-        -anchorPoint.z,
-      ]}
-    >
+    <group position={[0, worldOffsetY, 0]}>
       <group ref={worldRef}>
         <mesh position={[0, MINI_WORLD_LAYOUT.centerY, 0]}>
           <sphereGeometry
@@ -140,49 +138,52 @@ function MiniWorld({ motionState, animationSpeed }) {
               0,
               Math.PI * 2,
               0,
-              Math.PI * 0.34,
+              MINI_WORLD_LAYOUT.capThetaLength,
             ]}
           />
           <meshStandardMaterial color={MINI_WORLD_THEME.grass} />
         </mesh>
-        <mesh position={[0, -0.018, 0]} renderOrder={0}>
-          <tubeGeometry args={[pathCurve, 260, 0.42, 20, true]} />
-          <meshStandardMaterial color={MINI_WORLD_THEME.pathEdge} />
+        <mesh position={[0, MINI_WORLD_LAYOUT.centerY, 0]} renderOrder={1}>
+          <sphereGeometry
+            args={[
+              MINI_WORLD_LAYOUT.radius,
+              64,
+              42,
+              Math.PI / 2 - MINI_WORLD_LAYOUT.pathEdgePhiWidth / 2,
+              MINI_WORLD_LAYOUT.pathEdgePhiWidth,
+              0,
+              MINI_WORLD_LAYOUT.capThetaLength,
+            ]}
+          />
+          <meshStandardMaterial
+            color={MINI_WORLD_THEME.pathEdge}
+            polygonOffset
+            polygonOffsetFactor={-1}
+            polygonOffsetUnits={-1}
+          />
         </mesh>
-        <mesh renderOrder={1}>
-          <tubeGeometry args={[pathCurve, 260, 0.33, 20, true]} />
-          <meshStandardMaterial color={MINI_WORLD_THEME.path} />
+        <mesh position={[0, MINI_WORLD_LAYOUT.centerY, 0]} renderOrder={2}>
+          <sphereGeometry
+            args={[
+              MINI_WORLD_LAYOUT.radius,
+              64,
+              42,
+              Math.PI / 2 - MINI_WORLD_LAYOUT.pathPhiWidth / 2,
+              MINI_WORLD_LAYOUT.pathPhiWidth,
+              0,
+              MINI_WORLD_LAYOUT.capThetaLength,
+            ]}
+          />
+          <meshStandardMaterial
+            color={MINI_WORLD_THEME.path}
+            polygonOffset
+            polygonOffsetFactor={-2}
+            polygonOffsetUnits={-2}
+          />
         </mesh>
       </group>
     </group>
   );
-}
-
-function buildPathCurve() {
-  const points = [];
-  const totalSteps = 48;
-
-  for (let step = 0; step < totalSteps; step += 1) {
-    const theta = (step / totalSteps) * Math.PI * 2;
-    points.push(getPathPoint(theta));
-  }
-
-  return {
-    anchorPoint: getPathPoint(0),
-    pathCurve: new CatmullRomCurve3(points, true, "catmullrom", 0.5),
-  };
-}
-
-function getPathPoint(theta) {
-  const travelRadius = MINI_WORLD_LAYOUT.pathRadius;
-  const x = 0;
-  const y =
-    MINI_WORLD_LAYOUT.centerY +
-    Math.cos(theta) * travelRadius +
-    MINI_WORLD_LAYOUT.pathLift;
-  const z = Math.sin(theta) * travelRadius;
-
-  return new Vector3(x, y, z);
 }
 
 function getWorldRotationSpeed(motionState, animationSpeed = 1) {
