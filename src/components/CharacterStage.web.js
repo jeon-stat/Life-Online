@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { PanResponder, StyleSheet, View } from "react-native";
 import { useFrame } from "@react-three/fiber";
-import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three";
+import { BufferGeometry, DoubleSide, Float32BufferAttribute, Vector3 } from "three";
 
 import { GLBCharacterModel } from "../models/GLBCharacterModel.js";
 import { StageCanvas } from "../scene/StageCanvas.web.js";
@@ -19,9 +19,9 @@ const MINI_WORLD_LAYOUT = {
   centerOffsetY: -8.4,
   characterScale: 0.6,
   sphereThetaLength: Math.PI,
-  pathHalfWidth: 1.28,
-  pathEdgeHalfWidth: 1.58,
-  pathLift: 0.01,
+  pathHalfWidth: 1.75,
+  pathEdgeHalfWidth: 2.15,
+  pathLift: 0.12,
 };
 
 export function CharacterStage({ character, state, onInteractionChange }) {
@@ -157,10 +157,10 @@ function MiniWorld({ motionState, animationSpeed }) {
           <meshStandardMaterial color={MINI_WORLD_THEME.grass} />
         </mesh>
         <mesh geometry={pathEdgeGeometry} renderOrder={1}>
-          <meshStandardMaterial color={MINI_WORLD_THEME.pathEdge} />
+          <meshStandardMaterial color={MINI_WORLD_THEME.pathEdge} side={DoubleSide} />
         </mesh>
         <mesh geometry={pathGeometry} renderOrder={2}>
-          <meshStandardMaterial color={MINI_WORLD_THEME.path} />
+          <meshStandardMaterial color={MINI_WORLD_THEME.path} side={DoubleSide} />
         </mesh>
       </group>
     </group>
