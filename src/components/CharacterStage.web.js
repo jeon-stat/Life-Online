@@ -21,7 +21,8 @@ const MINI_WORLD_LAYOUT = {
   sphereThetaLength: Math.PI,
   pathHalfWidth: 1.75,
   pathEdgeHalfWidth: 2.15,
-  pathLift: 0.24,
+  pathRadiusOffset: 0.36,
+  pathEdgeRadiusOffset: 0.3,
 };
 
 export function CharacterStage({ character, state, onInteractionChange }) {
@@ -120,7 +121,7 @@ function MiniWorld({ motionState, animationSpeed }) {
       buildGreatCircleBandGeometry(
         MINI_WORLD_LAYOUT.radius,
         MINI_WORLD_LAYOUT.pathHalfWidth,
-        MINI_WORLD_LAYOUT.pathLift,
+        MINI_WORLD_LAYOUT.pathRadiusOffset,
       ),
     [],
   );
@@ -129,7 +130,7 @@ function MiniWorld({ motionState, animationSpeed }) {
       buildGreatCircleBandGeometry(
         MINI_WORLD_LAYOUT.radius,
         MINI_WORLD_LAYOUT.pathEdgeHalfWidth,
-        MINI_WORLD_LAYOUT.pathLift * 0.5,
+        MINI_WORLD_LAYOUT.pathEdgeRadiusOffset,
       ),
     [],
   );
