@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { PanResponder, StyleSheet, View } from "react-native";
 import { useFrame } from "@react-three/fiber";
+import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three";
 
 import { GLBCharacterModel } from "../models/GLBCharacterModel.js";
 import { StageCanvas } from "../scene/StageCanvas.web.js";
@@ -16,10 +17,11 @@ const MINI_WORLD_THEME = {
 const MINI_WORLD_LAYOUT = {
   radius: 8.4,
   centerOffsetY: -8.4,
-  characterScale: 0.68,
+  characterScale: 0.6,
   sphereThetaLength: Math.PI,
-  pathPhiWidth: 0.42,
-  pathEdgePhiWidth: 0.58,
+  pathHalfWidth: 1.28,
+  pathEdgeHalfWidth: 1.58,
+  pathLift: 0.01,
 };
 
 export function CharacterStage({ character, state, onInteractionChange }) {
@@ -113,6 +115,24 @@ function AnimatedCharacter({ character, rotation, state }) {
 
 function MiniWorld({ motionState, animationSpeed }) {
   const worldRef = useRef(null);
+  const pathGeometry = useMemo(
+    () =>
+      buildGreatCircleBandGeometry(
+        MINI_WORLD_LAYOUT.radius,
+        MINI_WORLD_LAYOUT.pathHalfWidth,
+        MINI_WORLD_LAYOUT.pathLift,
+      ),
+    [],
+  );
+  const pathEdgeGeometry = useMemo(
+    () =>
+      buildGreatCircleBandGeometry(
+        MINI_WORLD_LAYOUT.radius,
+        MINI_WORLD_LAYOUT.pathEdgeHalfWidth,
+        MINI_WORLD_LAYOUT.pathLift * 0.5,
+      ),
+    [],
+  );
 
   useFrame((_, delta) => {
     if (!worldRef.current) return;
@@ -136,47 +156,52 @@ function MiniWorld({ motionState, animationSpeed }) {
           />
           <meshStandardMaterial color={MINI_WORLD_THEME.grass} />
         </mesh>
-        <mesh position={[0, 0, 0]} rotation={[0, Math.PI / 2, 0]} renderOrder={1}>
-          <sphereGeometry
-            args={[
-              MINI_WORLD_LAYOUT.radius,
-              64,
-              42,
-              Math.PI / 2 - MINI_WORLD_LAYOUT.pathEdgePhiWidth / 2,
-              MINI_WORLD_LAYOUT.pathEdgePhiWidth,
-              0,
-              MINI_WORLD_LAYOUT.sphereThetaLength,
-            ]}
-          />
-          <meshStandardMaterial
-            color={MINI_WORLD_THEME.pathEdge}
-            polygonOffset
-            polygonOffsetFactor={-1}
-            polygonOffsetUnits={-1}
-          />
+        <mesh geometry={pathEdgeGeometry} renderOrder={1}>
+          <meshStandardMaterial color={MINI_WORLD_THEME.pathEdge} />
         </mesh>
-        <mesh position={[0, 0, 0]} rotation={[0, Math.PI / 2, 0]} renderOrder={2}>
-          <sphereGeometry
-            args={[
-              MINI_WORLD_LAYOUT.radius,
-              64,
-              42,
-              Math.PI / 2 - MINI_WORLD_LAYOUT.pathPhiWidth / 2,
-              MINI_WORLD_LAYOUT.pathPhiWidth,
-              0,
-              MINI_WORLD_LAYOUT.sphereThetaLength,
-            ]}
-          />
-          <meshStandardMaterial
-            color={MINI_WORLD_THEME.path}
-            polygonOffset
-            polygonOffsetFactor={-2}
-            polygonOffsetUnits={-2}
-          />
+        <mesh geometry={pathGeometry} renderOrder={2}>
+          <meshStandardMaterial color={MINI_WORLD_THEME.path} />
         </mesh>
       </group>
     </group>
   );
+}
+
+function buildGreatCircleBandGeometry(radius, halfWidth, lift = 0) {
+  const geometry = new BufferGeometry();
+  const positions = [];
+  const indices = [];
+  const segments = 128;
+
+  for (let step = 0; step <= segments; step += 1) {
+    const angle = (step / segments) * Math.PI * 2;
+    const left = projectBandPoint(radius, -halfWidth, angle, lift);
+    const right = projectBandPoint(radius, halfWidth, angle, lift);
+
+    positions.push(left.x, left.y, left.z);
+    positions.push(right.x, right.y, right.z);
+
+    if (step < segments) {
+      const base = step * 2;
+      indices.push(base, base + 1, base + 2);
+      indices.push(base + 1, base + 3, base + 2);
+    }
+  }
+
+  geometry.setAttribute(
+    "position",
+    new Float32BufferAttribute(positions, 3),
+  );
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+
+  return geometry;
+}
+
+function projectBandPoint(radius, xOffset, angle, lift) {
+  return new Vector3(xOffset, Math.cos(angle), Math.sin(angle))
+    .normalize()
+    .multiplyScalar(radius + lift);
 }
 
 function getWorldRotationSpeed(motionState, animationSpeed = 1) {
