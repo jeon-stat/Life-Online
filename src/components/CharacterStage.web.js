@@ -12,6 +12,7 @@ export function CharacterStage({
   character,
   state,
   onInteractionChange,
+  editing = false,
   glowLayout,
   glowEditable = false,
   glowSelected = false,
@@ -72,7 +73,7 @@ export function CharacterStage({
       <StageCanvas>
         <AnimatedCharacter character={character} rotation={rotation} state={state} />
       </StageCanvas>
-      <View style={styles.gestureHotspot} {...panResponder.panHandlers} />
+      {editing ? null : <View style={styles.gestureHotspot} {...panResponder.panHandlers} />}
     </View>
   );
 }

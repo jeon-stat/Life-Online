@@ -39,6 +39,7 @@ export function HomeScreen() {
             <CharacterStage
               character={character}
               state={viewState}
+              editing={editor.enabled}
               glowLayout={editor.layoutConfig.glow}
               glowEditable={editor.enabled}
               glowSelected={editor.selectedId === "glow"}

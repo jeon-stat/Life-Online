@@ -69,16 +69,20 @@ export function EditableFrame({
         },
       ]}
     >
-      <Pressable onPress={() => onSelect?.(id)} style={[styles.frame, selected && styles.frameSelected]}>
+      <View style={[styles.frame, selected && styles.frameSelected]}>
         {children}
-      </Pressable>
+      </View>
 
       {enabled ? (
         <>
+          <Pressable onPress={() => onSelect?.(id)} style={styles.selectionOverlay} />
           <View style={[styles.badge, selected && styles.badgeSelected]} {...moveResponder.panHandlers}>
             <Text style={styles.badgeText}>{label}</Text>
           </View>
-          <View style={[styles.handle, selected && styles.handleSelected]} {...resizeResponder.panHandlers} />
+          <View style={[styles.handle, styles.handleTopLeft, selected && styles.handleSelected]} {...resizeResponder.panHandlers} />
+          <View style={[styles.handle, styles.handleTopRight, selected && styles.handleSelected]} {...resizeResponder.panHandlers} />
+          <View style={[styles.handle, styles.handleBottomLeft, selected && styles.handleSelected]} {...resizeResponder.panHandlers} />
+          <View style={[styles.handle, styles.handleBottomRight, selected && styles.handleSelected]} {...resizeResponder.panHandlers} />
         </>
       ) : null}
     </View>
@@ -98,6 +102,11 @@ const styles = StyleSheet.create({
   frameSelected: {
     borderColor: "#f6b879",
     boxShadow: "0 0 0 2px rgba(246, 184, 121, 0.24)",
+  },
+  selectionOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 6,
+    backgroundColor: "transparent",
   },
   badge: {
     position: "absolute",
@@ -122,8 +131,6 @@ const styles = StyleSheet.create({
   },
   handle: {
     position: "absolute",
-    right: 10,
-    bottom: 10,
     zIndex: 10,
     width: 18,
     height: 18,
@@ -137,5 +144,21 @@ const styles = StyleSheet.create({
   },
   handleSelected: {
     backgroundColor: "rgba(246,184,121,0.95)",
+  },
+  handleTopLeft: {
+    top: -9,
+    left: -9,
+  },
+  handleTopRight: {
+    top: -9,
+    right: -9,
+  },
+  handleBottomLeft: {
+    bottom: -9,
+    left: -9,
+  },
+  handleBottomRight: {
+    bottom: -9,
+    right: -9,
   },
 });
