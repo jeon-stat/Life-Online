@@ -25,12 +25,11 @@ export function HomeScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <CharacterStatusBubble
-          text={currentUser ? `${currentUser.nickname}, ${viewState.bubbleText}` : viewState.bubbleText}
-          bubbleSurface={viewState.bubbleSurface}
-        />
-
         <View style={styles.stageWrap}>
+          <CharacterStatusBubble
+            text={viewState.bubbleText}
+            bubbleSurface={viewState.bubbleSurface}
+          />
           <CharacterStage character={character} state={viewState} />
         </View>
 

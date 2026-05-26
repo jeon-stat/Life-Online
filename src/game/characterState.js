@@ -21,7 +21,7 @@ export function buildCharacterViewModel({ todayRecord, history, goal = DEFAULT_S
     goal,
     status,
     statusLabel: statusTheme.label,
-    bubbleText: `${statusTheme.bubble} ${personality.bubbleTone}`,
+    bubbleText: statusTheme.bubble,
     statusDescription: statusTheme.description,
     background: statusTheme.background,
     stageColor: statusTheme.stage,

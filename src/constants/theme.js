@@ -30,7 +30,7 @@ export const theme = {
   status: {
     tired: {
       label: "\uC9C0\uCE68",
-      bubble: "\uC624\uB298\uC740 \uC870\uAE08\uB9CC \uB354 \uAC78\uC73C\uBA74 \uAE30\uC6B4\uC774 \uB0A0 \uAC83 \uAC19\uC544.",
+      bubble: "\uD798\uB4E4\uC5B4..",
       description: "\uBAA9\uD45C\uC758 \uCC98\uC74C \uAD6C\uAC04\uC774\uC5D0\uC694. \uC544\uC9C1 \uBCF8\uACA9\uC801\uC73C\uB85C \uBAB8\uC774 \uAE68\uAE30 \uC804 \uC0C1\uD0DC\uC608\uC694.",
       background: ["#fff7ea", "#f6f1ea"],
       stage: "#fff5e6",
@@ -41,7 +41,7 @@ export const theme = {
     },
     idle: {
       label: "\uD3C9\uC628",
-      bubble: "\uCC9C\uCC9C\uD788 \uD750\uB984\uC774 \uC0DD\uAE30\uACE0 \uC788\uC5B4. \uC870\uAE08\uB9CC \uB354 \uAC00\uBCFC\uAE4C?",
+      bubble: "\uCC9C\uCC9C\uD788 \uAC77\uACE0 \uC788\uC5B4.",
       description: "\uBAB8\uC774 \uD480\uB9AC\uACE0 \uC788\uB294 \uAD6C\uAC04\uC774\uC5D0\uC694. \uC544\uC9C1 \uC5EC\uC720\uAC00 \uC788\uC9C0\uB9CC \uC5B4\uC81C\uBCF4\uB2E4 \uB098\uC544\uC9C4 \uC0C1\uD0DC\uC608\uC694.",
       background: ["#f7f6ff", "#eef2f8"],
       stage: "#f3f4fb",
@@ -52,7 +52,7 @@ export const theme = {
     },
     active: {
       label: "\uD65C\uC131",
-      bubble: "\uC88B\uC544, \uC624\uB298 \uB9AC\uB4EC\uC774 \uC81C\uB300\uB85C \uC62C\uB77C\uC624\uACE0 \uC788\uC5B4.",
+      bubble: "\uD5C9\uD5C9... \uC88B\uC544!",
       description: "\uBAA9\uD45C \uB9C8\uAC10\uC774 \uAC00\uAE4C\uC6CC\uC11C \uCE90\uB9AD\uD130\uAC00 \uAC00\uC7A5 \uD65C\uBC1C\uD558\uAC8C \uBC18\uC751\uD558\uB294 \uC2DC\uC810\uC774\uC5D0\uC694.",
       background: ["#eef9f2", "#f7fbf3"],
       stage: "#eff9f2",
@@ -63,7 +63,7 @@ export const theme = {
     },
     happy: {
       label: "\uD589\uBCF5",
-      bubble: "\uC640, \uC624\uB298 \uBAA9\uD45C\uB97C \uB118\uACBC\uC5B4! \uD568\uAED8 \uC0B0\uCC45\uD55C \uAC83 \uAC19\uC544.",
+      bubble: "\uC640! \uC2E0\uB09C\uB2E4!",
       description: "\uC624\uB298 \uBAA9\uD45C\uB97C \uB2EC\uC131\uD55C \uC0C1\uD0DC\uC608\uC694. \uC774 \uC77C\uC0C1\uC774 \uCE90\uB9AD\uD130\uC758 \uAE34 \uC131\uC7A5\uC73C\uB85C \uC313\uC5EC\uC694.",
       background: ["#fff2f7", "#fff8e9"],
       stage: "#fff4ef",
