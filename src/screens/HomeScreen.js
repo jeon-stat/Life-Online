@@ -6,7 +6,6 @@ import { buildCharacterViewModel } from "../game/characterState.js";
 import { CHARACTER_CLASSES } from "../characters.js";
 import { AdminPanel } from "../components/AdminPanel.js";
 import { CharacterStage } from "../components/CharacterStage";
-import { CharacterStatusBubble } from "../components/CharacterStatusBubble.js";
 import { DailySummaryCard } from "../components/DailySummaryCard.js";
 import { StepProgressCard } from "../components/StepProgressCard.js";
 import { theme } from "../constants/theme.js";
@@ -31,10 +30,6 @@ export function HomeScreen() {
           defaultLayout={{ x: 0, y: 0, scale: 1 }}
         >
           <View style={styles.stageWrap}>
-            <CharacterStatusBubble
-              text={viewState.bubbleText}
-              bubbleSurface={viewState.bubbleSurface}
-            />
             <CharacterStage character={character} state={viewState} />
           </View>
         </EditableLayoutItem>
