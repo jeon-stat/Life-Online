@@ -1,6 +1,6 @@
 import { useFrame, useLoader } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { AnimationMixer, LoopRepeat } from "three";
+import { AnimationMixer, Box3, LoopRepeat, Vector3 } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 function pickAnimationClip(clips = [], animationMap = {}, stateKey = "idle", defaultAnimation = "idle") {
@@ -33,6 +33,7 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
   const gltf = useLoader(GLTFLoader, character.modelUrl);
   const mixerRef = useRef(null);
   const scale = character.modelScale ?? [3, 3, 3];
+  const basePosition = character.modelOffset ?? [0, -1, 0];
   const pivotOffsetY = (character.modelPivotY ?? 0) * scale[1];
 
   const scene = useMemo(() => {
@@ -45,6 +46,21 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
     });
     return baseScene;
   }, [gltf.scene]);
+
+  const groundAlignedPosition = useMemo(() => {
+    scene.updateMatrixWorld(true);
+
+    const bounds = new Box3().setFromObject(scene);
+    const min = new Vector3();
+    bounds.getMin(min);
+
+    const bottomY =
+      basePosition[1] -
+      pivotOffsetY +
+      min.y * scale[1];
+
+    return [basePosition[0], basePosition[1] - bottomY, basePosition[2]];
+  }, [basePosition, pivotOffsetY, scale, scene]);
 
   const selectedClip = useMemo(
     () =>
@@ -86,7 +102,7 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
 
   return (
     <group
-      position={character.modelOffset ?? [0, -1, 0]}
+      position={groundAlignedPosition}
       rotation={character.modelRotation ?? [0, Math.PI, 0]}
     >
       <group position={[0, -pivotOffsetY, 0]} scale={scale}>

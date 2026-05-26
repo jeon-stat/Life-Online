@@ -16,11 +16,11 @@ const MINI_WORLD_THEME = {
 const MINI_WORLD_LAYOUT = {
   radius: 8.4,
   centerY: -8.38,
-  surfaceOffsetY: -0.02,
-  characterScale: 0.82,
+  surfaceOffsetY: -0.08,
+  characterScale: 0.72,
   capThetaLength: Math.PI * 0.3,
-  pathPhiWidth: 0.72,
-  pathEdgePhiWidth: 0.86,
+  pathPhiWidth: 1.4,
+  pathEdgePhiWidth: 1.62,
 };
 
 export function CharacterStage({ character, state, onInteractionChange }) {
