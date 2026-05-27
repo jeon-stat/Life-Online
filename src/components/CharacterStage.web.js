@@ -130,7 +130,7 @@ function AnimatedCharacter({ character, rotation, state }) {
   });
 
   return (
-    <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY + 0.5, 0]}>
+    <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY + 1, 0]}>
       <MiniWorld motionState={state.animationState} animationSpeed={state.animationSpeed} />
 
       <group scale={MINI_WORLD_LAYOUT.characterScale}>
