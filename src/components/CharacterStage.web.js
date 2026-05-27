@@ -11,7 +11,6 @@ import { STAGE_LAYOUT } from "../scene/stageConfig.js";
 const MINI_WORLD_THEME = {
   grass: "#9acb7c",
   path: "#b9782f",
-  pathEdge: "#8e5c26",
 };
 
 const MINI_WORLD_LAYOUT = {
@@ -20,9 +19,7 @@ const MINI_WORLD_LAYOUT = {
   characterScale: 0.6,
   sphereThetaLength: Math.PI,
   pathHalfWidth: 1.75,
-  pathEdgeHalfWidth: 2.15,
   pathRadiusOffset: 0.36,
-  pathEdgeRadiusOffset: 0.3,
 };
 
 export function CharacterStage({ character, state, onInteractionChange }) {
@@ -125,15 +122,6 @@ function MiniWorld({ motionState, animationSpeed }) {
       ),
     [],
   );
-  const pathEdgeGeometry = useMemo(
-    () =>
-      buildGreatCircleBandGeometry(
-        MINI_WORLD_LAYOUT.radius,
-        MINI_WORLD_LAYOUT.pathEdgeHalfWidth,
-        MINI_WORLD_LAYOUT.pathEdgeRadiusOffset,
-      ),
-    [],
-  );
 
   useFrame((_, delta) => {
     if (!worldRef.current) return;
@@ -157,10 +145,7 @@ function MiniWorld({ motionState, animationSpeed }) {
           />
           <meshStandardMaterial color={MINI_WORLD_THEME.grass} />
         </mesh>
-        <mesh geometry={pathEdgeGeometry} renderOrder={1}>
-          <meshStandardMaterial color={MINI_WORLD_THEME.pathEdge} side={DoubleSide} />
-        </mesh>
-        <mesh geometry={pathGeometry} renderOrder={2}>
+        <mesh geometry={pathGeometry} renderOrder={1}>
           <meshStandardMaterial color={MINI_WORLD_THEME.path} side={DoubleSide} />
         </mesh>
       </group>
@@ -200,7 +185,7 @@ function buildGreatCircleBandGeometry(radius, halfWidth, lift = 0) {
 }
 
 function projectBandPoint(radius, xOffset, angle, lift) {
-  return new Vector3(Math.sin(angle), Math.cos(angle), xOffset)
+  return new Vector3(xOffset, Math.cos(angle), Math.sin(angle))
     .normalize()
     .multiplyScalar(radius + lift);
 }
