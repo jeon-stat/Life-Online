@@ -123,14 +123,14 @@ function AnimatedCharacter({ character, rotation, state }) {
 
     rootRef.current.rotation.x = rotation.x;
     rootRef.current.rotation.y = rotation.y;
-    rootRef.current.position.y = STAGE_LAYOUT.modelBaseY + Math.sin(t * 1.2) * bobAmount;
+    rootRef.current.position.y = STAGE_LAYOUT.modelBaseY + 0.55 + Math.sin(t * 1.2) * bobAmount;
 
     const scalePulse = 1 + Math.sin(t * 0.7) * 0.015;
     rootRef.current.scale.set(scalePulse, scalePulse, scalePulse);
   });
 
   return (
-    <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY + 1, 0]}>
+    <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY, 0]}>
       <MiniWorld motionState={state.animationState} animationSpeed={state.animationSpeed} />
 
       <group scale={MINI_WORLD_LAYOUT.characterScale}>
