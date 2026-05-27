@@ -1,6 +1,6 @@
 import { useFrame, useLoader } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { AnimationMixer, Box3, Color, LoopRepeat, MeshBasicMaterial } from "three";
+import { AnimationMixer, Box3, Color, LoopRepeat, MeshStandardMaterial } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 
@@ -51,12 +51,16 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
         if (!material) return material;
 
         if (skinTone) {
-          const skinMaterial = new MeshBasicMaterial({
+          const skinMaterial = new MeshStandardMaterial({
             color: new Color(skinTone),
             skinning: true,
-            toneMapped: false,
-            fog: false,
+            metalness: 0,
+            roughness: 0.92,
+            envMapIntensity: 0,
+            flatShading: false,
           });
+          skinMaterial.emissive = new Color(skinTone).multiplyScalar(0.03);
+          skinMaterial.emissiveIntensity = 0.06;
           skinMaterial.needsUpdate = true;
           return skinMaterial;
         }
