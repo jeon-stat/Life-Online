@@ -53,12 +53,8 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
         const nextMaterial = material.clone();
 
         if (skinTone && nextMaterial.color) {
-          const warmedTone = new Color(skinTone).offsetHSL(-0.01, 0.08, 0.03);
+          const warmedTone = new Color(skinTone).offsetHSL(0.025, 0.1, 0.01);
           nextMaterial.color = warmedTone;
-          if ("emissive" in nextMaterial) {
-            nextMaterial.emissive = warmedTone.clone().multiplyScalar(0.08);
-            nextMaterial.emissiveIntensity = 0.18;
-          }
         }
 
         if ("metalness" in nextMaterial) {
@@ -66,11 +62,11 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
         }
 
         if ("roughness" in nextMaterial) {
-          nextMaterial.roughness = 0.96;
+          nextMaterial.roughness = 0.9;
         }
 
         if ("envMapIntensity" in nextMaterial) {
-          nextMaterial.envMapIntensity = 0.08;
+          nextMaterial.envMapIntensity = 0.02;
         }
 
         if ("clearcoat" in nextMaterial) {
