@@ -30,7 +30,7 @@ const MINI_WORLD_LAYOUT = {
   centerOffsetY: -8.65,
 
   // 캐릭터 크기. 커질수록 캐릭터가 커짐.
-  characterScale: 0.6,
+  characterScale: 0.5,
 
   // 지구를 얼마나 보여줄지. Math.PI면 반구 정도.
   sphereThetaLength: Math.PI,
@@ -46,7 +46,7 @@ const MINI_WORLD_PATH = {
 
   // 길을 지구 표면에서 얼마나 띄울지.
   // 길이 안 보이면 이 값을 올려라. 1.0 ~ 1.4까지 테스트.
-  lift: 0.005,
+  lift: 0.006,
 
   // 길이 지나가는 중심 X 위치.
   // 0이면 캐릭터 중앙 발밑. 좌우로 밀고 싶으면 -0.5 / 0.5 등으로 조정.
