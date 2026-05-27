@@ -9,17 +9,17 @@ import { getRotationFromDrag } from "../scene/rotationMath.js";
 import { STAGE_LAYOUT } from "../scene/stageConfig.js";
 
 const MINI_WORLD_THEME = {
-  grass: "#9acb7c",
-  path: "#b9782f",
+  grass: "#8fbe70",
+  path: "#d89a4a",
 };
 
 const MINI_WORLD_LAYOUT = {
-  radius: 8.4,
-  centerOffsetY: -8.4,
+  radius: 8.8,
+  centerOffsetY: -8.65,
   characterScale: 0.6,
   sphereThetaLength: Math.PI,
-  pathHalfWidth: 1.75,
-  pathRadiusOffset: 0.08,
+  pathHalfWidth: 2.6,
+  pathRadiusOffset: 0.95,
 };
 
 export function CharacterStage({ character, state, onInteractionChange }) {
@@ -163,37 +163,48 @@ function buildGreatCircleBandGeometry(radius, halfWidth, lift = 0) {
   const geometry = new BufferGeometry();
   const positions = [];
   const indices = [];
-  const segments = 128;
+
+  const segments = 160;
+  const stripSegments = 10;
+
+  // 캐릭터가 보는 윗면 근처에 길을 만든다.
+  // polarAngle이 작을수록 구의 꼭대기 쪽이다.
+  const centerPolarAngle = 0.62;
+  const bandWidthAngle = halfWidth / radius;
 
   for (let step = 0; step <= segments; step += 1) {
     const angle = (step / segments) * Math.PI * 2;
-    const left = projectBandPoint(radius, -halfWidth, angle, lift);
-    const right = projectBandPoint(radius, halfWidth, angle, lift);
 
-    positions.push(left.x, left.y, left.z);
-    positions.push(right.x, right.y, right.z);
+    for (let band = 0; band <= stripSegments; band += 1) {
+      const t = band / stripSegments - 0.5;
+      const polarAngle = centerPolarAngle + t * bandWidthAngle;
+      const point = projectTopBandPoint(radius + lift, polarAngle, angle);
 
-    if (step < segments) {
-      const base = step * 2;
-      indices.push(base, base + 1, base + 2);
-      indices.push(base + 1, base + 3, base + 2);
+      positions.push(point.x, point.y, point.z);
+
+      if (step < segments && band < stripSegments) {
+        const row = stripSegments + 1;
+        const base = step * row + band;
+
+        indices.push(base, base + 1, base + row);
+        indices.push(base + 1, base + row + 1, base + row);
+      }
     }
   }
 
-  geometry.setAttribute(
-    "position",
-    new Float32BufferAttribute(positions, 3),
-  );
+  geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
 
   return geometry;
 }
 
-function projectBandPoint(radius, xOffset, angle, lift) {
-  return new Vector3(xOffset, Math.cos(angle), Math.sin(angle))
-    .normalize()
-    .multiplyScalar(radius + lift);
+function projectTopBandPoint(radius, polarAngle, azimuthAngle) {
+  return new Vector3(
+    Math.sin(polarAngle) * Math.cos(azimuthAngle),
+    Math.cos(polarAngle),
+    Math.sin(polarAngle) * Math.sin(azimuthAngle),
+  ).multiplyScalar(radius);
 }
 
 function getWorldRotationSpeed(motionState, animationSpeed = 1) {
