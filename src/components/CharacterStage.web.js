@@ -200,7 +200,7 @@ function buildGreatCircleBandGeometry(radius, halfWidth, lift = 0) {
 }
 
 function projectBandPoint(radius, xOffset, angle, lift) {
-  return new Vector3(xOffset, Math.cos(angle), Math.sin(angle))
+  return new Vector3(Math.sin(angle), Math.cos(angle), xOffset)
     .normalize()
     .multiplyScalar(radius + lift);
 }
