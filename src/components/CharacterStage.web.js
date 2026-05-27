@@ -19,7 +19,7 @@ const MINI_WORLD_LAYOUT = {
   characterScale: 0.6,
   sphereThetaLength: Math.PI,
   pathHalfWidth: 1.75,
-  pathRadiusOffset: 0.36,
+  pathRadiusOffset: 0.58,
 };
 
 export function CharacterStage({ character, state, onInteractionChange }) {
@@ -145,8 +145,14 @@ function MiniWorld({ motionState, animationSpeed }) {
           />
           <meshStandardMaterial color={MINI_WORLD_THEME.grass} />
         </mesh>
-        <mesh geometry={pathGeometry} renderOrder={1}>
-          <meshStandardMaterial color={MINI_WORLD_THEME.path} side={DoubleSide} />
+        <mesh geometry={pathGeometry} renderOrder={3}>
+          <meshStandardMaterial
+            color={MINI_WORLD_THEME.path}
+            side={DoubleSide}
+            polygonOffset
+            polygonOffsetFactor={-4}
+            polygonOffsetUnits={-4}
+          />
         </mesh>
       </group>
     </group>
