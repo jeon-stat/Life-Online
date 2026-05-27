@@ -14,7 +14,7 @@ import { STAGE_LAYOUT } from "../scene/stageConfig.js";
  * path = 길 색
  */
 const MINI_WORLD_THEME = {
-  grass: "#8fbe70",
+  grass: "#ff0000",
   path: "#d89a4a",
 };
 
