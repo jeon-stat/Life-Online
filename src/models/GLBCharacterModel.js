@@ -53,7 +53,12 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
         const nextMaterial = material.clone();
 
         if (skinTone && nextMaterial.color) {
-          nextMaterial.color = new Color(skinTone);
+          const warmedTone = new Color(skinTone).offsetHSL(-0.01, 0.08, 0.03);
+          nextMaterial.color = warmedTone;
+          if ("emissive" in nextMaterial) {
+            nextMaterial.emissive = warmedTone.clone().multiplyScalar(0.08);
+            nextMaterial.emissiveIntensity = 0.18;
+          }
         }
 
         if ("metalness" in nextMaterial) {
