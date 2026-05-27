@@ -1,14 +1,14 @@
 export const STAGE_MODE = "character-only";
 
 export const SKIN_TONE_PRESETS = [
-  { id: "fair-ivory", label: "\uD1A4 1", color: "#f5e2d2" },
-  { id: "soft-beige", label: "\uD1A4 2", color: "#ecd1bd" },
-  { id: "light-beige", label: "\uD1A4 3", color: "#dfbea4" },
-  { id: "warm-sand", label: "\uD1A4 4", color: "#d0ab89" },
-  { id: "sand", label: "\uD1A4 5", color: "#ba946b" },
-  { id: "honey", label: "\uD1A4 6", color: "#9f7a54" },
-  { id: "cocoa", label: "\uD1A4 7", color: "#7c5a42" },
-  { id: "deep-cocoa", label: "\uD1A4 8", color: "#5a4034" },
+  { id: "fair-1", label: "\uD1A4 1", color: "#f7d6ce" },
+  { id: "fair-2", label: "\uD1A4 2", color: "#f2c7b4" },
+  { id: "fair-3", label: "\uD1A4 3", color: "#efbfa8" },
+  { id: "fair-4", label: "\uD1A4 4", color: "#f0b59d" },
+  { id: "deep-1", label: "\uD1A4 5", color: "#f3a06c" },
+  { id: "deep-2", label: "\uD1A4 6", color: "#d47d54" },
+  { id: "deep-3", label: "\uD1A4 7", color: "#a85d44" },
+  { id: "deep-4", label: "\uD1A4 8", color: "#8b4f41" },
 ];
 
 export const CHARACTER_CLASSES = [
@@ -34,7 +34,7 @@ export const CHARACTER_CLASSES = [
       secondary: "#ffffff",
       accent: "#585d66",
       hair: "#6b4a37",
-      skin: "#f5e2d2",
+      skin: "#f7d6ce",
       detail: "#1f232b",
       hat: "#d5d8de",
       trim: "#8d939c",
