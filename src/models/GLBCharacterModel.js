@@ -1,6 +1,15 @@
 import { useFrame, useLoader } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { AnimationMixer, Box3, Color, LoopRepeat, SRGBColorSpace, TextureLoader } from "three";
+import {
+  AnimationMixer,
+  Box3,
+  CanvasTexture,
+  Color,
+  LoopRepeat,
+  Quaternion,
+  SRGBColorSpace,
+  Vector3,
+} from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 
@@ -35,14 +44,13 @@ function pickAnimationClip(clips = [], animationMap = {}, stateKey = "idle", def
 export function GLBCharacterModel({ character, animationState = "idle" }) {
   const gltf = useLoader(GLTFLoader, character.modelUrl);
   const mixerRef = useRef(null);
+  const faceMeshRef = useRef(null);
+  const faceParentRef = useRef(null);
   const scale = character.modelScale ?? [3, 3, 3];
   const basePosition = character.modelOffset ?? [0, -1, 0];
   const pivotOffsetY = (character.modelPivotY ?? 0) * scale[1];
   const skinTone = character.skinTone ?? character.palette?.skin ?? null;
   const faceExpression = resolveFaceExpression(character, animationState);
-  const faceTexture = useLoader(TextureLoader, faceExpression.image);
-
-  faceTexture.colorSpace = SRGBColorSpace;
 
   const scene = useMemo(() => {
     const baseScene = cloneSkeleton(gltf.scene);
@@ -67,6 +75,11 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
     });
     return baseScene;
   }, [gltf.scene, skinTone]);
+  const headBone = useMemo(
+    () => scene.getObjectByName(faceExpression.anchorBone) ?? null,
+    [faceExpression.anchorBone, scene],
+  );
+  const faceTexture = useMemo(() => buildFaceTexture(), []);
 
   const groundAlignedPosition = useMemo(() => {
     scene.updateMatrixWorld(true);
@@ -116,6 +129,32 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
 
   useFrame((_, delta) => {
     mixerRef.current?.update(delta);
+
+    if (!faceMeshRef.current || !faceParentRef.current || !headBone) {
+      return;
+    }
+
+    headBone.updateWorldMatrix(true, false);
+
+    const headWorld = headBone.getWorldPosition(new Vector3());
+    const headQuaternion = headBone.getWorldQuaternion(new Quaternion());
+    const parentQuaternion = faceParentRef.current.getWorldQuaternion(new Quaternion());
+    const localQuaternion = parentQuaternion.invert().multiply(headQuaternion);
+
+    const right = new Vector3(1, 0, 0).applyQuaternion(headQuaternion);
+    const up = new Vector3(0, 1, 0).applyQuaternion(headQuaternion);
+    const forward = new Vector3(0, 0, 1).applyQuaternion(headQuaternion);
+
+    const faceWorld = headWorld
+      .clone()
+      .add(right.multiplyScalar(faceExpression.offset[0]))
+      .add(up.multiplyScalar(faceExpression.offset[1]))
+      .add(forward.multiplyScalar(faceExpression.offset[2]));
+
+    const faceLocal = faceParentRef.current.worldToLocal(faceWorld);
+
+    faceMeshRef.current.position.copy(faceLocal);
+    faceMeshRef.current.quaternion.copy(localQuaternion);
   });
 
   return (
@@ -123,19 +162,80 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
       position={groundAlignedPosition}
       rotation={character.modelRotation ?? [0, Math.PI, 0]}
     >
-      <group position={[0, -pivotOffsetY, 0]} scale={scale}>
+      <group ref={faceParentRef} position={[0, -pivotOffsetY, 0]} scale={scale}>
         <primitive object={scene} />
-        <mesh position={faceExpression.position} renderOrder={5}>
+        <mesh ref={faceMeshRef} renderOrder={5}>
           <planeGeometry args={faceExpression.size} />
           <meshBasicMaterial
             map={faceTexture}
             transparent
             alphaTest={0.08}
             depthWrite={false}
+            depthTest={false}
             toneMapped={false}
           />
         </mesh>
       </group>
     </group>
   );
+}
+
+function buildFaceTexture() {
+  const canvas =
+    globalThis.document?.createElement?.("canvas") ??
+    new OffscreenCanvas(768, 384);
+
+  canvas.width = 768;
+  canvas.height = 384;
+
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    return null;
+  }
+
+  const eyes = [
+    { x: 222, y: 224 },
+    { x: 546, y: 224 },
+  ];
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (const eye of eyes) {
+    ctx.save();
+    ctx.translate(eye.x, eye.y);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 88, 74, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#111111";
+    ctx.beginPath();
+    ctx.ellipse(0, 6, 44, 58, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#6d8fa4";
+    ctx.beginPath();
+    ctx.ellipse(0, 38, 28, 30, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#a8c6d7";
+    ctx.beginPath();
+    ctx.ellipse(5, 44, 18, 16, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.ellipse(-20, -24, 16, 22, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  const texture = new CanvasTexture(canvas);
+  texture.colorSpace = SRGBColorSpace;
+  texture.needsUpdate = true;
+
+  return texture;
 }

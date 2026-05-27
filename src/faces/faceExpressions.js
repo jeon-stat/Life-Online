@@ -1,11 +1,9 @@
-import normalEyesImage from "../../assets/faces/normal-eyes.png";
-
 export const FACE_EXPRESSIONS = {
   normal: {
     id: "normal",
-    image: normalEyesImage,
-    position: [0, 0.43, 0.214],
-    size: [0.28, 0.17],
+    anchorBone: "mixamorigHead",
+    offset: [0, -0.03, 0.105],
+    size: [0.185, 0.11],
   },
 };
 
