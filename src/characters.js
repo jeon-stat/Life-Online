@@ -1,11 +1,11 @@
 export const STAGE_MODE = "character-only";
 
 export const SKIN_TONE_PRESETS = [
-  { id: "porcelain", label: "밝음 1", color: "#f4d4c2" },
-  { id: "ivory", label: "밝음 2", color: "#eac2aa" },
-  { id: "beige", label: "중간 1", color: "#d7a98e" },
-  { id: "tan", label: "중간 2", color: "#b77f63" },
-  { id: "deep", label: "깊음", color: "#8a5a45" },
+  { id: "ivory", label: "\uC544\uC774\uBCF4\uB9AC", color: "#f0cfb8" },
+  { id: "peach", label: "\uD53C\uCE58", color: "#e4b596" },
+  { id: "sand", label: "\uC0CC\uB4DC", color: "#cc9a77" },
+  { id: "amber", label: "\uC570\uBC84", color: "#a87355" },
+  { id: "walnut", label: "\uC6D4\uB10B", color: "#7f523d" },
 ];
 
 export const CHARACTER_CLASSES = [
@@ -31,7 +31,7 @@ export const CHARACTER_CLASSES = [
       secondary: "#ffffff",
       accent: "#585d66",
       hair: "#6b4a37",
-      skin: "#f4d4c2",
+      skin: "#f0cfb8",
       detail: "#1f232b",
       hat: "#d5d8de",
       trim: "#8d939c",

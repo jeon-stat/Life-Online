@@ -10,8 +10,8 @@ export const STAGE_LAYOUT = {
   fov: 28,
   modelBaseY: -0.76,
   defaultRotation: {
-    x: 0.02,
-    y: 0,
+    x: 0.06,
+    y: -0.42,
   },
   rotationLimit: {
     x: 0.5,
