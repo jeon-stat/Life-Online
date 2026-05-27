@@ -42,11 +42,11 @@ const MINI_WORLD_LAYOUT = {
  */
 const MINI_WORLD_PATH = {
   // 길 폭. 커질수록 길이 넓어짐.
-  halfWidth: 1.2,
+  halfWidth: 1,
 
   // 길을 지구 표면에서 얼마나 띄울지.
   // 길이 안 보이면 이 값을 올려라. 1.0 ~ 1.4까지 테스트.
-  lift: 0.001,
+  lift: 0.005,
 
   // 길이 지나가는 중심 X 위치.
   // 0이면 캐릭터 중앙 발밑. 좌우로 밀고 싶으면 -0.5 / 0.5 등으로 조정.
@@ -130,7 +130,7 @@ function AnimatedCharacter({ character, rotation, state }) {
   });
 
   return (
-    <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY + 0.3, 0]}>
+    <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY + 0.5, 0]}>
       <MiniWorld motionState={state.animationState} animationSpeed={state.animationSpeed} />
 
       <group scale={MINI_WORLD_LAYOUT.characterScale}>
