@@ -1,11 +1,14 @@
 export const STAGE_MODE = "character-only";
 
 export const SKIN_TONE_PRESETS = [
-  { id: "ivory", label: "\uC544\uC774\uBCF4\uB9AC", color: "#f0cfb8" },
-  { id: "peach", label: "\uD53C\uCE58", color: "#e4b596" },
-  { id: "sand", label: "\uC0CC\uB4DC", color: "#cc9a77" },
-  { id: "amber", label: "\uC570\uBC84", color: "#a87355" },
-  { id: "walnut", label: "\uC6D4\uB10B", color: "#7f523d" },
+  { id: "fair-rose", label: "\uD1A4 1", color: "#f6d7c6" },
+  { id: "fair-peach", label: "\uD1A4 2", color: "#efc6ad" },
+  { id: "light-beige", label: "\uD1A4 3", color: "#e6b497" },
+  { id: "warm-beige", label: "\uD1A4 4", color: "#d89d7f" },
+  { id: "soft-tan", label: "\uD1A4 5", color: "#c68668" },
+  { id: "golden-tan", label: "\uD1A4 6", color: "#ad7055" },
+  { id: "rich-brown", label: "\uD1A4 7", color: "#8c5740" },
+  { id: "deep-umber", label: "\uD1A4 8", color: "#6b3f31" },
 ];
 
 export const CHARACTER_CLASSES = [
@@ -31,7 +34,7 @@ export const CHARACTER_CLASSES = [
       secondary: "#ffffff",
       accent: "#585d66",
       hair: "#6b4a37",
-      skin: "#f0cfb8",
+      skin: "#f6d7c6",
       detail: "#1f232b",
       hat: "#d5d8de",
       trim: "#8d939c",
