@@ -1,8 +1,10 @@
 import { useFrame, useLoader } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { AnimationMixer, Box3, Color, LoopRepeat } from "three";
+import { AnimationMixer, Box3, Color, LoopRepeat, SRGBColorSpace, TextureLoader } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
+
+import { resolveFaceExpression } from "../faces/faceExpressions.js";
 
 function pickAnimationClip(clips = [], animationMap = {}, stateKey = "idle", defaultAnimation = "idle") {
   if (!clips.length) return null;
@@ -37,6 +39,10 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
   const basePosition = character.modelOffset ?? [0, -1, 0];
   const pivotOffsetY = (character.modelPivotY ?? 0) * scale[1];
   const skinTone = character.skinTone ?? character.palette?.skin ?? null;
+  const faceExpression = resolveFaceExpression(character, animationState);
+  const faceTexture = useLoader(TextureLoader, faceExpression.image);
+
+  faceTexture.colorSpace = SRGBColorSpace;
 
   const scene = useMemo(() => {
     const baseScene = cloneSkeleton(gltf.scene);
@@ -119,6 +125,16 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
     >
       <group position={[0, -pivotOffsetY, 0]} scale={scale}>
         <primitive object={scene} />
+        <mesh position={faceExpression.position} renderOrder={5}>
+          <planeGeometry args={faceExpression.size} />
+          <meshBasicMaterial
+            map={faceTexture}
+            transparent
+            alphaTest={0.08}
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </mesh>
       </group>
     </group>
   );
