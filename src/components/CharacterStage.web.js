@@ -125,7 +125,7 @@ function MiniWorld({ motionState, animationSpeed }) {
 
   useFrame((_, delta) => {
     if (!worldRef.current) return;
-    worldRef.current.rotation.x -= getWorldRotationSpeed(motionState, animationSpeed) * delta;
+    worldRef.current.rotation.y -= getWorldRotationSpeed(motionState, animationSpeed) * delta;
   });
 
   return (
