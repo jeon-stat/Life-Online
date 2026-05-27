@@ -183,14 +183,14 @@ function MiniWorld({ motionState, animationSpeed }) {
 
         <mesh 
           geometry={pathGeometry}
-          renderOrder={10}
+          renderOrder={0}
         >
           <meshStandardMaterial
             color={MINI_WORLD_THEME.path}
             side={DoubleSide}
             polygonOffset
-            polygonOffsetFactor={-10}
-            polygonOffsetUnits={-10}
+            polygonOffsetFactor={-1}
+            polygonOffsetUnits={-1}
           />
         </mesh>
       </group>
