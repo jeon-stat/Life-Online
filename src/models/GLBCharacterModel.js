@@ -1,6 +1,6 @@
 import { useFrame, useLoader } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { AnimationMixer, Box3, Color, LoopRepeat, MeshLambertMaterial } from "three";
+import { AnimationMixer, Box3, Color, LoopRepeat, MeshStandardMaterial } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 
@@ -37,6 +37,11 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
   const basePosition = character.modelOffset ?? [0, -1, 0];
   const pivotOffsetY = (character.modelPivotY ?? 0) * scale[1];
   const skinTone = character.skinTone ?? character.palette?.skin ?? null;
+  const skinBaseColor = useMemo(() => {
+    if (!skinTone) return null;
+
+    return compensateForLighting(new Color(skinTone));
+  }, [skinTone]);
 
   const scene = useMemo(() => {
     const baseScene = cloneSkeleton(gltf.scene);
@@ -51,13 +56,16 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
         if (!material) return material;
 
         if (skinTone) {
-          const skinMaterial = new MeshLambertMaterial({
-            color: new Color(skinTone),
+          const skinMaterial = new MeshStandardMaterial({
+            color: skinBaseColor ? skinBaseColor.clone() : new Color(skinTone),
             skinning: true,
             flatShading: false,
+            metalness: 0,
+            roughness: 0.88,
+            envMapIntensity: 0,
           });
-          skinMaterial.emissive = new Color(skinTone).multiplyScalar(0.01);
-          skinMaterial.emissiveIntensity = 0.02;
+          skinMaterial.emissive = skinBaseColor ? skinBaseColor.clone().multiplyScalar(0.015) : new Color(skinTone).multiplyScalar(0.015);
+          skinMaterial.emissiveIntensity = 0.03;
           skinMaterial.needsUpdate = true;
           return skinMaterial;
         }
@@ -131,4 +139,15 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
       </group>
     </group>
   );
+}
+
+function compensateForLighting(color) {
+  const base = color.clone();
+  const hsl = {};
+  base.getHSL(hsl);
+
+  hsl.s = Math.max(0.12, hsl.s * 0.88);
+  hsl.l = Math.min(0.92, hsl.l * 1.06);
+
+  return new Color().setHSL(hsl.h, hsl.s, hsl.l);
 }
