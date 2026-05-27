@@ -8,18 +8,54 @@ import { StageCanvas } from "../scene/StageCanvas.web.js";
 import { getRotationFromDrag } from "../scene/rotationMath.js";
 import { STAGE_LAYOUT } from "../scene/stageConfig.js";
 
+/**
+ * 색상 조정
+ * grass = 지구 색
+ * path = 길 색
+ */
 const MINI_WORLD_THEME = {
   grass: "#8fbe70",
   path: "#d89a4a",
 };
 
+/**
+ * 지구/캐릭터 전체 조정
+ */
 const MINI_WORLD_LAYOUT = {
+  // 지구 크기. 커질수록 지구가 크게 보임.
   radius: 8.8,
+
+  // 지구를 아래로 내리는 값. 더 음수면 지구가 아래로 내려감.
   centerOffsetY: -8.65,
+
+  // 캐릭터 크기. 커질수록 캐릭터가 커짐.
   characterScale: 0.6,
+
+  // 지구를 얼마나 보여줄지. Math.PI면 반구 정도.
   sphereThetaLength: Math.PI,
-  pathHalfWidth: 2.6,
-  pathRadiusOffset: 0.95,
+};
+
+/**
+ * 길 조정
+ * 지금 목표: 캐릭터 발밑을 앞뒤로 지나는 "자오선 길"
+ */
+const MINI_WORLD_PATH = {
+  // 길 폭. 커질수록 길이 넓어짐.
+  halfWidth: 1.7,
+
+  // 길을 지구 표면에서 얼마나 띄울지.
+  // 길이 안 보이면 이 값을 올려라. 1.0 ~ 1.4까지 테스트.
+  lift: 1.15,
+
+  // 길이 지나가는 중심 X 위치.
+  // 0이면 캐릭터 중앙 발밑. 좌우로 밀고 싶으면 -0.5 / 0.5 등으로 조정.
+  centerX: 0,
+
+  // 길 해상도. 높을수록 부드럽지만 무거움.
+  segments: 160,
+
+  // 길 폭 방향 분할. 높을수록 길 가장자리가 부드러움.
+  stripSegments: 8,
 };
 
 export function CharacterStage({ character, state, onInteractionChange }) {
@@ -65,11 +101,7 @@ export function CharacterStage({ character, state, onInteractionChange }) {
         <StageEffect effect={state.effect} />
       </View>
       <StageCanvas>
-        <AnimatedCharacter
-          character={character}
-          rotation={rotation}
-          state={state}
-        />
+        <AnimatedCharacter character={character} rotation={rotation} state={state} />
       </StageCanvas>
       <View style={styles.gestureHotspot} {...panResponder.panHandlers} />
     </View>
@@ -91,21 +123,17 @@ function AnimatedCharacter({ character, rotation, state }) {
     rootRef.current.rotation.x = rotation.x;
     rootRef.current.rotation.y = rotation.y;
     rootRef.current.position.y = STAGE_LAYOUT.modelBaseY + Math.sin(t * 1.2) * bobAmount;
+
     const scalePulse = 1 + Math.sin(t * 0.7) * 0.015;
     rootRef.current.scale.set(scalePulse, scalePulse, scalePulse);
   });
 
   return (
     <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY, 0]}>
-      <MiniWorld
-        motionState={state.animationState}
-        animationSpeed={state.animationSpeed}
-      />
+      <MiniWorld motionState={state.animationState} animationSpeed={state.animationSpeed} />
+
       <group scale={MINI_WORLD_LAYOUT.characterScale}>
-        <GLBCharacterModel
-          character={character}
-          animationState={state.animationState}
-        />
+        <GLBCharacterModel character={character} animationState={state.animationState} />
       </group>
     </group>
   );
@@ -113,18 +141,24 @@ function AnimatedCharacter({ character, rotation, state }) {
 
 function MiniWorld({ motionState, animationSpeed }) {
   const worldRef = useRef(null);
+
   const pathGeometry = useMemo(
     () =>
-      buildGreatCircleBandGeometry(
-        MINI_WORLD_LAYOUT.radius,
-        MINI_WORLD_LAYOUT.pathHalfWidth,
-        MINI_WORLD_LAYOUT.pathRadiusOffset,
-      ),
+      buildMeridianPathGeometry({
+        radius: MINI_WORLD_LAYOUT.radius,
+        halfWidth: MINI_WORLD_PATH.halfWidth,
+        lift: MINI_WORLD_PATH.lift,
+        centerX: MINI_WORLD_PATH.centerX,
+        segments: MINI_WORLD_PATH.segments,
+        stripSegments: MINI_WORLD_PATH.stripSegments,
+      }),
     [],
   );
 
   useFrame((_, delta) => {
     if (!worldRef.current) return;
+
+    // X축 회전 = 지구가 앞으로 굴러가며 길이 캐릭터 발밑을 지나감.
     worldRef.current.rotation.x -= getWorldRotationSpeed(motionState, animationSpeed) * delta;
   });
 
@@ -145,13 +179,14 @@ function MiniWorld({ motionState, animationSpeed }) {
           />
           <meshStandardMaterial color={MINI_WORLD_THEME.grass} />
         </mesh>
-        <mesh geometry={pathGeometry} renderOrder={3}>
+
+        <mesh geometry={pathGeometry} renderOrder={10}>
           <meshStandardMaterial
             color={MINI_WORLD_THEME.path}
             side={DoubleSide}
             polygonOffset
-            polygonOffsetFactor={-1}
-            polygonOffsetUnits={-1}
+            polygonOffsetFactor={-10}
+            polygonOffsetUnits={-10}
           />
         </mesh>
       </group>
@@ -159,27 +194,32 @@ function MiniWorld({ motionState, animationSpeed }) {
   );
 }
 
-function buildGreatCircleBandGeometry(radius, halfWidth, lift = 0) {
+/**
+ * 캐릭터 발밑을 앞뒤로 지나는 자오선 길 geometry.
+ *
+ * x = 길의 좌우 폭
+ * y/z = 구를 앞뒤로 감싸는 방향
+ */
+function buildMeridianPathGeometry({
+  radius,
+  halfWidth,
+  lift,
+  centerX,
+  segments,
+  stripSegments,
+}) {
   const geometry = new BufferGeometry();
   const positions = [];
   const indices = [];
-
-  const segments = 160;
-  const stripSegments = 10;
-
-  // 캐릭터가 보는 윗면 근처에 길을 만든다.
-  // polarAngle이 작을수록 구의 꼭대기 쪽이다.
-  const centerPolarAngle = 0.62;
-  const bandWidthAngle = halfWidth / radius;
 
   for (let step = 0; step <= segments; step += 1) {
     const angle = (step / segments) * Math.PI * 2;
 
     for (let band = 0; band <= stripSegments; band += 1) {
       const t = band / stripSegments - 0.5;
-      const polarAngle = centerPolarAngle + t * bandWidthAngle;
-      const point = projectTopBandPoint(radius + lift, polarAngle, angle);
+      const x = centerX + t * halfWidth * 2;
 
+      const point = projectMeridianBandPoint(radius + lift, x, angle);
       positions.push(point.x, point.y, point.z);
 
       if (step < segments && band < stripSegments) {
@@ -199,12 +239,19 @@ function buildGreatCircleBandGeometry(radius, halfWidth, lift = 0) {
   return geometry;
 }
 
-function projectTopBandPoint(radius, polarAngle, azimuthAngle) {
+/**
+ * 자오선 길의 한 점을 구 표면 위로 투영.
+ * 길이 안 보이면 lift를 올리면 된다.
+ */
+function projectMeridianBandPoint(radius, x, angle) {
+  const safeX = Math.max(-radius * 0.85, Math.min(radius * 0.85, x));
+  const yzRadius = Math.sqrt(radius * radius - safeX * safeX);
+
   return new Vector3(
-    Math.sin(azimuthAngle) * Math.sin(polarAngle),
-    Math.cos(polarAngle),
-    Math.cos(azimuthAngle) * Math.sin(polarAngle),
-  ).multiplyScalar(radius);
+    safeX,
+    Math.cos(angle) * yzRadius,
+    Math.sin(angle) * yzRadius,
+  );
 }
 
 function getWorldRotationSpeed(motionState, animationSpeed = 1) {
