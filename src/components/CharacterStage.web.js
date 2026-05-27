@@ -125,7 +125,7 @@ function MiniWorld({ motionState, animationSpeed }) {
 
   useFrame((_, delta) => {
     if (!worldRef.current) return;
-    worldRef.current.rotation.y -= getWorldRotationSpeed(motionState, animationSpeed) * delta;
+    worldRef.current.rotation.x -= getWorldRotationSpeed(motionState, animationSpeed) * delta;
   });
 
   return (
@@ -201,9 +201,9 @@ function buildGreatCircleBandGeometry(radius, halfWidth, lift = 0) {
 
 function projectTopBandPoint(radius, polarAngle, azimuthAngle) {
   return new Vector3(
-    Math.sin(polarAngle) * Math.cos(azimuthAngle),
+    Math.sin(azimuthAngle) * Math.sin(polarAngle),
     Math.cos(polarAngle),
-    Math.sin(polarAngle) * Math.sin(azimuthAngle),
+    Math.cos(azimuthAngle) * Math.sin(polarAngle),
   ).multiplyScalar(radius);
 }
 
