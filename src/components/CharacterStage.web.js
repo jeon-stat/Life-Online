@@ -42,7 +42,7 @@ const MINI_WORLD_LAYOUT = {
  */
 const MINI_WORLD_PATH = {
   // 길 폭. 커질수록 길이 넓어짐.
-  halfWidth: 1,
+  halfWidth: 0.7,
 
   // 길을 지구 표면에서 얼마나 띄울지.
   // 길이 안 보이면 이 값을 올려라. 1.0 ~ 1.4까지 테스트.
