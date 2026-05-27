@@ -180,7 +180,11 @@ function MiniWorld({ motionState, animationSpeed }) {
           <meshStandardMaterial color={MINI_WORLD_THEME.grass} />
         </mesh>
 
-        <mesh geometry={pathGeometry} renderOrder={10}>
+        <mesh 
+          geometry={pathGeometry}
+          rotation={[0, 0, Math.PI / 2]}
+          renderOrder={10}
+        >
           <meshStandardMaterial
             color={MINI_WORLD_THEME.path}
             side={DoubleSide}
