@@ -14,7 +14,7 @@ import { STAGE_LAYOUT } from "../scene/stageConfig.js";
  * path = 길 색
  */
 const MINI_WORLD_THEME = {
-  grass: "#ff0000",
+  grass: "#d89a4a",
   path: "#d89a4a",
 };
 
@@ -182,7 +182,6 @@ function MiniWorld({ motionState, animationSpeed }) {
 
         <mesh 
           geometry={pathGeometry}
-          rotation={[0, 0, Math.PI / 2]}
           renderOrder={10}
         >
           <meshStandardMaterial
