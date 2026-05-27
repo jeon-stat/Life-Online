@@ -19,7 +19,7 @@ const MINI_WORLD_LAYOUT = {
   characterScale: 0.6,
   sphereThetaLength: Math.PI,
   pathHalfWidth: 1.75,
-  pathRadiusOffset: 0.58,
+  pathRadiusOffset: 0.08,
 };
 
 export function CharacterStage({ character, state, onInteractionChange }) {
@@ -150,8 +150,8 @@ function MiniWorld({ motionState, animationSpeed }) {
             color={MINI_WORLD_THEME.path}
             side={DoubleSide}
             polygonOffset
-            polygonOffsetFactor={-4}
-            polygonOffsetUnits={-4}
+            polygonOffsetFactor={-1}
+            polygonOffsetUnits={-1}
           />
         </mesh>
       </group>
