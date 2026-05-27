@@ -46,14 +46,14 @@ const MINI_WORLD_PATH = {
 
   // 길을 지구 표면에서 얼마나 띄울지.
   // 길이 안 보이면 이 값을 올려라. 1.0 ~ 1.4까지 테스트.
-  lift: 0.006,
+  lift: 0.007,
 
   // 길이 지나가는 중심 X 위치.
   // 0이면 캐릭터 중앙 발밑. 좌우로 밀고 싶으면 -0.5 / 0.5 등으로 조정.
   centerX: 0,
 
   // 길 해상도. 높을수록 부드럽지만 무거움.
-  segments: 64,
+  segments: 128,
 
   // 길 폭 방향 분할. 높을수록 길 가장자리가 부드러움.
   stripSegments: 8,
@@ -123,8 +123,8 @@ function AnimatedCharacter({ character, rotation, state }) {
 
     rootRef.current.rotation.x = rotation.x;
     rootRef.current.rotation.y = rotation.y;
-    rootRef.current.position.y = STAGE_LAYOUT.modelBaseY + 0.55 + Math.sin(t * 1.2) * bobAmount;
-
+    rootRef.current.position.y = STAGE_LAYOUT.modelBaseY + Math.sin(t * 1.2) * bobAmount;
+    
     const scalePulse = 1 + Math.sin(t * 0.7) * 0.015;
     rootRef.current.scale.set(scalePulse, scalePulse, scalePulse);
   });
@@ -133,7 +133,7 @@ function AnimatedCharacter({ character, rotation, state }) {
     <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY, 0]}>
       <MiniWorld motionState={state.animationState} animationSpeed={state.animationSpeed} />
 
-      <group scale={MINI_WORLD_LAYOUT.characterScale}>
+      <group position={[0, 0.8, 0]} scale={MINI_WORLD_LAYOUT.characterScale}>
         <GLBCharacterModel character={character} animationState={state.animationState} />
       </group>
     </group>
