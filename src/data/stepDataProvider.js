@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo, useState } from "react";
 
+import { SKIN_TONE_PRESETS } from "../characters.js";
 import { DEFAULT_STEP_GOAL } from "../game/stepRules.js";
 import { ADMIN_STEP_PRESETS, applyAdminOverride, createMockStepSnapshot } from "./mockStepData.js";
 
@@ -8,6 +9,7 @@ const StepDataContext = createContext(null);
 export function StepDataProvider({ children, mode = "mock", adminEnabled = false }) {
   const [mockState, setMockState] = useState(() => createMockStepSnapshot());
   const [motionOverride, setMotionOverride] = useState(null);
+  const [skinToneId, setSkinToneId] = useState(SKIN_TONE_PRESETS[0]?.id ?? null);
   const isMockMode = mode === "mock";
   const history = isMockMode ? mockState.history : [];
   const today = history[0] ?? {
@@ -30,6 +32,12 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
         presets: ADMIN_STEP_PRESETS,
         motionOverride,
         motionStates: ["idle", "walk", "run", "tired"],
+        skinTones: SKIN_TONE_PRESETS,
+        skinToneId,
+        setSkinTone: (nextSkinToneId) => {
+          if (!adminEnabled) return;
+          setSkinToneId(nextSkinToneId);
+        },
         setPreset: (preset) => {
           if (!adminEnabled || !isMockMode) return;
           setMockState(applyAdminOverride(preset.steps));
@@ -48,7 +56,7 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
         },
       },
     }),
-    [adminEnabled, history, isMockMode, mode, motionOverride, today],
+    [adminEnabled, history, isMockMode, mode, motionOverride, skinToneId, today],
   );
 
   return <StepDataContext.Provider value={value}>{children}</StepDataContext.Provider>;

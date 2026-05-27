@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { AdminPanel } from "../components/AdminPanel.js";
@@ -12,7 +13,23 @@ import { buildCharacterViewModel } from "../game/characterState.js";
 
 export function HomeScreen() {
   const { today, history, goal, admin } = useStepData();
-  const character = CHARACTER_CLASSES[0];
+  const character = useMemo(() => {
+    const baseCharacter = CHARACTER_CLASSES[0];
+    const selectedSkinTone = admin?.skinTones?.find((tone) => tone.id === admin?.skinToneId);
+
+    if (!selectedSkinTone) {
+      return baseCharacter;
+    }
+
+    return {
+      ...baseCharacter,
+      palette: {
+        ...baseCharacter.palette,
+        skin: selectedSkinTone.color,
+      },
+      skinTone: selectedSkinTone.color,
+    };
+  }, [admin?.skinToneId, admin?.skinTones]);
   const viewState = buildCharacterViewModel({
     todayRecord: today,
     history,

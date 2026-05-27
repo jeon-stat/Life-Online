@@ -1,7 +1,8 @@
 import { useFrame, useLoader } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { AnimationMixer, Box3, LoopRepeat } from "three";
+import { AnimationMixer, Box3, Color, LoopRepeat } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 
 function pickAnimationClip(clips = [], animationMap = {}, stateKey = "idle", defaultAnimation = "idle") {
   if (!clips.length) return null;
@@ -35,17 +36,31 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
   const scale = character.modelScale ?? [3, 3, 3];
   const basePosition = character.modelOffset ?? [0, -1, 0];
   const pivotOffsetY = (character.modelPivotY ?? 0) * scale[1];
+  const skinTone = character.skinTone ?? character.palette?.skin ?? null;
 
   const scene = useMemo(() => {
-    const baseScene = gltf.scene;
+    const baseScene = cloneSkeleton(gltf.scene);
     baseScene.traverse((node) => {
       if (node.isMesh) {
         node.castShadow = false;
         node.receiveShadow = false;
+        const materials = Array.isArray(node.material) ? node.material : [node.material];
+        const tintedMaterials = materials.map((material) => {
+          if (!material) return material;
+          const nextMaterial = material.clone();
+
+          if (skinTone && nextMaterial.color) {
+            nextMaterial.color = new Color(skinTone);
+          }
+
+          return nextMaterial;
+        });
+
+        node.material = Array.isArray(node.material) ? tintedMaterials : tintedMaterials[0];
       }
     });
     return baseScene;
-  }, [gltf.scene]);
+  }, [gltf.scene, skinTone]);
 
   const groundAlignedPosition = useMemo(() => {
     scene.updateMatrixWorld(true);

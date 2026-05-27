@@ -1,5 +1,13 @@
 export const STAGE_MODE = "character-only";
 
+export const SKIN_TONE_PRESETS = [
+  { id: "porcelain", label: "밝음 1", color: "#f4d4c2" },
+  { id: "ivory", label: "밝음 2", color: "#eac2aa" },
+  { id: "beige", label: "중간 1", color: "#d7a98e" },
+  { id: "tan", label: "중간 2", color: "#b77f63" },
+  { id: "deep", label: "깊음", color: "#8a5a45" },
+];
+
 export const CHARACTER_CLASSES = [
   {
     id: "custom-chibi",

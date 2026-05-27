@@ -40,6 +40,26 @@ export function AdminPanel({ admin }) {
         </Pressable>
       </View>
 
+      <View style={styles.motionSection}>
+        <Text style={styles.motionTitle}>{"\uD53C\uBD80\uC0C9"}</Text>
+        <View style={styles.row}>
+          {admin.skinTones?.map((tone) => {
+            const selected = admin.skinToneId === tone.id;
+
+            return (
+              <Pressable
+                key={tone.id}
+                onPress={() => admin.setSkinTone(tone.id)}
+                style={[styles.skinButton, selected && styles.skinButtonSelected]}
+              >
+                <View style={[styles.skinSwatch, { backgroundColor: tone.color }]} />
+                <Text style={styles.buttonLabel}>{tone.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
       <Pressable onPress={admin.resetMock} style={styles.resetButton}>
         <Text style={styles.resetLabel}>{"\uAE30\uBCF8 mock \uD750\uB984\uC73C\uB85C \uB3CC\uB9AC\uAE30"}</Text>
       </Pressable>
@@ -100,6 +120,28 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 12,
     fontWeight: "900",
+  },
+  skinButton: {
+    minWidth: 78,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#efcbb1",
+    alignItems: "center",
+    gap: 8,
+  },
+  skinButtonSelected: {
+    borderColor: "#b45c3a",
+    backgroundColor: "#fff2e9",
+  },
+  skinSwatch: {
+    width: 26,
+    height: 26,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(36,48,66,0.12)",
   },
   resetButton: {
     marginTop: 12,
