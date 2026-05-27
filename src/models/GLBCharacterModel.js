@@ -1,6 +1,6 @@
 import { useFrame, useLoader } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { AnimationMixer, Box3, Color, LoopRepeat, MeshStandardMaterial } from "three";
+import { AnimationMixer, Box3, Color, LoopRepeat, MeshLambertMaterial } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 
@@ -51,41 +51,18 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
         if (!material) return material;
 
         if (skinTone) {
-          const skinMaterial = new MeshStandardMaterial({
+          const skinMaterial = new MeshLambertMaterial({
             color: new Color(skinTone),
             skinning: true,
-            metalness: 0,
-            roughness: 0.92,
-            envMapIntensity: 0,
             flatShading: false,
           });
-          skinMaterial.emissive = new Color(skinTone).multiplyScalar(0.03);
-          skinMaterial.emissiveIntensity = 0.06;
+          skinMaterial.emissive = new Color(skinTone).multiplyScalar(0.01);
+          skinMaterial.emissiveIntensity = 0.02;
           skinMaterial.needsUpdate = true;
           return skinMaterial;
         }
 
         const nextMaterial = material.clone();
-
-        if ("metalness" in nextMaterial) {
-          nextMaterial.metalness = 0;
-        }
-
-        if ("roughness" in nextMaterial) {
-          nextMaterial.roughness = 0.95;
-        }
-
-        if ("envMapIntensity" in nextMaterial) {
-          nextMaterial.envMapIntensity = 0;
-        }
-
-        if ("clearcoat" in nextMaterial) {
-          nextMaterial.clearcoat = 0;
-        }
-
-        if ("sheen" in nextMaterial) {
-          nextMaterial.sheen = 0;
-        }
 
         nextMaterial.needsUpdate = true;
 
