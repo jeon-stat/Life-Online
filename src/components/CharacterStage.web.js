@@ -133,7 +133,7 @@ function AnimatedCharacter({ character, rotation, state }) {
     <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY, 0]}>
       <MiniWorld motionState={state.animationState} animationSpeed={state.animationSpeed} />
 
-      <group position={[0, 0.05, 0]} scale={MINI_WORLD_LAYOUT.characterScale}>
+      <group position={[0, 0.1, 0]} scale={MINI_WORLD_LAYOUT.characterScale}>
         <GLBCharacterModel character={character} animationState={state.animationState} />
       </group>
     </group>
