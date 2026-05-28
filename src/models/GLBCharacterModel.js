@@ -1,6 +1,7 @@
 import { useFrame, useLoader } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { AnimationMixer, Box3, Color, LoopRepeat, MeshStandardMaterial } from "three";
+import { AnimationMixer, Box3, Color, LoopOnce, LoopRepeat, MeshStandardMaterial } from "three";
+import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 
@@ -30,8 +31,22 @@ function pickAnimationClip(clips = [], animationMap = {}, stateKey = "idle", def
   return clips[0];
 }
 
-export function GLBCharacterModel({ character, animationState = "idle", animationSpeed = 1 }) {
+export function GLBCharacterModel({
+  character,
+  animationState = "idle",
+  animationSpeed = 1,
+  animationLoopMode = "repeat",
+}) {
   const gltf = useLoader(GLTFLoader, character.modelUrl);
+  const animationSourceEntries = useMemo(
+    () => Object.entries(character.animationSources ?? {}),
+    [character.animationSources],
+  );
+  const animationSourceUrls = useMemo(
+    () => animationSourceEntries.map(([, url]) => url),
+    [animationSourceEntries],
+  );
+  const loadedAnimationFiles = useLoader(FBXLoader, animationSourceUrls);
   const mixerRef = useRef(null);
   const scale = character.modelScale ?? [3, 3, 3];
   const basePosition = character.modelOffset ?? [0, -1, 0];
@@ -42,6 +57,25 @@ export function GLBCharacterModel({ character, animationState = "idle", animatio
 
     return compensateForLighting(new Color(skinTone));
   }, [skinTone]);
+
+  const externalAnimationClips = useMemo(() => {
+    const files = Array.isArray(loadedAnimationFiles) ? loadedAnimationFiles : [loadedAnimationFiles];
+
+    return files.flatMap((file, index) => {
+      const [clipName] = animationSourceEntries[index] ?? [];
+      const clip = file?.animations?.[0];
+      if (!clip || !clipName) return [];
+
+      const renamedClip = clip.clone();
+      renamedClip.name = clipName;
+      return [renamedClip];
+    });
+  }, [animationSourceEntries, loadedAnimationFiles]);
+
+  const animationClips = useMemo(
+    () => [...gltf.animations, ...externalAnimationClips],
+    [externalAnimationClips, gltf.animations],
+  );
 
   const scene = useMemo(() => {
     const baseScene = cloneSkeleton(gltf.scene);
@@ -94,12 +128,12 @@ export function GLBCharacterModel({ character, animationState = "idle", animatio
   const selectedClip = useMemo(
     () =>
       pickAnimationClip(
-        gltf.animations,
+        animationClips,
         character.animationMap,
         animationState,
         character.defaultAnimation,
       ),
-    [animationState, character.animationMap, character.defaultAnimation, gltf.animations],
+    [animationClips, animationState, character.animationMap, character.defaultAnimation],
   );
 
   useEffect(() => {
@@ -111,7 +145,8 @@ export function GLBCharacterModel({ character, animationState = "idle", animatio
     const action = mixer.clipAction(selectedClip);
     action.reset();
     action.enabled = true;
-    action.setLoop(LoopRepeat, Infinity);
+    action.setLoop(animationLoopMode === "once" ? LoopOnce : LoopRepeat, animationLoopMode === "once" ? 1 : Infinity);
+    action.clampWhenFinished = animationLoopMode === "once";
     action.setEffectiveTimeScale(animationSpeed);
     action.setEffectiveWeight(1);
     action.fadeIn(0.2);
@@ -123,7 +158,7 @@ export function GLBCharacterModel({ character, animationState = "idle", animatio
       mixer.stopAllAction();
       mixerRef.current = null;
     };
-  }, [animationSpeed, scene, selectedClip]);
+  }, [animationLoopMode, animationSpeed, scene, selectedClip]);
 
   useFrame((_, delta) => {
     mixerRef.current?.update(delta);

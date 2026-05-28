@@ -15,6 +15,10 @@ const STATE_LABELS = {
 const ACTION_LABELS_KO = {
   idle: "서 있기",
   tired: "앉기",
+  standingUp: "일어서기",
+  startWalking: "걷기 시작",
+  stopWalking: "걷기 멈춤",
+  runToStop: "뛰기 멈춤",
   slowWalk: "느리게 걷기",
   walk: "걷기",
   fastWalk: "빠르게 걷기",

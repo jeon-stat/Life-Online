@@ -21,6 +21,10 @@ export const ACTION_TYPES = {
 export const ACTION_KEYS = {
   idle: "idle",
   tired: "tired",
+  standingUp: "standingUp",
+  startWalking: "startWalking",
+  stopWalking: "stopWalking",
+  runToStop: "runToStop",
   slowWalk: "slowWalk",
   walk: "walk",
   fastWalk: "fastWalk",
@@ -41,10 +45,10 @@ export const ACTION_KEYS = {
   stretch: "stretch",
   lightJog: "lightJog",
   lookAround: "lookAround",
+  idleTransition: "idleTransition",
   turnLeftRight: "turnLeftRight",
   smallPause: "smallPause",
   footTap: "footTap",
-  idleTransition: "idleTransition",
   quickTurn: "quickTurn",
   bounceIdle: "bounceIdle",
   fastStop: "fastStop",
@@ -60,6 +64,10 @@ export const ACTION_KEYS = {
 export const ACTION_LABELS = {
   idle: "Idle Standing",
   tired: "Sitting",
+  standingUp: "Standing Up",
+  startWalking: "Start Walking",
+  stopWalking: "Stop Walking",
+  runToStop: "Run To Stop",
   slowWalk: "Walking(slow)",
   walk: "Walking",
   fastWalk: "Walking(fast)",
@@ -98,7 +106,7 @@ export const ACTION_LABELS = {
 
 const DEFAULT_TIMING = {
   mainDurationRange: [8, 15],
-  transitionDurationRange: [1, 3],
+  transitionDurationRange: [0.5, 2],
   waitDurationRange: [1, 4],
 };
 
@@ -118,18 +126,66 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.tired,
     label: ACTION_LABELS.tired,
     type: ACTION_TYPES.MAIN,
-    clipKey: "tired",
+    clipKey: "sittingIdle",
     available: true,
     baseWeight: 26,
     clipSpeed: 0.8,
     worldSpeed: 0.004,
     motionKind: "neutral",
   }),
+  standingUp: createAction({
+    key: ACTION_KEYS.standingUp,
+    label: ACTION_LABELS.standingUp,
+    type: ACTION_TYPES.TRANSITION,
+    clipKey: "standingUp",
+    available: true,
+    baseWeight: 0.25,
+    clipSpeed: 0.95,
+    worldSpeed: 0,
+    motionKind: "neutral",
+    loopMode: "once",
+  }),
+  startWalking: createAction({
+    key: ACTION_KEYS.startWalking,
+    label: ACTION_LABELS.startWalking,
+    type: ACTION_TYPES.TRANSITION,
+    clipKey: "startWalking",
+    available: true,
+    baseWeight: 0.25,
+    clipSpeed: 1.0,
+    worldSpeed: 0,
+    motionKind: "walk",
+    loopMode: "once",
+  }),
+  stopWalking: createAction({
+    key: ACTION_KEYS.stopWalking,
+    label: ACTION_LABELS.stopWalking,
+    type: ACTION_TYPES.TRANSITION,
+    clipKey: "stopWalking",
+    available: true,
+    baseWeight: 0.25,
+    clipSpeed: 1.0,
+    worldSpeed: 0,
+    motionKind: "walk",
+    loopMode: "once",
+  }),
+  runToStop: createAction({
+    key: ACTION_KEYS.runToStop,
+    label: ACTION_LABELS.runToStop,
+    type: ACTION_TYPES.TRANSITION,
+    clipKey: "runToStop",
+    available: true,
+    baseWeight: 0.25,
+    clipSpeed: 1.0,
+    worldSpeed: 0,
+    motionKind: "run",
+    loopMode: "once",
+  }),
   slowWalk: createAction({
     key: ACTION_KEYS.slowWalk,
     label: ACTION_LABELS.slowWalk,
     type: ACTION_TYPES.MAIN,
-    clipKey: "walk",
+    clipKey: "walking",
     available: true,
     baseWeight: 18,
     clipSpeed: 0.74,
@@ -140,7 +196,7 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.walk,
     label: ACTION_LABELS.walk,
     type: ACTION_TYPES.MAIN,
-    clipKey: "walk",
+    clipKey: "walking",
     available: true,
     baseWeight: 34,
     clipSpeed: 0.96,
@@ -151,7 +207,7 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.fastWalk,
     label: ACTION_LABELS.fastWalk,
     type: ACTION_TYPES.MAIN,
-    clipKey: "walk",
+    clipKey: "walking",
     available: true,
     baseWeight: 14,
     clipSpeed: 1.18,
@@ -162,7 +218,7 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.run,
     label: ACTION_LABELS.run,
     type: ACTION_TYPES.MAIN,
-    clipKey: "run",
+    clipKey: "running",
     available: true,
     baseWeight: 22,
     clipSpeed: 1.1,
@@ -173,8 +229,8 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.sleepyIdle,
     label: ACTION_LABELS.sleepyIdle,
     type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
+    clipKey: "breathingIdle",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.9,
     worldSpeed: 0.0,
@@ -183,9 +239,9 @@ const ACTION_LIBRARY = {
   lookingDown: createAction({
     key: ACTION_KEYS.lookingDown,
     label: ACTION_LABELS.lookingDown,
-    type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
+    type: ACTION_TYPES.TRANSITION,
+    clipKey: "lookingDown",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.9,
     worldSpeed: 0.0,
@@ -195,7 +251,7 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.slowTiredWalk,
     label: ACTION_LABELS.slowTiredWalk,
     type: ACTION_TYPES.MAIN,
-    clipKey: "walk",
+    clipKey: "walking",
     available: false,
     baseWeight: 0.25,
     clipSpeed: 0.68,
@@ -205,20 +261,21 @@ const ACTION_LIBRARY = {
   stretchSitting: createAction({
     key: ACTION_KEYS.stretchSitting,
     label: ACTION_LABELS.stretchSitting,
-    type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
+    type: ACTION_TYPES.TRANSITION,
+    clipKey: "standingUp",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.9,
     worldSpeed: 0,
     motionKind: "neutral",
+    loopMode: "once",
   }),
   idleBreathing: createAction({
     key: ACTION_KEYS.idleBreathing,
     label: ACTION_LABELS.idleBreathing,
     type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
+    clipKey: "breathingIdle",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.9,
     worldSpeed: 0,
@@ -228,19 +285,20 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.yawn,
     label: ACTION_LABELS.yawn,
     type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
+    clipKey: "yawn",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.9,
     worldSpeed: 0,
     motionKind: "neutral",
+    loopMode: "once",
   }),
   weightShift: createAction({
     key: ACTION_KEYS.weightShift,
     label: ACTION_LABELS.weightShift,
     type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
+    clipKey: "weightShift",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.9,
     worldSpeed: 0,
@@ -250,19 +308,20 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.stopAndRest,
     label: ACTION_LABELS.stopAndRest,
     type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
+    clipKey: "stopWalking",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.9,
     worldSpeed: 0,
     motionKind: "neutral",
+    loopMode: "once",
   }),
   headNod: createAction({
     key: ACTION_KEYS.headNod,
     label: ACTION_LABELS.headNod,
     type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
+    clipKey: "idleTransition",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.9,
     worldSpeed: 0,
@@ -272,8 +331,8 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.slowTurn,
     label: ACTION_LABELS.slowTurn,
     type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
+    clipKey: "lookAround",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.9,
     worldSpeed: 0,
@@ -283,8 +342,8 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.relaxedIdle,
     label: ACTION_LABELS.relaxedIdle,
     type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
+    clipKey: "neutralIdle",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.92,
     worldSpeed: 0,
@@ -294,8 +353,8 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.casualWalk,
     label: ACTION_LABELS.casualWalk,
     type: ACTION_TYPES.MAIN,
-    clipKey: "walk",
-    available: false,
+    clipKey: "walking",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 1.0,
     worldSpeed: 0.14,
@@ -305,8 +364,8 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.exploreWalk,
     label: ACTION_LABELS.exploreWalk,
     type: ACTION_TYPES.MAIN,
-    clipKey: "walk",
-    available: false,
+    clipKey: "walking",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 1.0,
     worldSpeed: 0.16,
@@ -315,20 +374,21 @@ const ACTION_LIBRARY = {
   stretch: createAction({
     key: ACTION_KEYS.stretch,
     label: ACTION_LABELS.stretch,
-    type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
+    type: ACTION_TYPES.TRANSITION,
+    clipKey: "standingUp",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.9,
     worldSpeed: 0,
     motionKind: "neutral",
+    loopMode: "once",
   }),
   lightJog: createAction({
     key: ACTION_KEYS.lightJog,
     label: ACTION_LABELS.lightJog,
     type: ACTION_TYPES.MAIN,
-    clipKey: "walk",
-    available: false,
+    clipKey: "slowRun",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 1.08,
     worldSpeed: 0.18,
@@ -338,8 +398,8 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.lookAround,
     label: ACTION_LABELS.lookAround,
     type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
+    clipKey: "lookAround",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.9,
     worldSpeed: 0,
@@ -349,8 +409,8 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.turnLeftRight,
     label: ACTION_LABELS.turnLeftRight,
     type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
+    clipKey: "lookAround",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.9,
     worldSpeed: 0,
@@ -360,8 +420,8 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.smallPause,
     label: ACTION_LABELS.smallPause,
     type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
+    clipKey: "idleTransition",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.9,
     worldSpeed: 0,
@@ -371,8 +431,8 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.footTap,
     label: ACTION_LABELS.footTap,
     type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
+    clipKey: "weightShift",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.9,
     worldSpeed: 0,
@@ -382,19 +442,20 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.idleTransition,
     label: ACTION_LABELS.idleTransition,
     type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
+    clipKey: "idleTransition",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.9,
     worldSpeed: 0,
     motionKind: "neutral",
+    loopMode: "once",
   }),
   quickTurn: createAction({
     key: ACTION_KEYS.quickTurn,
     label: ACTION_LABELS.quickTurn,
     type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
+    clipKey: "lookAround",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.95,
     worldSpeed: 0,
@@ -404,8 +465,8 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.bounceIdle,
     label: ACTION_LABELS.bounceIdle,
     type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
+    clipKey: "breathingIdle",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.95,
     worldSpeed: 0,
@@ -415,19 +476,20 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.fastStop,
     label: ACTION_LABELS.fastStop,
     type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
+    clipKey: "runToStop",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.95,
     worldSpeed: 0,
     motionKind: "neutral",
+    loopMode: "once",
   }),
   lookAroundFast: createAction({
     key: ACTION_KEYS.lookAroundFast,
     label: ACTION_LABELS.lookAroundFast,
     type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
+    clipKey: "lookAround",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 0.95,
     worldSpeed: 0,
@@ -448,8 +510,8 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.happyRun,
     label: ACTION_LABELS.happyRun,
     type: ACTION_TYPES.MAIN,
-    clipKey: "run",
-    available: false,
+    clipKey: "running",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 1.16,
     worldSpeed: 0.3,
@@ -459,8 +521,8 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.energeticWalk,
     label: ACTION_LABELS.energeticWalk,
     type: ACTION_TYPES.MAIN,
-    clipKey: "walk",
-    available: false,
+    clipKey: "walking",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 1.14,
     worldSpeed: 0.2,
@@ -469,7 +531,7 @@ const ACTION_LIBRARY = {
   dashStart: createAction({
     key: ACTION_KEYS.dashStart,
     label: ACTION_LABELS.dashStart,
-    type: ACTION_TYPES.MAIN,
+    type: ACTION_TYPES.TRANSITION,
     clipKey: null,
     available: false,
     baseWeight: 0.25,
@@ -481,8 +543,8 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.excitedIdle,
     label: ACTION_LABELS.excitedIdle,
     type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
+    clipKey: "breathingIdle",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 1.0,
     worldSpeed: 0.04,
@@ -492,8 +554,8 @@ const ACTION_LIBRARY = {
     key: ACTION_KEYS.activePatrol,
     label: ACTION_LABELS.activePatrol,
     type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
+    clipKey: "walking",
+    available: true,
     baseWeight: 0.25,
     clipSpeed: 1.08,
     worldSpeed: 0.22,
@@ -513,27 +575,25 @@ const STATE_PROFILES = {
     mainActionKeys: [
       ACTION_KEYS.idle,
       ACTION_KEYS.tired,
-      ACTION_KEYS.slowWalk,
-      ACTION_KEYS.sleepyIdle,
-      ACTION_KEYS.lookingDown,
-      ACTION_KEYS.slowTiredWalk,
-      ACTION_KEYS.stretchSitting,
       ACTION_KEYS.idleBreathing,
+      ACTION_KEYS.sleepyIdle,
+      ACTION_KEYS.relaxedIdle,
     ],
     transitionActionKeys: [
-      ACTION_KEYS.yawn,
+      ACTION_KEYS.standingUp,
+      ACTION_KEYS.startWalking,
+      ACTION_KEYS.lookAround,
+      ACTION_KEYS.lookingDown,
       ACTION_KEYS.weightShift,
-      ACTION_KEYS.stopAndRest,
-      ACTION_KEYS.headNod,
-      ACTION_KEYS.slowTurn,
+      ACTION_KEYS.yawn,
+      ACTION_KEYS.idleTransition,
     ],
     weightBias: {
       [ACTION_KEYS.idle]: 10,
-      [ACTION_KEYS.tired]: 18,
-      [ACTION_KEYS.slowWalk]: 6,
-      [ACTION_KEYS.walk]: -12,
-      [ACTION_KEYS.fastWalk]: -18,
-      [ACTION_KEYS.run]: -24,
+      [ACTION_KEYS.tired]: 20,
+      [ACTION_KEYS.idleBreathing]: 14,
+      [ACTION_KEYS.sleepyIdle]: 10,
+      [ACTION_KEYS.relaxedIdle]: 6,
     },
     clipSpeedScale: 0.9,
     worldSpeedScale: 0.7,
@@ -547,27 +607,33 @@ const STATE_PROFILES = {
     cloudSpeed: 0.62,
     brightness: 1,
     mainActionKeys: [
-      ACTION_KEYS.idle,
       ACTION_KEYS.walk,
-      ACTION_KEYS.relaxedIdle,
+      ACTION_KEYS.slowWalk,
+      ACTION_KEYS.fastWalk,
       ACTION_KEYS.casualWalk,
       ACTION_KEYS.exploreWalk,
-      ACTION_KEYS.stretch,
       ACTION_KEYS.lightJog,
+      ACTION_KEYS.idle,
+      ACTION_KEYS.relaxedIdle,
     ],
     transitionActionKeys: [
+      ACTION_KEYS.startWalking,
+      ACTION_KEYS.stopWalking,
       ACTION_KEYS.lookAround,
       ACTION_KEYS.turnLeftRight,
       ACTION_KEYS.smallPause,
       ACTION_KEYS.footTap,
       ACTION_KEYS.idleTransition,
+      ACTION_KEYS.weightShift,
     ],
     weightBias: {
-      [ACTION_KEYS.idle]: 6,
-      [ACTION_KEYS.walk]: 18,
-      [ACTION_KEYS.slowWalk]: 4,
-      [ACTION_KEYS.fastWalk]: 4,
-      [ACTION_KEYS.run]: -12,
+      [ACTION_KEYS.walk]: 20,
+      [ACTION_KEYS.slowWalk]: 10,
+      [ACTION_KEYS.fastWalk]: 8,
+      [ACTION_KEYS.casualWalk]: 6,
+      [ACTION_KEYS.exploreWalk]: 6,
+      [ACTION_KEYS.idle]: 4,
+      [ACTION_KEYS.relaxedIdle]: 4,
     },
     clipSpeedScale: 1,
     worldSpeedScale: 1,
@@ -582,27 +648,30 @@ const STATE_PROFILES = {
     brightness: 1.05,
     mainActionKeys: [
       ACTION_KEYS.run,
+      ACTION_KEYS.lightJog,
       ACTION_KEYS.fastWalk,
-      ACTION_KEYS.idle,
       ACTION_KEYS.happyRun,
       ACTION_KEYS.energeticWalk,
-      ACTION_KEYS.dashStart,
-      ACTION_KEYS.excitedIdle,
       ACTION_KEYS.activePatrol,
+      ACTION_KEYS.idle,
+      ACTION_KEYS.excitedIdle,
     ],
     transitionActionKeys: [
+      ACTION_KEYS.runToStop,
+      ACTION_KEYS.startWalking,
       ACTION_KEYS.quickTurn,
       ACTION_KEYS.bounceIdle,
-      ACTION_KEYS.fastStop,
       ACTION_KEYS.lookAroundFast,
-      ACTION_KEYS.shortHop,
+      ACTION_KEYS.idleTransition,
     ],
     weightBias: {
       [ACTION_KEYS.run]: 22,
-      [ACTION_KEYS.fastWalk]: 18,
-      [ACTION_KEYS.walk]: 8,
-      [ACTION_KEYS.idle]: 4,
-      [ACTION_KEYS.tired]: -12,
+      [ACTION_KEYS.lightJog]: 16,
+      [ACTION_KEYS.fastWalk]: 12,
+      [ACTION_KEYS.happyRun]: 14,
+      [ACTION_KEYS.energeticWalk]: 10,
+      [ACTION_KEYS.activePatrol]: 8,
+      [ACTION_KEYS.idle]: 2,
     },
     clipSpeedScale: 1.08,
     worldSpeedScale: 1.18,
@@ -758,6 +827,18 @@ export function pickWeightedAction(actions = [], previousAction = null) {
   return pool[pool.length - 1] ?? null;
 }
 
+export function pickTransitionAction(actions = [], fromMainKey = null, toMainKey = null, previousAction = null) {
+  const preferredKeys = getTransitionPriorityKeys(fromMainKey, toMainKey);
+  for (const key of preferredKeys) {
+    const match = actions.find((action) => action.key === key);
+    if (match && match.weight > 0) {
+      return match;
+    }
+  }
+
+  return pickWeightedAction(actions, previousAction);
+}
+
 export function resolveActionByKey(actions = [], actionKey = null) {
   if (!actionKey) return null;
   return actions.find((action) => action.key === actionKey) ?? null;
@@ -782,6 +863,7 @@ function createAction({
   clipSpeed,
   worldSpeed,
   motionKind,
+  loopMode,
 }) {
   return {
     key,
@@ -793,6 +875,7 @@ function createAction({
     clipSpeed,
     worldSpeed,
     motionKind,
+    loopMode: loopMode ?? "repeat",
   };
 }
 
@@ -861,6 +944,63 @@ function resolveMovementMultiplier(motionKind, overrides) {
 function pickDefaultActionKey(actions, fallbackKey) {
   if (!actions.length) return fallbackKey;
   return actions.reduce((best, action) => (action.weight > best.weight ? action : best), actions[0])?.key ?? fallbackKey;
+}
+
+function getTransitionPriorityKeys(fromMainKey, toMainKey) {
+  const fromFamily = getActionFamily(fromMainKey);
+  const toFamily = getActionFamily(toMainKey);
+
+  if (fromFamily === "sit" && toFamily === "walk") {
+    return [ACTION_KEYS.standingUp, ACTION_KEYS.startWalking, ACTION_KEYS.idleTransition, ACTION_KEYS.lookAround];
+  }
+
+  if (fromFamily === "sit" && toFamily === "idle") {
+    return [ACTION_KEYS.standingUp, ACTION_KEYS.idleTransition, ACTION_KEYS.lookAround, ACTION_KEYS.weightShift];
+  }
+
+  if (fromFamily === "idle" && toFamily === "walk") {
+    return [ACTION_KEYS.startWalking, ACTION_KEYS.idleTransition, ACTION_KEYS.weightShift];
+  }
+
+  if (fromFamily === "walk" && toFamily === "idle") {
+    return [ACTION_KEYS.stopWalking, ACTION_KEYS.idleTransition, ACTION_KEYS.weightShift];
+  }
+
+  if (fromFamily === "walk" && toFamily === "run") {
+    return [ACTION_KEYS.idleTransition, ACTION_KEYS.startWalking, ACTION_KEYS.lookAround];
+  }
+
+  if (fromFamily === "run" && toFamily === "idle") {
+    return [ACTION_KEYS.runToStop, ACTION_KEYS.idleTransition, ACTION_KEYS.lookAroundFast];
+  }
+
+  if (fromFamily === "run" && toFamily === "walk") {
+    return [ACTION_KEYS.runToStop, ACTION_KEYS.stopWalking, ACTION_KEYS.startWalking, ACTION_KEYS.idleTransition];
+  }
+
+  if (fromFamily === "idle" && toFamily === "run") {
+    return [ACTION_KEYS.idleTransition, ACTION_KEYS.lookAround, ACTION_KEYS.weightShift];
+  }
+
+  return [ACTION_KEYS.idleTransition, ACTION_KEYS.lookAround, ACTION_KEYS.weightShift, ACTION_KEYS.yawn];
+}
+
+function getActionFamily(actionKey) {
+  if (!actionKey) return "idle";
+
+  if ([ACTION_KEYS.tired, ACTION_KEYS.idleBreathing, ACTION_KEYS.sleepyIdle, ACTION_KEYS.relaxedIdle].includes(actionKey)) {
+    return "sit";
+  }
+
+  if ([ACTION_KEYS.walk, ACTION_KEYS.slowWalk, ACTION_KEYS.fastWalk, ACTION_KEYS.casualWalk, ACTION_KEYS.exploreWalk, ACTION_KEYS.lightJog, ACTION_KEYS.energeticWalk, ACTION_KEYS.activePatrol].includes(actionKey)) {
+    return "walk";
+  }
+
+  if ([ACTION_KEYS.run, ACTION_KEYS.happyRun].includes(actionKey)) {
+    return "run";
+  }
+
+  return "idle";
 }
 
 function buildBehaviorSignature({
