@@ -3,6 +3,54 @@ import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { theme } from "../constants/theme.js";
 import { getActionKindLabel } from "../game/behavior.js";
 
+const STATE_LABELS = {
+  LOW_ENERGY: "낮음",
+  NORMAL_ENERGY: "보통",
+  HIGH_ENERGY: "높음",
+  WEAK: "허약",
+  HEALTHY: "건강",
+  ACTIVE: "활발",
+};
+
+const ACTION_LABELS_KO = {
+  idle: "서 있기",
+  tired: "앉기",
+  slowWalk: "느리게 걷기",
+  walk: "걷기",
+  fastWalk: "빠르게 걷기",
+  run: "뛰기",
+  sleepyIdle: "졸린 서 있기",
+  lookingDown: "아래 보기",
+  slowTiredWalk: "피곤한 느린 걷기",
+  stretchSitting: "앉아서 스트레칭",
+  idleBreathing: "호흡하기",
+  yawn: "하품",
+  weightShift: "중심 옮기기",
+  stopAndRest: "멈추고 쉬기",
+  headNod: "고개 끄덕이기",
+  slowTurn: "천천히 돌기",
+  relaxedIdle: "편안한 서 있기",
+  casualWalk: "평범하게 걷기",
+  exploreWalk: "둘러보기 걷기",
+  stretch: "스트레칭",
+  lightJog: "가벼운 조깅",
+  lookAround: "주변 보기",
+  turnLeftRight: "좌우 보기",
+  smallPause: "짧은 멈춤",
+  footTap: "발 톡톡",
+  idleTransition: "서 있기 전환",
+  quickTurn: "빠른 회전",
+  bounceIdle: "들썩이기",
+  fastStop: "빠른 멈춤",
+  lookAroundFast: "빠르게 주변 보기",
+  shortHop: "짧은 점프",
+  happyRun: "신나는 뛰기",
+  energeticWalk: "활기찬 걷기",
+  dashStart: "달리기 시작",
+  excitedIdle: "신난 서 있기",
+  activePatrol: "활동적인 배회",
+};
+
 export function AdminPanel({ admin, behavior }) {
   if (!admin?.visible || !admin?.canOverride) {
     return null;
@@ -11,32 +59,32 @@ export function AdminPanel({ admin, behavior }) {
   const shortState = admin.forcedShortTermState ?? behavior?.energyState ?? "LOW_ENERGY";
   const longState = admin.forcedLongTermState ?? behavior?.longTermState ?? "WEAK";
   const backgroundState = admin.forcedBackgroundState ?? behavior?.backgroundState ?? shortState;
-  const forcedAction = admin.forcedActionKey ?? "auto";
+  const forcedAction = admin.forcedActionKey ?? "자동";
 
   return (
     <View style={styles.shell}>
-      <Text style={styles.title}>Behavior Dev Panel</Text>
+      <Text style={styles.title}>행동 테스트 패널</Text>
       <Text style={styles.caption}>
-        Dev-only controls for testing states, actions, timing, weights, speed, and background mood.
+        개발자 전용 패널입니다. 상태, 행동, 시간, 속도, 배경 분위기를 빠르게 테스트할 수 있습니다.
       </Text>
 
       <View style={styles.summaryCard}>
-        <SummaryLine label="Current Short Term State" value={shortState} />
-        <SummaryLine label="Current Long Term State" value={longState} />
-        <SummaryLine label="Current Background Mood" value={backgroundState} />
-        <SummaryLine label="Current Forced Action" value={forcedAction} />
+        <SummaryLine label="현재 단기 상태" value={formatState(shortState)} />
+        <SummaryLine label="현재 장기 상태" value={formatState(longState)} />
+        <SummaryLine label="현재 배경 분위기" value={formatState(backgroundState)} />
+        <SummaryLine label="현재 강제 행동" value={forcedAction} />
       </View>
 
       <Pressable onPress={() => admin.setForcedActionKey(null)} style={styles.clearActionButton}>
-        <Text style={styles.clearActionLabel}>Clear Forced Action</Text>
+        <Text style={styles.clearActionLabel}>강제 행동 해제</Text>
       </Pressable>
 
-      <Section title="1. Force Short Term State">
+      <Section title="1. 단기 상태 강제 변경">
         <ButtonRow
           items={[
-            { key: "LOW_ENERGY", label: "LOW" },
-            { key: "NORMAL_ENERGY", label: "NORMAL" },
-            { key: "HIGH_ENERGY", label: "HIGH" },
+            { key: "LOW_ENERGY", label: "낮음" },
+            { key: "NORMAL_ENERGY", label: "보통" },
+            { key: "HIGH_ENERGY", label: "높음" },
           ]}
           selected={admin.forcedShortTermState}
           onSelect={(value) => admin.setForcedShortTermState(value)}
@@ -44,12 +92,12 @@ export function AdminPanel({ admin, behavior }) {
         />
       </Section>
 
-      <Section title="2. Force Long Term State">
+      <Section title="2. 장기 상태 강제 변경">
         <ButtonRow
           items={[
-            { key: "WEAK", label: "WEAK" },
-            { key: "HEALTHY", label: "HEALTHY" },
-            { key: "ACTIVE", label: "ACTIVE" },
+            { key: "WEAK", label: "허약" },
+            { key: "HEALTHY", label: "건강" },
+            { key: "ACTIVE", label: "활발" },
           ]}
           selected={admin.forcedLongTermState}
           onSelect={(value) => admin.setForcedLongTermState(value)}
@@ -57,12 +105,12 @@ export function AdminPanel({ admin, behavior }) {
         />
       </Section>
 
-      <Section title="3. Force Background Mood">
+      <Section title="3. 배경 분위기 강제 적용">
         <ButtonRow
           items={[
-            { key: "LOW_ENERGY", label: "LOW" },
-            { key: "NORMAL_ENERGY", label: "NORMAL" },
-            { key: "HIGH_ENERGY", label: "HIGH" },
+            { key: "LOW_ENERGY", label: "낮음" },
+            { key: "NORMAL_ENERGY", label: "보통" },
+            { key: "HIGH_ENERGY", label: "높음" },
           ]}
           selected={admin.forcedBackgroundState}
           onSelect={(value) => admin.setForcedBackgroundState(value)}
@@ -70,8 +118,8 @@ export function AdminPanel({ admin, behavior }) {
         />
       </Section>
 
-      <Section title="4. Action Testing">
-        <Text style={styles.poolTitle}>Main Action Pool</Text>
+      <Section title="4. 행동 테스트">
+        <Text style={styles.poolTitle}>메인 행동 풀</Text>
         <ActionPool
           actions={behavior?.mainActions ?? []}
           forcedActionKey={admin.forcedActionKey}
@@ -79,7 +127,7 @@ export function AdminPanel({ admin, behavior }) {
           onAdjustWeight={admin.adjustWeightOverride}
         />
 
-        <Text style={[styles.poolTitle, { marginTop: 12 }]}>Transition Action Pool</Text>
+        <Text style={[styles.poolTitle, { marginTop: 12 }]}>전환 행동 풀</Text>
         <ActionPool
           actions={behavior?.transitionActions ?? []}
           forcedActionKey={admin.forcedActionKey}
@@ -88,60 +136,60 @@ export function AdminPanel({ admin, behavior }) {
         />
       </Section>
 
-      <Section title="5. Speed Testing">
+      <Section title="5. 속도 테스트">
         <RangeEditor
-          label="Walking speed multiplier"
+          label="걷기 속도 배수"
           value={admin.walkingSpeedMultiplier}
           onChange={admin.setWalkingSpeedMultiplier}
           step={0.1}
         />
         <RangeEditor
-          label="Running speed multiplier"
+          label="뛰기 속도 배수"
           value={admin.runningSpeedMultiplier}
           onChange={admin.setRunningSpeedMultiplier}
           step={0.1}
         />
         <RangeEditor
-          label="Animation speed multiplier"
+          label="애니메이션 속도 배수"
           value={admin.animationSpeedMultiplier}
           onChange={admin.setAnimationSpeedMultiplier}
           step={0.1}
         />
       </Section>
 
-      <Section title="6. Time Testing">
+      <Section title="6. 시간 테스트">
         <RangeEditor
-          label="Main action duration"
+          label="메인 행동 지속 시간"
           value={admin.mainDurationRange}
           onChange={(min, max) => admin.setMainDurationRange(min, max)}
           pair
         />
         <RangeEditor
-          label="Transition duration"
+          label="전환 행동 지속 시간"
           value={admin.transitionDurationRange}
           onChange={(min, max) => admin.setTransitionDurationRange(min, max)}
           pair
         />
         <RangeEditor
-          label="Random wait duration"
+          label="랜덤 대기 시간"
           value={admin.waitDurationRange}
           onChange={(min, max) => admin.setWaitDurationRange(min, max)}
           pair
         />
       </Section>
 
-      <Section title="7. Weight Testing">
+      <Section title="7. 가중치 테스트">
         <View style={styles.actionGrid}>
           {(behavior?.allActions ?? []).map((action) => {
             const selected = admin.forcedActionKey === action.key;
 
             return (
               <View key={action.key} style={[styles.actionCard, selected && styles.actionCardSelected]}>
-                <Text style={styles.actionName}>{action.label}</Text>
+                <Text style={styles.actionName}>{getAdminActionLabel(action.key, action.label)}</Text>
                 <Text style={styles.actionMeta}>
-                  {`${getActionKindLabel(action.type)} • ${action.available ? "clip" : "placeholder"}`}
+                  {`${getActionKindLabel(action.type) === "Transition" ? "전환" : "메인"} · ${action.available ? "실제 클립" : "임시 항목"}`}
                 </Text>
-                <Text style={styles.actionMeta}>{`weight ${formatWeight(action.weight)}`}</Text>
+                <Text style={styles.actionMeta}>{`가중치 ${formatWeight(action.weight)}`}</Text>
                 <View style={styles.actionButtonRow}>
                   <Pressable onPress={() => admin.adjustWeightOverride(action.key, -1)} style={styles.miniButton}>
                     <Text style={styles.miniButtonLabel}>-</Text>
@@ -150,7 +198,7 @@ export function AdminPanel({ admin, behavior }) {
                     <Text style={styles.miniButtonLabel}>+</Text>
                   </Pressable>
                   <Pressable onPress={() => admin.setForcedActionKey(action.key)} style={styles.forceButton}>
-                    <Text style={styles.forceButtonLabel}>Force</Text>
+                    <Text style={styles.forceButtonLabel}>강제</Text>
                   </Pressable>
                 </View>
               </View>
@@ -160,11 +208,11 @@ export function AdminPanel({ admin, behavior }) {
       </Section>
 
       <Pressable onPress={admin.resetBehavior} style={styles.resetButton}>
-        <Text style={styles.resetLabel}>Reset Behavior Overrides</Text>
+        <Text style={styles.resetLabel}>행동 설정 초기화</Text>
       </Pressable>
 
       <Pressable onPress={admin.resetMock} style={styles.resetButtonSecondary}>
-        <Text style={styles.resetLabelSecondary}>Reset Mock Data</Text>
+        <Text style={styles.resetLabelSecondary}>모의 데이터 초기화</Text>
       </Pressable>
     </View>
   );
@@ -204,7 +252,7 @@ function ButtonRow({ items, selected, onSelect, onClear }) {
         );
       })}
       <Pressable onPress={onClear} style={styles.button}>
-        <Text style={styles.buttonLabel}>Clear</Text>
+        <Text style={styles.buttonLabel}>해제</Text>
       </Pressable>
     </View>
   );
@@ -219,9 +267,9 @@ function ActionPool({ actions, forcedActionKey, onForceAction, onAdjustWeight })
         return (
           <View key={action.key} style={[styles.poolRow, selected && styles.poolRowSelected]}>
             <View style={styles.poolText}>
-              <Text style={styles.poolName}>{action.label}</Text>
+              <Text style={styles.poolName}>{getAdminActionLabel(action.key, action.label)}</Text>
               <Text style={styles.poolMeta}>
-                {`${getActionKindLabel(action.type)} • ${action.available ? "clip" : "placeholder"} • weight ${formatWeight(action.weight)}`}
+                {`${getActionKindLabel(action.type) === "Transition" ? "전환" : "메인"} · ${action.available ? "실제 클립" : "임시 항목"} · 가중치 ${formatWeight(action.weight)}`}
               </Text>
             </View>
             <View style={styles.poolControls}>
@@ -232,7 +280,7 @@ function ActionPool({ actions, forcedActionKey, onForceAction, onAdjustWeight })
                 <Text style={styles.miniButtonLabel}>+</Text>
               </Pressable>
               <Pressable onPress={() => onForceAction(action.key)} style={styles.forceButton}>
-                <Text style={styles.forceButtonLabel}>Force</Text>
+                <Text style={styles.forceButtonLabel}>강제</Text>
               </Pressable>
             </View>
           </View>
@@ -256,7 +304,7 @@ function RangeEditor({ label, value, onChange, step = 0.1, pair = false }) {
             style={styles.input}
             onChangeText={(text) => onChange(parseFloat(text || "0"), localMax)}
           />
-          <Text style={styles.rangeDash}>to</Text>
+          <Text style={styles.rangeDash}>~</Text>
           <TextInput
             value={String(localMax)}
             keyboardType="decimal-pad"
@@ -290,6 +338,14 @@ function formatWeight(value) {
 
 function roundToOne(value) {
   return Math.round(value * 10) / 10;
+}
+
+function formatState(value) {
+  return STATE_LABELS[value] ?? value;
+}
+
+function getAdminActionLabel(actionKey, fallbackLabel) {
+  return ACTION_LABELS_KO[actionKey] ?? fallbackLabel;
 }
 
 const styles = StyleSheet.create({
