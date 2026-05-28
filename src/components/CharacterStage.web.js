@@ -92,7 +92,7 @@ function useBehaviorPlayback(behavior, motionOverride) {
     let active = true;
     let previousActionKey = resolveActionByKey(actions, behavior?.defaultActionKey)?.key ?? actions[0].key;
 
-    const scheduleNext = (forceActionKey = null, recovery = false) => {
+    const scheduleNext = (forceActionKey = null) => {
       if (!active) return;
 
       const nextAction = forceActionKey
@@ -107,15 +107,10 @@ function useBehaviorPlayback(behavior, motionOverride) {
       previousActionKey = nextAction.key;
       setCurrentActionKey(nextAction.key);
 
-      const [minWait, maxWait] = getActionDurationRange(nextAction, { recovery });
+      const [minWait, maxWait] = getActionDurationRange(nextAction);
       const waitMs = randomBetween(minWait, maxWait) * 1000;
       timerRef.current = setTimeout(() => {
         if (!active) return;
-
-        if (nextAction.key === ACTION_KEYS.run) {
-          scheduleNext(ACTION_KEYS.walk, true);
-          return;
-        }
 
         scheduleNext();
       }, waitMs);
@@ -191,6 +186,7 @@ function AnimatedCharacter({ character, rotation, state, currentAction }) {
   const actionKey = currentAction?.key ?? state.animationState ?? ACTION_KEYS.idle;
   const actionClipSpeed = currentAction?.clipSpeed ?? state.animationSpeed ?? 1;
   const worldRotationSpeed = currentAction?.worldSpeed ?? 0;
+  const clipAnimationState = currentAction?.clipKey ?? actionKey;
 
   useFrame((frameState) => {
     if (!rootRef.current) return;
@@ -214,7 +210,7 @@ function AnimatedCharacter({ character, rotation, state, currentAction }) {
       <MiniWorld motionState={actionKey} rotationSpeed={worldRotationSpeed} />
 
       <group position={[0, 0.16, 0]} scale={MINI_WORLD_LAYOUT.characterScale}>
-        <GLBCharacterModel character={character} animationState={actionKey} animationSpeed={actionClipSpeed} />
+        <GLBCharacterModel character={character} animationState={clipAnimationState} animationSpeed={actionClipSpeed} />
       </group>
     </group>
   );

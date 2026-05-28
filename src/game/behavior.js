@@ -18,6 +18,7 @@ export const ACTION_KEYS = {
   tired: "tired",
   walk: "walk",
   run: "run",
+  dance: "dance",
 };
 
 export const ACTION_LABELS = {
@@ -25,6 +26,7 @@ export const ACTION_LABELS = {
   tired: "Sitting",
   walk: "Walking",
   run: "Running",
+  dance: "Dancing",
 };
 
 const BASE_ACTIONS = {
@@ -55,11 +57,26 @@ const BASE_ACTIONS = {
   run: {
     key: ACTION_KEYS.run,
     label: ACTION_LABELS.run,
-    weight: 24,
+    weight: 22,
     waitRange: [10, 13.5],
     clipSpeed: 1.1,
     worldSpeed: 0.26,
   },
+  dance: {
+    key: ACTION_KEYS.dance,
+    label: ACTION_LABELS.dance,
+    clipKey: ACTION_KEYS.run,
+    weight: 22,
+    waitRange: [10, 13.5],
+    clipSpeed: 1.14,
+    worldSpeed: 0.28,
+  },
+};
+
+const STATE_ACTION_KEYS = {
+  [ENERGY_STATES.LOW_ENERGY]: [ACTION_KEYS.idle, ACTION_KEYS.tired],
+  [ENERGY_STATES.NORMAL_ENERGY]: [ACTION_KEYS.walk],
+  [ENERGY_STATES.HIGH_ENERGY]: [ACTION_KEYS.run, ACTION_KEYS.dance],
 };
 
 const ENERGY_BEHAVIOR = {
@@ -157,8 +174,12 @@ export function buildBehaviorProfile({ steps = 0, history = [], goal = DEFAULT_S
   const longTermState = getLongTermState(history, goal);
   const energyProfile = ENERGY_BEHAVIOR[energyState];
   const longTermProfile = LONG_TERM_BEHAVIOR[longTermState];
+  const allowedActionKeys = STATE_ACTION_KEYS[energyState] ?? [ACTION_KEYS.idle];
 
-  const actions = Object.values(BASE_ACTIONS).map((action) => {
+  const actions = allowedActionKeys.map((actionKey) => {
+    const action = BASE_ACTIONS[actionKey];
+    if (!action) return null;
+
     const weightBias = (energyProfile.weightBias?.[action.key] ?? 0) + (longTermProfile.weightBias?.[action.key] ?? 0);
     const waitScale = energyProfile.waitScale * longTermProfile.waitScale;
 
@@ -169,7 +190,7 @@ export function buildBehaviorProfile({ steps = 0, history = [], goal = DEFAULT_S
       clipSpeed: roundToTwo(action.clipSpeed * energyProfile.clipSpeedScale * longTermProfile.clipSpeedScale),
       worldSpeed: roundToThree(action.worldSpeed * energyProfile.worldSpeedScale * longTermProfile.worldSpeedScale),
     };
-  });
+  }).filter(Boolean);
 
   const defaultAction = actions.reduce((best, action) => (action.weight > best.weight ? action : best), actions[0]);
   const actionMap = actions.reduce((map, action) => {
@@ -180,6 +201,7 @@ export function buildBehaviorProfile({ steps = 0, history = [], goal = DEFAULT_S
   return {
     energyState,
     longTermState,
+    allowedActionKeys,
     actions,
     actionMap,
     defaultActionKey: defaultAction?.key ?? ACTION_KEYS.idle,
@@ -217,9 +239,6 @@ export function getActionLabel(actionKey) {
 
 export function getActionDurationRange(action, { recovery = false } = {}) {
   if (!action) return [10, 13.5];
-  if (recovery && action.key === ACTION_KEYS.walk) {
-    return [3, 3.5];
-  }
 
   return action.waitRange ?? [10, 13.5];
 }
