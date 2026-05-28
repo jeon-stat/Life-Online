@@ -266,7 +266,6 @@ function AnimatedCharacter({ character, rotation, state, playback }) {
   const rootRef = useRef(null);
   const actionKey = playback?.currentAction?.key ?? state.animationState ?? ACTION_KEYS.idle;
   const actionClipSpeed = playback?.currentSpeedMultiplier ?? state.animationSpeed ?? 1;
-  const animationLoopMode = playback?.currentAction?.loopMode ?? "repeat";
   const worldRotationSpeed = playback?.currentAction?.worldSpeed ?? 0;
   const clipAnimationState = playback?.clipActionKey ?? actionKey;
 
@@ -292,12 +291,7 @@ function AnimatedCharacter({ character, rotation, state, playback }) {
       <MiniWorld motionState={playback?.currentAction?.motionKind ?? actionKey} rotationSpeed={worldRotationSpeed} />
 
       <group position={[0, 0.16, 0]} scale={MINI_WORLD_LAYOUT.characterScale}>
-        <GLBCharacterModel
-          character={character}
-          animationState={clipAnimationState}
-          animationSpeed={actionClipSpeed}
-          animationLoopMode={animationLoopMode}
-        />
+        <GLBCharacterModel character={character} animationState={clipAnimationState} animationSpeed={actionClipSpeed} />
       </group>
     </group>
   );
