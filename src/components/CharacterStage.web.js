@@ -3,7 +3,7 @@ import { PanResponder, StyleSheet, Text, View } from "react-native";
 import { useFrame } from "@react-three/fiber";
 import { BufferGeometry, DoubleSide, Float32BufferAttribute, Vector3 } from "three";
 
-import { ACTION_KEYS, ACTION_TYPES, getActionKindLabel, pickTransitionAction, pickWeightedAction, resolveActionByKey } from "../game/behavior.js";
+import { ACTION_KEYS, ACTION_TYPES, getActionKindLabel, pickWeightedAction, resolveActionByKey } from "../game/behavior.js";
 import { GLBCharacterModel } from "../models/GLBCharacterModel.js";
 import { StageCanvas } from "../scene/StageCanvas.web.js";
 import { getRotationFromDrag } from "../scene/rotationMath.js";
@@ -64,7 +64,7 @@ function useBehaviorPlayback(behavior) {
   const [snapshot, setSnapshot] = useState(() => createPlaybackSnapshot(behavior));
   const [clock, setClock] = useState(() => Date.now());
   const timerRef = useRef(null);
-  const lastTransitionKeyRef = useRef(null);
+  const lastPlayableClipRef = useRef("idle");
 
   useEffect(() => {
     const interval = setInterval(() => setClock(Date.now()), 250);
@@ -91,21 +91,22 @@ function useBehaviorPlayback(behavior) {
     const applyAction = (action, phase, nextActionPreview = null, phaseDurationMs = null) => {
       if (!active || !action) return;
 
+      const playableClipKey = action.playable ? action.clipKey : lastPlayableClipRef.current || "idle";
+      if (action.playable && action.clipKey) {
+        lastPlayableClipRef.current = action.clipKey;
+      }
+
       setSnapshot((current) => ({
         ...current,
         phase,
         currentAction: action,
         currentActionType: phase === "wait" ? current.currentActionType : action.type,
-        clipActionKey: action.key,
+        clipActionKey: playableClipKey,
         nextActionPreview,
         currentWeight: action.weight,
         currentSpeedMultiplier: action.clipSpeed,
         phaseEndsAt: phaseDurationMs ? Date.now() + phaseDurationMs : null,
       }));
-
-      if (phase === "transition") {
-        lastTransitionKeyRef.current = action.key;
-      }
     };
 
     const scheduleWait = (nextStage, currentAction, nextActionPreview) => {
@@ -113,58 +114,52 @@ function useBehaviorPlayback(behavior) {
 
       const [minWait, maxWait] = behavior?.timing?.waitDurationRange ?? [1, 4];
       const waitMs = randomBetween(minWait, maxWait) * 1000;
-      if (currentAction) {
-        applyAction(currentAction, "wait", nextActionPreview, waitMs);
-      }
+      applyAction(currentAction, "wait", nextActionPreview, waitMs);
 
       timerRef.current = setTimeout(() => {
         if (!active) return;
 
-        if (nextStage === "main") {
-          scheduleMain(nextActionPreview?.key ?? null, nextActionPreview ?? null);
+        if (nextStage === "transition") {
+          scheduleTransition(nextActionPreview?.key ?? null);
+          return;
         }
+
+        scheduleMain(nextActionPreview?.key ?? null);
       }, waitMs);
     };
 
-    const scheduleMain = (previousMainKey = null, forcedMainAction = null) => {
+    const scheduleMain = (previousMainKey = null) => {
       if (!active) return;
 
-      const currentMain =
-        forcedMainAction ??
-        pickWeightedAction(mainActions, previousMainKey) ??
-        resolveActionByKey(mainActions, behavior.defaultMainActionKey) ??
-        mainActions[0];
-      const nextMainPreview =
-        pickWeightedAction(mainActions, currentMain?.key ?? previousMainKey) ??
-        resolveActionByKey(mainActions, behavior.defaultMainActionKey) ??
-        mainActions[0] ??
-        null;
-      const [minDuration, maxDuration] = currentMain.durationRange ?? behavior.timing.mainDurationRange;
+      const nextAction = pickWeightedAction(mainActions, previousMainKey) ?? resolveActionByKey(mainActions, behavior.defaultMainActionKey) ?? mainActions[0];
+      const nextPreview = pickWeightedAction(transitionActions, behavior.defaultTransitionActionKey) ?? transitionActions[0] ?? null;
+      const [minDuration, maxDuration] = nextAction.durationRange ?? behavior.timing.mainDurationRange;
       const actionMs = randomBetween(minDuration, maxDuration) * 1000;
 
-      applyAction(currentMain, "main", nextMainPreview, actionMs);
+      applyAction(nextAction, "main", nextPreview, actionMs);
 
       timerRef.current = setTimeout(() => {
         if (!active) return;
-        scheduleTransition(currentMain, nextMainPreview);
+        scheduleWait("transition", nextAction, nextPreview);
       }, actionMs);
     };
 
-    const scheduleTransition = (fromMainAction, nextMainAction = null) => {
+    const scheduleTransition = (previousTransitionKey = null) => {
       if (!active) return;
 
-      const transitionAction =
-        pickTransitionAction(transitionActions, fromMainAction?.key ?? null, nextMainAction?.key ?? null, lastTransitionKeyRef.current) ??
+      const nextAction =
+        pickWeightedAction(transitionActions, previousTransitionKey) ??
         resolveActionByKey(transitionActions, behavior.defaultTransitionActionKey) ??
         transitionActions[0];
-      const [minDuration, maxDuration] = transitionAction.durationRange ?? behavior.timing.transitionDurationRange;
+      const nextPreview = pickWeightedAction(mainActions, behavior.defaultMainActionKey) ?? mainActions[0] ?? null;
+      const [minDuration, maxDuration] = nextAction.durationRange ?? behavior.timing.transitionDurationRange;
       const actionMs = randomBetween(minDuration, maxDuration) * 1000;
 
-      applyAction(transitionAction, "transition", nextMainAction, actionMs);
+      applyAction(nextAction, "transition", nextPreview, actionMs);
 
       timerRef.current = setTimeout(() => {
         if (!active) return;
-        scheduleWait("main", transitionAction, nextMainAction);
+        scheduleWait("main", nextAction, nextPreview);
       }, actionMs);
     };
 
@@ -206,7 +201,7 @@ function createPlaybackSnapshot(behavior) {
     phase: "idle",
     currentAction: fallbackAction,
     currentActionType: fallbackAction?.type ?? ACTION_TYPES.MAIN,
-    clipActionKey: fallbackAction?.key ?? ACTION_KEYS.idle,
+    clipActionKey: fallbackAction?.clipKey ?? "idle",
     nextActionPreview: null,
     currentWeight: fallbackAction?.weight ?? 0,
     currentSpeedMultiplier: fallbackAction?.clipSpeed ?? 1,

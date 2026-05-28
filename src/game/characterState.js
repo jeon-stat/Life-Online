@@ -17,7 +17,7 @@ export function buildCharacterViewModel({ todayRecord, history, goal = DEFAULT_S
     runningSpeedMultiplier: admin?.runningSpeedMultiplier ?? 1,
     animationSpeedMultiplier: admin?.animationSpeedMultiplier ?? 1,
     mainDurationRange: admin?.mainDurationRange ?? [8, 15],
-    transitionDurationRange: admin?.transitionDurationRange ?? [0.5, 2],
+    transitionDurationRange: admin?.transitionDurationRange ?? [1, 3],
     waitDurationRange: admin?.waitDurationRange ?? [1, 4],
   };
   const behavior = buildBehaviorProfile({ steps, history, goal, overrides: behaviorOverrides });
@@ -30,7 +30,7 @@ export function buildCharacterViewModel({ todayRecord, history, goal = DEFAULT_S
   const memories = getMemories(history, goal);
   const forcedAction = behavior.actionMap[behavior.forcedActionKey] ?? null;
   const defaultAction = behavior.mainActionMap[behavior.defaultMainActionKey] ?? behavior.mainActions[0] ?? null;
-  const animationState = forcedAction?.key ?? defaultAction?.key ?? "idle";
+  const animationState = forcedAction?.clipKey ?? defaultAction?.clipKey ?? "idle";
 
   return {
     steps,
