@@ -10,7 +10,7 @@ import { theme } from "../constants/theme.js";
 export function CharacterScreen() {
   const { currentUser, signOut } = useAuth();
   const { today, history, goal, admin } = useStepData();
-  const viewState = buildCharacterViewModel({ todayRecord: today, history, goal });
+  const viewState = buildCharacterViewModel({ todayRecord: today, history, goal, admin });
   const recentMemories = viewState.memories.slice(0, 2);
 
   return (
@@ -64,7 +64,7 @@ export function CharacterScreen() {
         )}
       </View>
 
-      <AdminPanel admin={admin} />
+      <AdminPanel admin={admin} behavior={viewState.behavior} />
     </ScrollView>
   );
 }

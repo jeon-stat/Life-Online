@@ -31,13 +31,13 @@ export const theme = {
     LOW_ENERGY: {
       label: "\uCC28\uBD84",
       bubble: "\uC624\uB298\uC740 \uCC9C\uCC9C\uD788.",
-      description: "\uC624\uB298 \uAC78\uC74C\uC774 \uC801\uC5B4\uC11C \uCC9C\uCC9C\uD788 \uC218\uB300\uB294 \uBD84\uC704\uAE30\uC608\uC694.",
-      background: ["#f4f1ea", "#faf8f3"],
-      stage: "#f4efe6",
-      bubbleSurface: "#f7f2ea",
-      effect: "sleepy",
+      description: "\uC624\uB298\uC740 \uC870\uC6A9\uD558\uACE0 \uD754\uB4E4\uB9AC\uC9C0 \uC54A\uB294 \uB0A0\uC774\uC5D0\uC694.",
+      background: ["#f2f0ea", "#fbfaf6"],
+      stage: "#f3efe5",
+      bubbleSurface: "#f7f2e9",
+      effect: "cloudy",
       animationSpeed: 0.72,
-      bobAmount: 0.028,
+      bobAmount: 0.026,
     },
     NORMAL_ENERGY: {
       label: "\uD3C9\uC628",
@@ -53,7 +53,7 @@ export const theme = {
     HIGH_ENERGY: {
       label: "\uD65C\uBC1C",
       bubble: "\uC65C\uCC0D \uB354 \uAC78\uC5B4\uBCF4\uACE0 \uC2F6\uC5B4!",
-      description: "\uC624\uB298 \uC5D0\uB108\uC9C0\uAC00 \uB192\uC544\uC11C \uBC1C\uAC78\uC74C\uC774 \uD45C\uC815\uC744 \uB354 \uC0B4\uC544\uB0A0 \uC0C1\uD0DC\uC608\uC694.",
+      description: "\uC624\uB298 \uC5D0\uB108\uC9C0\uAC00 \uB192\uC544\uC11C \uBC1C\uAC78\uC74C\uACFC \uBD84\uC704\uAE30\uAC00 \uB354 \uC0B4\uC544\uB0B4\uC694.",
       background: ["#eef8ef", "#f7fcf4"],
       stage: "#edf8f0",
       bubbleSurface: "#edf8ef",

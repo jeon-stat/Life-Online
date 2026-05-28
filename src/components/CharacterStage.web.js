@@ -1,14 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { PanResponder, StyleSheet, View } from "react-native";
+import { PanResponder, StyleSheet, Text, View } from "react-native";
 import { useFrame } from "@react-three/fiber";
 import { BufferGeometry, DoubleSide, Float32BufferAttribute, Vector3 } from "three";
 
-import {
-  ACTION_KEYS,
-  getActionDurationRange,
-  pickWeightedAction,
-  resolveActionByKey,
-} from "../game/behavior.js";
+import { ACTION_KEYS, ACTION_TYPES, getActionKindLabel, pickWeightedAction, resolveActionByKey } from "../game/behavior.js";
 import { GLBCharacterModel } from "../models/GLBCharacterModel.js";
 import { StageCanvas } from "../scene/StageCanvas.web.js";
 import { getRotationFromDrag } from "../scene/rotationMath.js";
@@ -65,11 +60,16 @@ const MINI_WORLD_PATH = {
   stripSegments: 8,
 };
 
-function useBehaviorPlayback(behavior, motionOverride) {
-  const [currentActionKey, setCurrentActionKey] = useState(
-    () => resolveActionByKey(behavior?.actions, motionOverride)?.key ?? behavior?.defaultActionKey ?? ACTION_KEYS.idle,
-  );
+function useBehaviorPlayback(behavior) {
+  const [snapshot, setSnapshot] = useState(() => createPlaybackSnapshot(behavior));
+  const [clock, setClock] = useState(() => Date.now());
   const timerRef = useRef(null);
+  const lastPlayableClipRef = useRef("idle");
+
+  useEffect(() => {
+    const interval = setInterval(() => setClock(Date.now()), 250);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (timerRef.current) {
@@ -77,46 +77,104 @@ function useBehaviorPlayback(behavior, motionOverride) {
       timerRef.current = null;
     }
 
-    const actions = behavior?.actions ?? [];
-    if (!actions.length) {
-      setCurrentActionKey(ACTION_KEYS.idle);
-      return undefined;
-    }
+    const mainActions = behavior?.mainActions ?? [];
+    const transitionActions = behavior?.transitionActions ?? [];
+    const forcedAction = resolveActionByKey(behavior?.allActions, behavior?.forcedActionKey);
 
-    const forcedAction = resolveActionByKey(actions, motionOverride);
-    if (forcedAction) {
-      setCurrentActionKey(forcedAction.key);
+    if (!mainActions.length) {
+      setSnapshot(createPlaybackSnapshot(behavior));
       return undefined;
     }
 
     let active = true;
-    let previousActionKey = resolveActionByKey(actions, behavior?.defaultActionKey)?.key ?? actions[0].key;
 
-    const scheduleNext = (forceActionKey = null) => {
-      if (!active) return;
+    const applyAction = (action, phase, nextActionPreview = null, phaseDurationMs = null) => {
+      if (!active || !action) return;
 
-      const nextAction = forceActionKey
-        ? resolveActionByKey(actions, forceActionKey)
-        : pickWeightedAction(actions, previousActionKey) ?? actions[0];
-
-      if (!nextAction) {
-        setCurrentActionKey(ACTION_KEYS.idle);
-        return;
+      const playableClipKey = action.playable ? action.clipKey : lastPlayableClipRef.current || "idle";
+      if (action.playable && action.clipKey) {
+        lastPlayableClipRef.current = action.clipKey;
       }
 
-      previousActionKey = nextAction.key;
-      setCurrentActionKey(nextAction.key);
+      setSnapshot((current) => ({
+        ...current,
+        phase,
+        currentAction: action,
+        currentActionType: phase === "wait" ? current.currentActionType : action.type,
+        clipActionKey: playableClipKey,
+        nextActionPreview,
+        currentWeight: action.weight,
+        currentSpeedMultiplier: action.clipSpeed,
+        phaseEndsAt: phaseDurationMs ? Date.now() + phaseDurationMs : null,
+      }));
+    };
 
-      const [minWait, maxWait] = getActionDurationRange(nextAction);
+    const scheduleWait = (nextStage, currentAction, nextActionPreview) => {
+      if (!active) return;
+
+      const [minWait, maxWait] = behavior?.timing?.waitDurationRange ?? [1, 4];
       const waitMs = randomBetween(minWait, maxWait) * 1000;
+      applyAction(currentAction, "wait", nextActionPreview, waitMs);
+
       timerRef.current = setTimeout(() => {
         if (!active) return;
 
-        scheduleNext();
+        if (nextStage === "transition") {
+          scheduleTransition(nextActionPreview?.key ?? null);
+          return;
+        }
+
+        scheduleMain(nextActionPreview?.key ?? null);
       }, waitMs);
     };
 
-    scheduleNext();
+    const scheduleMain = (previousMainKey = null) => {
+      if (!active) return;
+
+      const nextAction = pickWeightedAction(mainActions, previousMainKey) ?? resolveActionByKey(mainActions, behavior.defaultMainActionKey) ?? mainActions[0];
+      const nextPreview = pickWeightedAction(transitionActions, behavior.defaultTransitionActionKey) ?? transitionActions[0] ?? null;
+      const [minDuration, maxDuration] = nextAction.durationRange ?? behavior.timing.mainDurationRange;
+      const actionMs = randomBetween(minDuration, maxDuration) * 1000;
+
+      applyAction(nextAction, "main", nextPreview, actionMs);
+
+      timerRef.current = setTimeout(() => {
+        if (!active) return;
+        scheduleWait("transition", nextAction, nextPreview);
+      }, actionMs);
+    };
+
+    const scheduleTransition = (previousTransitionKey = null) => {
+      if (!active) return;
+
+      const nextAction =
+        pickWeightedAction(transitionActions, previousTransitionKey) ??
+        resolveActionByKey(transitionActions, behavior.defaultTransitionActionKey) ??
+        transitionActions[0];
+      const nextPreview = pickWeightedAction(mainActions, behavior.defaultMainActionKey) ?? mainActions[0] ?? null;
+      const [minDuration, maxDuration] = nextAction.durationRange ?? behavior.timing.transitionDurationRange;
+      const actionMs = randomBetween(minDuration, maxDuration) * 1000;
+
+      applyAction(nextAction, "transition", nextPreview, actionMs);
+
+      timerRef.current = setTimeout(() => {
+        if (!active) return;
+        scheduleWait("main", nextAction, nextPreview);
+      }, actionMs);
+    };
+
+    if (forcedAction) {
+      applyAction(forcedAction, forcedAction.type, null, null);
+      return () => {
+        active = false;
+        if (timerRef.current) {
+          clearTimeout(timerRef.current);
+          timerRef.current = null;
+        }
+      };
+    }
+
+    scheduleMain();
 
     return () => {
       active = false;
@@ -125,16 +183,38 @@ function useBehaviorPlayback(behavior, motionOverride) {
         timerRef.current = null;
       }
     };
-  }, [behavior?.signature, behavior?.defaultActionKey, motionOverride]);
+  }, [behavior?.signature]);
 
-  return behavior?.actionMap?.[currentActionKey] ?? behavior?.actionMap?.[behavior?.defaultActionKey] ?? null;
+  return useMemo(() => {
+    const remainingDuration = snapshot.phaseEndsAt ? Math.max(0, (snapshot.phaseEndsAt - clock) / 1000) : null;
+    return {
+      ...snapshot,
+      remainingDuration,
+    };
+  }, [clock, snapshot]);
+}
+
+function createPlaybackSnapshot(behavior) {
+  const fallbackAction = behavior?.mainActionMap?.[behavior?.defaultMainActionKey] ?? behavior?.mainActions?.[0] ?? null;
+
+  return {
+    phase: "idle",
+    currentAction: fallbackAction,
+    currentActionType: fallbackAction?.type ?? ACTION_TYPES.MAIN,
+    clipActionKey: fallbackAction?.clipKey ?? "idle",
+    nextActionPreview: null,
+    currentWeight: fallbackAction?.weight ?? 0,
+    currentSpeedMultiplier: fallbackAction?.clipSpeed ?? 1,
+    remainingDuration: null,
+    phaseEndsAt: null,
+  };
 }
 
 export function CharacterStage({ character, state, onInteractionChange }) {
   const [rotation, setRotation] = useState(STAGE_LAYOUT.defaultRotation);
   const rotationRef = useRef(STAGE_LAYOUT.defaultRotation);
   const dragStartRef = useRef(STAGE_LAYOUT.defaultRotation);
-  const currentAction = useBehaviorPlayback(state.behavior, state.motionOverride);
+  const playback = useBehaviorPlayback(state.behavior);
 
   const panResponder = useMemo(
     () =>
@@ -171,22 +251,23 @@ export function CharacterStage({ character, state, onInteractionChange }) {
     <View style={styles.shell}>
       <View style={[styles.glowBack, { backgroundColor: state.background?.[0] ?? "rgba(255,255,255,0.48)" }]} />
       <View style={styles.effectWrap} pointerEvents="none">
-        <StageEffect effect={state.effect} />
+        <StageEffect effect={state.effect} mood={state.sceneMood} />
       </View>
       <StageCanvas>
-        <AnimatedCharacter character={character} rotation={rotation} state={state} currentAction={currentAction} />
+        <AnimatedCharacter character={character} rotation={rotation} state={state} playback={playback} />
       </StageCanvas>
+      {state.debugVisible ? <BehaviorDebugOverlay state={state} playback={playback} /> : null}
       <View style={styles.gestureHotspot} {...panResponder.panHandlers} />
     </View>
   );
 }
 
-function AnimatedCharacter({ character, rotation, state, currentAction }) {
+function AnimatedCharacter({ character, rotation, state, playback }) {
   const rootRef = useRef(null);
-  const actionKey = currentAction?.key ?? state.animationState ?? ACTION_KEYS.idle;
-  const actionClipSpeed = currentAction?.clipSpeed ?? state.animationSpeed ?? 1;
-  const worldRotationSpeed = currentAction?.worldSpeed ?? 0;
-  const clipAnimationState = currentAction?.clipKey ?? actionKey;
+  const actionKey = playback?.currentAction?.key ?? state.animationState ?? ACTION_KEYS.idle;
+  const actionClipSpeed = playback?.currentSpeedMultiplier ?? state.animationSpeed ?? 1;
+  const worldRotationSpeed = playback?.currentAction?.worldSpeed ?? 0;
+  const clipAnimationState = playback?.clipActionKey ?? actionKey;
 
   useFrame((frameState) => {
     if (!rootRef.current) return;
@@ -207,12 +288,39 @@ function AnimatedCharacter({ character, rotation, state, currentAction }) {
 
   return (
     <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY, 0]}>
-      <MiniWorld motionState={actionKey} rotationSpeed={worldRotationSpeed} />
+      <MiniWorld motionState={playback?.currentAction?.motionKind ?? actionKey} rotationSpeed={worldRotationSpeed} />
 
       <group position={[0, 0.16, 0]} scale={MINI_WORLD_LAYOUT.characterScale}>
         <GLBCharacterModel character={character} animationState={clipAnimationState} animationSpeed={actionClipSpeed} />
       </group>
     </group>
+  );
+}
+
+function BehaviorDebugOverlay({ state, playback }) {
+  const currentAction = playback?.currentAction;
+  const nextPreview = playback?.nextActionPreview;
+
+  return (
+    <View style={styles.debugOverlay} pointerEvents="none">
+      <DebugLine label="Current Short Term State" value={state.energyState ?? "n/a"} />
+      <DebugLine label="Current Long Term State" value={state.longTermState ?? "n/a"} />
+      <DebugLine label="Current Action" value={currentAction?.label ?? "idle"} />
+      <DebugLine label="Current Action Type" value={playback?.phase === "wait" ? "Waiting" : getActionKindLabel(playback?.currentActionType)} />
+      <DebugLine label="Current Weight" value={formatDebugNumber(playback?.currentWeight)} />
+      <DebugLine label="Current Speed Multiplier" value={formatDebugNumber(playback?.currentSpeedMultiplier)} />
+      <DebugLine label="Remaining Duration" value={formatDebugNumber(playback?.remainingDuration)} />
+      <DebugLine label="Next Action Preview" value={nextPreview?.label ?? "none"} />
+    </View>
+  );
+}
+
+function DebugLine({ label, value }) {
+  return (
+    <View style={styles.debugLine}>
+      <Text style={styles.debugLabel}>{label}</Text>
+      <Text style={styles.debugValue}>{String(value)}</Text>
+    </View>
   );
 }
 
@@ -357,7 +465,17 @@ function randomBetween(min, max) {
   return min + Math.random() * (max - min);
 }
 
-function StageEffect({ effect }) {
+function formatDebugNumber(value) {
+  if (value == null || Number.isNaN(value)) return "n/a";
+  if (typeof value === "number") return value.toFixed(2).replace(/\.00$/, "");
+  return String(value);
+}
+
+function StageEffect({ effect, mood }) {
+  if (effect === "cloudy") {
+    return <CloudLayer speed={mood?.cloudSpeed ?? 0.28} />;
+  }
+
   if (effect === "sparkle") {
     return (
       <>
@@ -385,6 +503,30 @@ function StageEffect({ effect }) {
   );
 }
 
+function CloudLayer({ speed = 0.28 }) {
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    const intervalMs = Math.max(160, 560 / Math.max(0.2, speed));
+    const interval = setInterval(() => {
+      setTick((value) => (value + 1) % 1000);
+    }, intervalMs);
+
+    return () => clearInterval(interval);
+  }, [speed]);
+
+  const cloudShift = Math.sin(tick * 0.06) * Math.max(3, 7 * speed);
+  const cloudDrift = Math.cos(tick * 0.03) * Math.max(2, 4 * speed);
+
+  return (
+    <>
+      <View style={[styles.cloud, styles.cloudOne, { transform: [{ translateX: cloudShift }] }]} />
+      <View style={[styles.cloud, styles.cloudTwo, { transform: [{ translateX: -cloudShift * 0.8 }] }]} />
+      <View style={[styles.cloud, styles.cloudThree, { transform: [{ translateX: cloudDrift }] }]} />
+    </>
+  );
+}
+
 const styles = StyleSheet.create({
   shell: {
     height: STAGE_LAYOUT.heroHeight,
@@ -403,6 +545,33 @@ const styles = StyleSheet.create({
   },
   effectWrap: {
     ...StyleSheet.absoluteFillObject,
+  },
+  debugOverlay: {
+    position: "absolute",
+    left: 10,
+    bottom: 10,
+    zIndex: 20,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    maxWidth: 240,
+    backgroundColor: "rgba(20, 28, 40, 0.75)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    gap: 4,
+  },
+  debugLine: {
+    gap: 1,
+  },
+  debugLabel: {
+    color: "rgba(255,255,255,0.68)",
+    fontSize: 9,
+    fontWeight: "700",
+  },
+  debugValue: {
+    color: "#ffffff",
+    fontSize: 11,
+    fontWeight: "800",
   },
   gestureHotspot: {
     position: "absolute",
@@ -456,6 +625,30 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.55)",
+  },
+  cloud: {
+    position: "absolute",
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.68)",
+    opacity: 0.72,
+  },
+  cloudOne: {
+    top: 34,
+    left: 28,
+    width: 68,
+    height: 30,
+  },
+  cloudTwo: {
+    top: 70,
+    right: 26,
+    width: 84,
+    height: 34,
+  },
+  cloudThree: {
+    top: 128,
+    left: 48,
+    width: 58,
+    height: 24,
   },
   dotOne: {
     top: 76,

@@ -34,7 +34,7 @@ export function HomeScreen() {
     todayRecord: today,
     history,
     goal,
-    motionOverride: admin?.motionOverride ?? null,
+    admin,
   });
 
   return (
@@ -63,7 +63,7 @@ export function HomeScreen() {
           accent
         />
 
-        <AdminPanel admin={admin} />
+        <AdminPanel admin={admin} behavior={viewState.behavior} />
       </ScrollView>
     </View>
   );
