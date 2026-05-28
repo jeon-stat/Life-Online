@@ -60,6 +60,7 @@ export function AdminPanel({ admin, behavior }) {
   const longState = admin.forcedLongTermState ?? behavior?.longTermState ?? "WEAK";
   const backgroundState = admin.forcedBackgroundState ?? behavior?.backgroundState ?? shortState;
   const forcedAction = admin.forcedActionKey ?? "자동";
+  const selectedSkinTone = admin.skinTones?.find((tone) => tone.id === admin.skinToneId) ?? null;
 
   return (
     <View style={styles.shell}>
@@ -73,6 +74,10 @@ export function AdminPanel({ admin, behavior }) {
         <SummaryLine label="현재 장기 상태" value={formatState(longState)} />
         <SummaryLine label="현재 배경 분위기" value={formatState(backgroundState)} />
         <SummaryLine label="현재 강제 행동" value={forcedAction} />
+        <SummaryLine
+          label="현재 피부색"
+          value={selectedSkinTone ? selectedSkinTone.label : "미선택"}
+        />
       </View>
 
       <Pressable onPress={() => admin.setForcedActionKey(null)} style={styles.clearActionButton}>
@@ -202,6 +207,24 @@ export function AdminPanel({ admin, behavior }) {
                   </Pressable>
                 </View>
               </View>
+            );
+          })}
+        </View>
+      </Section>
+
+      <Section title="8. 피부색 설정">
+        <View style={styles.skinToneGrid}>
+          {(admin.skinTones ?? []).map((tone) => {
+            const selected = admin.skinToneId === tone.id;
+            return (
+              <Pressable
+                key={tone.id}
+                onPress={() => admin.setSkinTone(tone.id)}
+                style={[styles.skinToneChip, selected && styles.skinToneChipSelected]}
+              >
+                <View style={[styles.skinToneSwatch, { backgroundColor: tone.color }]} />
+                <Text style={styles.skinToneLabel}>{tone.label}</Text>
+              </Pressable>
             );
           })}
         </View>
@@ -462,6 +485,39 @@ const styles = StyleSheet.create({
   },
   actionGrid: {
     gap: 8,
+  },
+  skinToneGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  skinToneChip: {
+    minWidth: 78,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#efd1bd",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  skinToneChipSelected: {
+    backgroundColor: "#fff4ee",
+    borderColor: "#b45c3a",
+  },
+  skinToneSwatch: {
+    width: 18,
+    height: 18,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.08)",
+  },
+  skinToneLabel: {
+    color: theme.colors.ink,
+    fontSize: 12,
+    fontWeight: "900",
   },
   actionCard: {
     borderRadius: theme.radius.md,
