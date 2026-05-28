@@ -30,7 +30,7 @@ function pickAnimationClip(clips = [], animationMap = {}, stateKey = "idle", def
   return clips[0];
 }
 
-export function GLBCharacterModel({ character, animationState = "idle" }) {
+export function GLBCharacterModel({ character, animationState = "idle", animationSpeed = 1 }) {
   const gltf = useLoader(GLTFLoader, character.modelUrl);
   const mixerRef = useRef(null);
   const scale = character.modelScale ?? [3, 3, 3];
@@ -112,7 +112,7 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
     action.reset();
     action.enabled = true;
     action.setLoop(LoopRepeat, Infinity);
-    action.setEffectiveTimeScale(1);
+    action.setEffectiveTimeScale(animationSpeed);
     action.setEffectiveWeight(1);
     action.fadeIn(0.2);
     action.play();
@@ -123,7 +123,7 @@ export function GLBCharacterModel({ character, animationState = "idle" }) {
       mixer.stopAllAction();
       mixerRef.current = null;
     };
-  }, [scene, selectedClip]);
+  }, [animationSpeed, scene, selectedClip]);
 
   useFrame((_, delta) => {
     mixerRef.current?.update(delta);

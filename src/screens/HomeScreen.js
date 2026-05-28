@@ -38,8 +38,11 @@ export function HomeScreen() {
   });
 
   return (
-    <View style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <View style={[styles.screen, { backgroundColor: viewState.sceneBackground }]}>
+      <ScrollView
+        contentContainerStyle={[styles.content, { backgroundColor: viewState.sceneBackground }]}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.updatedAt}>{LAST_UPDATED_LABEL}</Text>
 
         <View style={styles.stageWrap}>

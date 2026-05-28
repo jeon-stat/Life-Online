@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { theme } from "../constants/theme.js";
+import { getActionLabel } from "../game/behavior.js";
 
 export function AdminPanel({ admin }) {
   if (!admin?.visible || !admin?.canOverride) {
@@ -31,7 +32,7 @@ export function AdminPanel({ admin }) {
         <View style={styles.row}>
           {admin.motionStates.map((state) => (
             <Pressable key={state} onPress={() => admin.setMotionOverride(state)} style={styles.button}>
-              <Text style={styles.buttonLabel}>{state}</Text>
+              <Text style={styles.buttonLabel}>{getActionLabel(state)}</Text>
             </Pressable>
           ))}
         </View>

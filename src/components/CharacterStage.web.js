@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PanResponder, StyleSheet, View } from "react-native";
 import { useFrame } from "@react-three/fiber";
 import { BufferGeometry, DoubleSide, Float32BufferAttribute, Vector3 } from "three";
 
+import { ACTION_KEYS, pickWeightedAction, resolveActionByKey } from "../game/behavior.js";
 import { GLBCharacterModel } from "../models/GLBCharacterModel.js";
 import { StageCanvas } from "../scene/StageCanvas.web.js";
 import { getRotationFromDrag } from "../scene/rotationMath.js";
@@ -59,10 +60,64 @@ const MINI_WORLD_PATH = {
   stripSegments: 8,
 };
 
+function useBehaviorPlayback(behavior, motionOverride) {
+  const [currentActionKey, setCurrentActionKey] = useState(
+    () => resolveActionByKey(behavior?.actions, motionOverride)?.key ?? behavior?.defaultActionKey ?? ACTION_KEYS.idle,
+  );
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
+    const actions = behavior?.actions ?? [];
+    if (!actions.length) {
+      setCurrentActionKey(ACTION_KEYS.idle);
+      return undefined;
+    }
+
+    const forcedAction = resolveActionByKey(actions, motionOverride);
+    if (forcedAction) {
+      setCurrentActionKey(forcedAction.key);
+      return undefined;
+    }
+
+    let active = true;
+    let previousActionKey = resolveActionByKey(actions, behavior?.defaultActionKey)?.key ?? actions[0].key;
+
+    const scheduleNext = () => {
+      if (!active) return;
+
+      const nextAction = pickWeightedAction(actions, previousActionKey) ?? actions[0];
+      previousActionKey = nextAction.key;
+      setCurrentActionKey(nextAction.key);
+
+      const [minWait, maxWait] = nextAction.waitRange ?? [1, 2];
+      const waitMs = randomBetween(minWait, maxWait) * 1000;
+      timerRef.current = setTimeout(scheduleNext, waitMs);
+    };
+
+    scheduleNext();
+
+    return () => {
+      active = false;
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, [behavior?.signature, behavior?.defaultActionKey, motionOverride]);
+
+  return behavior?.actionMap?.[currentActionKey] ?? behavior?.actionMap?.[behavior?.defaultActionKey] ?? null;
+}
+
 export function CharacterStage({ character, state, onInteractionChange }) {
   const [rotation, setRotation] = useState(STAGE_LAYOUT.defaultRotation);
   const rotationRef = useRef(STAGE_LAYOUT.defaultRotation);
   const dragStartRef = useRef(STAGE_LAYOUT.defaultRotation);
+  const currentAction = useBehaviorPlayback(state.behavior, state.motionOverride);
 
   const panResponder = useMemo(
     () =>
@@ -97,50 +152,53 @@ export function CharacterStage({ character, state, onInteractionChange }) {
 
   return (
     <View style={styles.shell}>
-      <View style={styles.glowBack} />
+      <View style={[styles.glowBack, { backgroundColor: state.background?.[0] ?? "rgba(255,255,255,0.48)" }]} />
       <View style={styles.effectWrap} pointerEvents="none">
         <StageEffect effect={state.effect} />
       </View>
       <StageCanvas>
-        <AnimatedCharacter character={character} rotation={rotation} state={state} />
+        <AnimatedCharacter character={character} rotation={rotation} state={state} currentAction={currentAction} />
       </StageCanvas>
       <View style={styles.gestureHotspot} {...panResponder.panHandlers} />
     </View>
   );
 }
 
-function AnimatedCharacter({ character, rotation, state }) {
+function AnimatedCharacter({ character, rotation, state, currentAction }) {
   const rootRef = useRef(null);
+  const actionKey = currentAction?.key ?? state.animationState ?? ACTION_KEYS.idle;
+  const actionClipSpeed = currentAction?.clipSpeed ?? state.animationSpeed ?? 1;
+  const worldRotationSpeed = currentAction?.worldSpeed ?? 0;
 
   useFrame((frameState) => {
     if (!rootRef.current) return;
 
-    const t = frameState.clock.getElapsedTime() * state.animationSpeed;
+    const t = frameState.clock.getElapsedTime() * actionClipSpeed;
     const bobAmount =
-      state.animationState === "walk" || state.animationState === "run"
+      actionKey === "walk" || actionKey === "run"
         ? state.bobAmount * 0.12
         : state.bobAmount * 0.08;
 
     rootRef.current.rotation.x = rotation.x;
     rootRef.current.rotation.y = rotation.y;
     rootRef.current.position.y = STAGE_LAYOUT.modelBaseY + Math.sin(t * 1.2) * bobAmount;
-    
+
     const scalePulse = 1 + Math.sin(t * 0.7) * 0.015;
     rootRef.current.scale.set(scalePulse, scalePulse, scalePulse);
   });
 
   return (
     <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY, 0]}>
-      <MiniWorld motionState={state.animationState} animationSpeed={state.animationSpeed} />
+      <MiniWorld motionState={actionKey} rotationSpeed={worldRotationSpeed} />
 
       <group position={[0, 0.16, 0]} scale={MINI_WORLD_LAYOUT.characterScale}>
-        <GLBCharacterModel character={character} animationState={state.animationState} />
+        <GLBCharacterModel character={character} animationState={actionKey} animationSpeed={actionClipSpeed} />
       </group>
     </group>
   );
 }
 
-function MiniWorld({ motionState, animationSpeed }) {
+function MiniWorld({ motionState, rotationSpeed = 0 }) {
   const worldRef = useRef(null);
 
   const pathGeometry = useMemo(
@@ -160,7 +218,7 @@ function MiniWorld({ motionState, animationSpeed }) {
     if (!worldRef.current) return;
 
     // X축 회전 = 지구가 앞으로 굴러가며 길이 캐릭터 발밑을 지나감.
-    worldRef.current.rotation.x -= getWorldRotationSpeed(motionState, animationSpeed) * delta;
+    worldRef.current.rotation.x -= getWorldRotationSpeed(motionState, rotationSpeed) * delta;
   });
 
   return (
@@ -258,18 +316,27 @@ function projectMeridianBandPoint(radius, x, angle) {
   );
 }
 
-function getWorldRotationSpeed(motionState, animationSpeed = 1) {
+function getWorldRotationSpeed(motionState, rotationSpeed = 0) {
+  if (rotationSpeed > 0) {
+    return rotationSpeed;
+  }
+
   switch (motionState) {
     case "run":
-      return 0.34 * animationSpeed;
+      return 0.26;
     case "walk":
-      return 0.22 * animationSpeed;
+      return 0.14;
     case "tired":
-      return 0.002 * animationSpeed;
+      return 0.004;
     case "idle":
     default:
-      return 0.008 * animationSpeed;
+      return 0.02;
   }
+}
+
+function randomBetween(min, max) {
+  if (max <= min) return min;
+  return min + Math.random() * (max - min);
 }
 
 function StageEffect({ effect }) {

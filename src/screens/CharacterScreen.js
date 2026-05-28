@@ -44,6 +44,8 @@ export function CharacterScreen() {
         </View>
         <Text style={styles.meta}>{`${viewState.xpIntoLevel} / 100 XP`}</Text>
         <Text style={styles.meta}>{`\uB204\uC801 ${viewState.growth.lifetimeSteps.toLocaleString()}\uBCF4 \u00B7 \uBAA9\uD45C \uB2EC\uC131 ${viewState.growth.achievedDays}\uC77C \u00B7 \uC5F0\uC18D ${viewState.growth.streak}\uC77C`}</Text>
+        <Text style={styles.growthLabel}>{`\uC7A5\uAE30 \uC0C1\uD0DC · ${viewState.growthLabel}`}</Text>
+        <Text style={styles.description}>{viewState.growthDescription}</Text>
       </View>
 
       <View style={styles.card}>
@@ -119,6 +121,12 @@ const styles = StyleSheet.create({
     color: theme.colors.inkSoft,
     fontSize: 13,
     fontWeight: "800",
+  },
+  growthLabel: {
+    marginTop: 12,
+    color: theme.colors.ink,
+    fontSize: 14,
+    fontWeight: "900",
   },
   memoryItem: {
     marginTop: 14,
