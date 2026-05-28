@@ -3,7 +3,12 @@ import { PanResponder, StyleSheet, View } from "react-native";
 import { useFrame } from "@react-three/fiber";
 import { BufferGeometry, DoubleSide, Float32BufferAttribute, Vector3 } from "three";
 
-import { ACTION_KEYS, pickWeightedAction, resolveActionByKey } from "../game/behavior.js";
+import {
+  ACTION_KEYS,
+  getActionDurationRange,
+  pickWeightedAction,
+  resolveActionByKey,
+} from "../game/behavior.js";
 import { GLBCharacterModel } from "../models/GLBCharacterModel.js";
 import { StageCanvas } from "../scene/StageCanvas.web.js";
 import { getRotationFromDrag } from "../scene/rotationMath.js";
@@ -87,16 +92,33 @@ function useBehaviorPlayback(behavior, motionOverride) {
     let active = true;
     let previousActionKey = resolveActionByKey(actions, behavior?.defaultActionKey)?.key ?? actions[0].key;
 
-    const scheduleNext = () => {
+    const scheduleNext = (forceActionKey = null, recovery = false) => {
       if (!active) return;
 
-      const nextAction = pickWeightedAction(actions, previousActionKey) ?? actions[0];
+      const nextAction = forceActionKey
+        ? resolveActionByKey(actions, forceActionKey)
+        : pickWeightedAction(actions, previousActionKey) ?? actions[0];
+
+      if (!nextAction) {
+        setCurrentActionKey(ACTION_KEYS.idle);
+        return;
+      }
+
       previousActionKey = nextAction.key;
       setCurrentActionKey(nextAction.key);
 
-      const [minWait, maxWait] = nextAction.waitRange ?? [1, 2];
+      const [minWait, maxWait] = getActionDurationRange(nextAction, { recovery });
       const waitMs = randomBetween(minWait, maxWait) * 1000;
-      timerRef.current = setTimeout(scheduleNext, waitMs);
+      timerRef.current = setTimeout(() => {
+        if (!active) return;
+
+        if (nextAction.key === ACTION_KEYS.run) {
+          scheduleNext(ACTION_KEYS.walk, true);
+          return;
+        }
+
+        scheduleNext();
+      }, waitMs);
     };
 
     scheduleNext();

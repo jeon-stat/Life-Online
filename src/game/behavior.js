@@ -32,7 +32,7 @@ const BASE_ACTIONS = {
     key: ACTION_KEYS.idle,
     label: ACTION_LABELS.idle,
     weight: 24,
-    waitRange: [1.6, 3.1],
+    waitRange: [10, 13.5],
     clipSpeed: 0.92,
     worldSpeed: 0.02,
   },
@@ -40,7 +40,7 @@ const BASE_ACTIONS = {
     key: ACTION_KEYS.tired,
     label: ACTION_LABELS.tired,
     weight: 16,
-    waitRange: [2.3, 4.7],
+    waitRange: [10, 13.5],
     clipSpeed: 0.78,
     worldSpeed: 0.004,
   },
@@ -48,7 +48,7 @@ const BASE_ACTIONS = {
     key: ACTION_KEYS.walk,
     label: ACTION_LABELS.walk,
     weight: 36,
-    waitRange: [1.7, 3.6],
+    waitRange: [10, 13.5],
     clipSpeed: 0.96,
     worldSpeed: 0.14,
   },
@@ -56,7 +56,7 @@ const BASE_ACTIONS = {
     key: ACTION_KEYS.run,
     label: ACTION_LABELS.run,
     weight: 24,
-    waitRange: [0.8, 1.7],
+    waitRange: [10, 13.5],
     clipSpeed: 1.1,
     worldSpeed: 0.26,
   },
@@ -213,6 +213,15 @@ export function resolveActionByKey(actions = [], actionKey = null) {
 
 export function getActionLabel(actionKey) {
   return ACTION_LABELS[actionKey] ?? actionKey ?? "";
+}
+
+export function getActionDurationRange(action, { recovery = false } = {}) {
+  if (!action) return [10, 13.5];
+  if (recovery && action.key === ACTION_KEYS.walk) {
+    return [3, 3.5];
+  }
+
+  return action.waitRange ?? [10, 13.5];
 }
 
 function scaleRange(range, multiplier) {
