@@ -40,6 +40,8 @@ export function AdminPanel({ admin, behavior }) {
   const selectedSkinTone = admin.skinTones?.find((tone) => tone.id === admin.skinToneId) ?? null;
   const forcedEnergyLevel = admin.forcedEnergyLevel ?? null;
   const forcedLongTermState = admin.forcedLongTermState ?? null;
+  const energySixPool = buildChanceRows(behavior?.specialActionPool ?? []);
+  const specialChanceLabel = formatSpecialChanceLabel(behavior?.specialActionPool ?? []);
 
   return (
     <View style={styles.shell}>
@@ -66,6 +68,23 @@ export function AdminPanel({ admin, behavior }) {
 
       <Section title="Long-Term State">
         <OptionRow items={LONG_TERM_OPTIONS} selected={forcedLongTermState} onSelect={admin.setForcedLongTermState} />
+      </Section>
+
+      <Section title="Energy 6 Chance">
+        <Text style={styles.sectionNote}>Only used when Energy Level is 6.</Text>
+        <Text style={styles.sectionNote}>{specialChanceLabel}</Text>
+        {energySixPool.length ? (
+          <View style={styles.chanceList}>
+            {energySixPool.map((row) => (
+              <View key={row.key} style={styles.chanceRow}>
+                <Text style={styles.chanceLabel}>{row.label}</Text>
+                <Text style={styles.chanceValue}>{row.percentLabel}</Text>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Text style={styles.sectionNote}>No special-action pool is available.</Text>
+        )}
       </Section>
 
       <Section title="Skin Tone">
@@ -136,6 +155,35 @@ function OptionRow({ items, selected, onSelect }) {
   );
 }
 
+function buildChanceRows(actions) {
+  const validActions = actions.filter((action) => Number.isFinite(action.weight) && action.weight > 0);
+  const totalWeight = validActions.reduce((sum, action) => sum + action.weight, 0);
+
+  if (!totalWeight) return [];
+
+  return validActions.map((action) => {
+    const percent = (action.weight / totalWeight) * 100;
+    return {
+      key: action.key,
+      label: action.label ?? action.key,
+      percentLabel: `${Math.round(percent)}%`,
+    };
+  });
+}
+
+function formatSpecialChanceLabel(actions) {
+  const validActions = actions.filter((action) => Number.isFinite(action.weight) && action.weight > 0);
+  const totalWeight = validActions.reduce((sum, action) => sum + action.weight, 0);
+
+  if (!totalWeight) return "Special action chance: not configured.";
+
+  const specialWeight = validActions
+    .filter((action) => action.key !== "energy6")
+    .reduce((sum, action) => sum + action.weight, 0);
+
+  return `Special actions total: ${Math.round((specialWeight / totalWeight) * 100)}%`;
+}
+
 const styles = StyleSheet.create({
   shell: {
     position: "absolute",
@@ -197,6 +245,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "900",
   },
+  sectionNote: {
+    color: theme.colors.inkSoft,
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: "700",
+  },
   optionRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -219,6 +273,30 @@ const styles = StyleSheet.create({
   },
   optionLabel: {
     color: theme.colors.ink,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  chanceList: {
+    gap: 8,
+  },
+  chanceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: theme.radius.md,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    backgroundColor: "#fff8f2",
+    borderWidth: 1,
+    borderColor: "#efd6c2",
+  },
+  chanceLabel: {
+    color: theme.colors.ink,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  chanceValue: {
+    color: "#9f4e33",
     fontSize: 12,
     fontWeight: "900",
   },
