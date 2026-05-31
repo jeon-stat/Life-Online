@@ -39,6 +39,16 @@ const ENERGY_MOTION_KIND = {
   6: "run",
 };
 
+const ENERGY_LEVEL_TO_ACTION_KEY = {
+  0: "energy0",
+  1: "energy1",
+  2: "energy2",
+  3: "energy3",
+  4: "energy4",
+  5: "energy5",
+  6: "energy6",
+};
+
 const BONUS_ACTION_DURATION_MS = {
   hipHopDancing: 3400,
   moonwalk: 2800,
@@ -156,7 +166,7 @@ export function CharacterStage({ character, state, onInteractionChange }) {
           bonusAction={bonusAction}
         />
       </StageCanvas>
-      {state.debugVisible ? <BehaviorDebugOverlay state={state} bonusAction={bonusAction} /> : null}
+      {state.debugVisible ? <BehaviorDebugOverlay state={state} bonusAction={bonusAction} actionKey={actionKey} /> : null}
       <View style={styles.gestureHotspot} {...panResponder.panHandlers} />
     </View>
   );
@@ -165,7 +175,8 @@ export function CharacterStage({ character, state, onInteractionChange }) {
 function AnimatedCharacter({ character, rotation, state, bonusAction }) {
   const rootRef = useRef(null);
   const energyLevel = state.energyLevel ?? 3;
-  const actionKey = bonusAction?.key ?? state.animationState ?? `energy${energyLevel}`;
+  const baseActionKey = ENERGY_LEVEL_TO_ACTION_KEY[energyLevel] ?? "energy3";
+  const actionKey = bonusAction?.key ?? baseActionKey;
   const actionClipSpeed = state.animationSpeed ?? 1;
   const worldMotionKind = bonusAction?.motionKind ?? ENERGY_MOTION_KIND[energyLevel] ?? "neutral";
   const loopMode = bonusAction ? "once" : "repeat";
@@ -202,13 +213,13 @@ function AnimatedCharacter({ character, rotation, state, bonusAction }) {
   );
 }
 
-function BehaviorDebugOverlay({ state, bonusAction }) {
+function BehaviorDebugOverlay({ state, bonusAction, actionKey }) {
   return (
     <View style={styles.debugOverlay} pointerEvents="none">
       <DebugLine label="Energy Level" value={state.energyLevel ?? "n/a"} />
       <DebugLine label="Current Energy State" value={state.energyState ?? "n/a"} />
       <DebugLine label="Current Long Term State" value={state.longTermState ?? "n/a"} />
-      <DebugLine label="Current Clip" value={state.animationState ?? "n/a"} />
+      <DebugLine label="Current Clip" value={actionKey ?? state.animationState ?? "n/a"} />
       <DebugLine label="Bonus Action" value={bonusAction?.label ?? "running"} />
     </View>
   );
