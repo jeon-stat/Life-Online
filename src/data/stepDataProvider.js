@@ -9,6 +9,7 @@ const StepDataContext = createContext(null);
 export function StepDataProvider({ children, mode = "mock", adminEnabled = false }) {
   const [mockState, setMockState] = useState(() => createMockStepSnapshot());
   const [skinToneId, setSkinToneId] = useState(SKIN_TONE_PRESETS[0]?.id ?? null);
+  const [adminVisible, setAdminVisible] = useState(() => Boolean(adminEnabled));
   const [behaviorAdmin, setBehaviorAdmin] = useState(() => ({
     forcedEnergyLevel: null,
     forcedLongTermState: null,
@@ -29,7 +30,7 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
       today,
       history,
       admin: {
-        visible: Boolean(adminEnabled),
+        visible: adminVisible,
         canOverride: Boolean(adminEnabled && isMockMode),
         source: today.source,
         ...behaviorAdmin,
@@ -38,6 +39,18 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
         setSkinTone: (nextSkinToneId) => {
           if (!adminEnabled) return;
           setSkinToneId(nextSkinToneId);
+        },
+        toggleVisible: () => {
+          if (!adminEnabled) return;
+          setAdminVisible((current) => !current);
+        },
+        show: () => {
+          if (!adminEnabled) return;
+          setAdminVisible(true);
+        },
+        hide: () => {
+          if (!adminEnabled) return;
+          setAdminVisible(false);
         },
         setForcedEnergyLevel: (nextLevel) => {
           if (!adminEnabled) return;
@@ -63,7 +76,7 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
         },
       },
     }),
-    [adminEnabled, behaviorAdmin, history, isMockMode, mode, skinToneId, today],
+    [adminEnabled, adminVisible, behaviorAdmin, history, isMockMode, mode, skinToneId, today],
   );
 
   return <StepDataContext.Provider value={value}>{children}</StepDataContext.Provider>;

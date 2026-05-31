@@ -1,9 +1,10 @@
 import { Platform, SafeAreaView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
+import { Pressable, Text } from "react-native";
 
 import { AuthProvider, useAuth } from "./src/auth/AuthProvider.js";
-import { StepDataProvider } from "./src/data/stepDataProvider.js";
+import { StepDataProvider, useStepData } from "./src/data/stepDataProvider.js";
 import { AuthScreen } from "./src/screens/AuthScreen.js";
 import { HomeScreen } from "./src/screens/HomeScreen.js";
 import { HistoryScreen } from "./src/screens/HistoryScreen.js";
@@ -53,18 +54,47 @@ function AppContent() {
 
   return (
     <StepDataProvider mode={STEP_DATA_MODE} adminEnabled={adminEnabled}>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.appShell}>
-          <View style={styles.screenArea}>
-            {activeTab === "home" ? <HomeScreen /> : null}
-            {activeTab === "history" ? <HistoryScreen /> : null}
-            {activeTab === "character" ? <CharacterScreen /> : null}
-          </View>
-          <BottomTabs items={TABS} activeId={activeTab} onChange={setActiveTab} />
-        </View>
-        <StatusBar style="dark" />
-      </SafeAreaView>
+      <AppShell activeTab={activeTab} onChangeTab={setActiveTab} />
     </StepDataProvider>
+  );
+}
+
+function AppShell({ activeTab, onChangeTab }) {
+  const { admin } = useStepData();
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.appShell}>
+        <View style={styles.screenArea}>
+          {activeTab === "home" ? <HomeScreen /> : null}
+          {activeTab === "history" ? <HistoryScreen /> : null}
+          {activeTab === "character" ? <CharacterScreen /> : null}
+        </View>
+
+        {admin?.visible ? (
+          <Pressable
+            onPress={admin.toggleVisible}
+            style={styles.adminToggle}
+            accessibilityRole="button"
+            accessibilityLabel="Hide admin panel"
+          >
+            <Text style={styles.adminToggleLabel}>Hide Admin</Text>
+          </Pressable>
+        ) : admin?.canOverride ? (
+          <Pressable
+            onPress={admin.toggleVisible}
+            style={styles.adminToggle}
+            accessibilityRole="button"
+            accessibilityLabel="Show admin panel"
+          >
+            <Text style={styles.adminToggleLabel}>Show Admin</Text>
+          </Pressable>
+        ) : null}
+
+        <BottomTabs items={TABS} activeId={activeTab} onChange={onChangeTab} />
+      </View>
+      <StatusBar style="dark" />
+    </SafeAreaView>
   );
 }
 
@@ -79,5 +109,22 @@ const styles = StyleSheet.create({
   },
   screenArea: {
     flex: 1,
+  },
+  adminToggle: {
+    position: "absolute",
+    top: 14,
+    left: 14,
+    zIndex: 30,
+    borderRadius: theme.radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderWidth: 1,
+    borderColor: "#dfc8b4",
+  },
+  adminToggleLabel: {
+    color: theme.colors.ink,
+    fontSize: 11,
+    fontWeight: "900",
   },
 });

@@ -130,6 +130,10 @@ export function getEnergyLevel(steps, goal = DEFAULT_STEP_GOAL) {
 export function getEnergyState(steps, goal = DEFAULT_STEP_GOAL) {
   const level = getEnergyLevel(steps, goal);
 
+  return getEnergyStateForLevel(level);
+}
+
+export function getEnergyStateForLevel(level) {
   if (level <= 1) return ENERGY_STATES.LOW_ENERGY;
   if (level <= 4) return ENERGY_STATES.NORMAL_ENERGY;
   return ENERGY_STATES.HIGH_ENERGY;
@@ -147,8 +151,9 @@ export function getLongTermState(history = [], goal = DEFAULT_STEP_GOAL) {
 export function buildBehaviorProfile({ steps = 0, history = [], goal = DEFAULT_STEP_GOAL, overrides = {} } = {}) {
   const energyLevel = overrides.forceEnergyLevel ?? getEnergyLevel(steps, goal);
   const rawEnergyState = getEnergyState(steps, goal);
+  const forcedEnergyState = getEnergyStateForLevel(energyLevel);
   const rawLongTermState = getLongTermState(history, goal);
-  const energyState = overrides.forceShortTermState ?? rawEnergyState;
+  const energyState = overrides.forceShortTermState ?? forcedEnergyState ?? rawEnergyState;
   const longTermState = overrides.forceLongTermState ?? rawLongTermState;
   const backgroundState = overrides.forceBackgroundState ?? energyState;
   const mainActions = MAIN_ACTION_LIBRARY.map((action) => ({

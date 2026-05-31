@@ -57,6 +57,24 @@ test("character view model maps high energy to the running base clip", () => {
   assert.equal(viewModel.level >= 1, true);
 });
 
+test("forced energy level drives the visible behavior state", () => {
+  const history = buildMockHistory({ todaySteps: 6500 });
+  const viewModel = buildCharacterViewModel({
+    todayRecord: history[0],
+    history,
+    goal: DEFAULT_STEP_GOAL,
+    admin: {
+      forcedEnergyLevel: 0,
+      forcedLongTermState: null,
+    },
+  });
+
+  assert.equal(viewModel.energyLevel, 0);
+  assert.equal(viewModel.energyState, "LOW_ENERGY");
+  assert.equal(viewModel.animationState, "energy0");
+  assert.equal(viewModel.backgroundState, "LOW_ENERGY");
+});
+
 test("admin presets stay limited to mock step scenarios", () => {
   assert.deepEqual(
     ADMIN_STEP_PRESETS.map((item) => item.steps),
