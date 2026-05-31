@@ -15,635 +15,123 @@ export const LONG_TERM_STATES = {
 
 export const ACTION_TYPES = {
   MAIN: "main",
-  TRANSITION: "transition",
+  SPECIAL: "special",
 };
 
 export const ACTION_KEYS = {
-  idle: "idle",
-  tired: "tired",
-  slowWalk: "slowWalk",
-  walk: "walk",
-  fastWalk: "fastWalk",
-  run: "run",
-  sleepyIdle: "sleepyIdle",
-  lookingDown: "lookingDown",
-  slowTiredWalk: "slowTiredWalk",
-  stretchSitting: "stretchSitting",
-  idleBreathing: "idleBreathing",
-  yawn: "yawn",
-  weightShift: "weightShift",
-  stopAndRest: "stopAndRest",
-  headNod: "headNod",
-  slowTurn: "slowTurn",
-  relaxedIdle: "relaxedIdle",
-  casualWalk: "casualWalk",
-  exploreWalk: "exploreWalk",
-  stretch: "stretch",
-  lightJog: "lightJog",
-  lookAround: "lookAround",
-  turnLeftRight: "turnLeftRight",
-  smallPause: "smallPause",
-  footTap: "footTap",
-  idleTransition: "idleTransition",
-  quickTurn: "quickTurn",
-  bounceIdle: "bounceIdle",
-  fastStop: "fastStop",
-  lookAroundFast: "lookAroundFast",
-  shortHop: "shortHop",
-  happyRun: "happyRun",
-  energeticWalk: "energeticWalk",
-  dashStart: "dashStart",
-  excitedIdle: "excitedIdle",
-  activePatrol: "activePatrol",
+  energy0: "energy0",
+  energy1: "energy1",
+  energy2: "energy2",
+  energy3: "energy3",
+  energy4: "energy4",
+  energy5: "energy5",
+  energy6: "energy6",
+  hipHopDancing: "hipHopDancing",
+  moonwalk: "moonwalk",
 };
 
 export const ACTION_LABELS = {
-  idle: "Idle Standing",
-  tired: "Sitting",
-  slowWalk: "Walking(slow)",
-  walk: "Walking",
-  fastWalk: "Walking(fast)",
-  run: "Running",
-  sleepyIdle: "Sleepy Idle",
-  lookingDown: "Looking Down",
-  slowTiredWalk: "Slow Tired Walk",
-  stretchSitting: "Stretch Sitting",
-  idleBreathing: "Idle Breathing",
-  yawn: "Yawn",
-  weightShift: "Weight Shift",
-  stopAndRest: "Stop And Rest",
-  headNod: "Head Nod",
-  slowTurn: "Slow Turn",
-  relaxedIdle: "Relaxed Idle",
-  casualWalk: "Casual Walk",
-  exploreWalk: "Explore Walk",
-  stretch: "Stretch",
-  lightJog: "Light Jog",
-  lookAround: "Look Around",
-  turnLeftRight: "Turn Left / Right",
-  smallPause: "Small Pause",
-  footTap: "Foot Tap",
-  idleTransition: "Idle Transition",
-  quickTurn: "Quick Turn",
-  bounceIdle: "Bounce Idle",
-  fastStop: "Fast Stop",
-  lookAroundFast: "Look Around Fast",
-  shortHop: "Short Hop",
-  happyRun: "Happy Run",
-  energeticWalk: "Energetic Walk",
-  dashStart: "Dash Start",
-  excitedIdle: "Excited Idle",
-  activePatrol: "Active Patrol",
+  energy0: "Sitting Idle",
+  energy1: "Yawn",
+  energy2: "Breathing Idle",
+  energy3: "Neutral Idle",
+  energy4: "Walking",
+  energy5: "Running",
+  energy6: "Running + Special",
+  hipHopDancing: "Hip Hop Dancing",
+  moonwalk: "Moonwalk",
 };
 
-const DEFAULT_TIMING = {
-  mainDurationRange: [8, 15],
-  transitionDurationRange: [1, 3],
-  waitDurationRange: [1, 4],
+const ENERGY_LEVEL_TO_STATE = [
+  ACTION_KEYS.energy0,
+  ACTION_KEYS.energy1,
+  ACTION_KEYS.energy2,
+  ACTION_KEYS.energy3,
+  ACTION_KEYS.energy4,
+  ACTION_KEYS.energy5,
+  ACTION_KEYS.energy6,
+];
+
+const ENERGY_LEVEL_TO_CLIP = {
+  [ACTION_KEYS.energy0]: "sitting-idle",
+  [ACTION_KEYS.energy1]: "yawn",
+  [ACTION_KEYS.energy2]: "breathing-idle",
+  [ACTION_KEYS.energy3]: "neutral-idle",
+  [ACTION_KEYS.energy4]: "walking",
+  [ACTION_KEYS.energy5]: "running",
+  [ACTION_KEYS.energy6]: "running",
+  [ACTION_KEYS.hipHopDancing]: "hip-hop-dancing",
+  [ACTION_KEYS.moonwalk]: "moonwalk",
 };
 
-const ACTION_LIBRARY = {
-  idle: createAction({
-    key: ACTION_KEYS.idle,
-    label: ACTION_LABELS.idle,
+const ENERGY_LEVEL_TO_ANIMATION_SPEED = {
+  [ACTION_KEYS.energy0]: 0.96,
+  [ACTION_KEYS.energy1]: 0.98,
+  [ACTION_KEYS.energy2]: 1.0,
+  [ACTION_KEYS.energy3]: 1.0,
+  [ACTION_KEYS.energy4]: 1.02,
+  [ACTION_KEYS.energy5]: 1.08,
+  [ACTION_KEYS.energy6]: 1.1,
+  [ACTION_KEYS.hipHopDancing]: 1.0,
+  [ACTION_KEYS.moonwalk]: 1.0,
+};
+
+const MAIN_ACTION_LIBRARY = ENERGY_LEVEL_TO_STATE.map((key) =>
+  createAction({
+    key,
+    label: ACTION_LABELS[key],
     type: ACTION_TYPES.MAIN,
-    clipKey: "idle",
+    clipKey: ENERGY_LEVEL_TO_CLIP[key],
     available: true,
-    baseWeight: 24,
-    clipSpeed: 0.92,
-    worldSpeed: 0.02,
-    motionKind: "neutral",
+    baseWeight: 1,
+    clipSpeed: ENERGY_LEVEL_TO_ANIMATION_SPEED[key],
+    worldSpeed: getWorldSpeedForEnergyKey(key),
+    motionKind: getMotionKindForEnergyKey(key),
   }),
-  tired: createAction({
-    key: ACTION_KEYS.tired,
-    label: ACTION_LABELS.tired,
-    type: ACTION_TYPES.MAIN,
-    clipKey: "tired",
+);
+
+const SPECIAL_ACTION_LIBRARY = [
+  createAction({
+    key: ACTION_KEYS.hipHopDancing,
+    label: ACTION_LABELS.hipHopDancing,
+    type: ACTION_TYPES.SPECIAL,
+    clipKey: ENERGY_LEVEL_TO_CLIP[ACTION_KEYS.hipHopDancing],
     available: true,
-    baseWeight: 26,
-    clipSpeed: 0.8,
-    worldSpeed: 0.004,
-    motionKind: "neutral",
+    baseWeight: 15,
+    clipSpeed: 1,
+    worldSpeed: 0.18,
+    motionKind: "run",
   }),
-  slowWalk: createAction({
-    key: ACTION_KEYS.slowWalk,
-    label: ACTION_LABELS.slowWalk,
-    type: ACTION_TYPES.MAIN,
-    clipKey: "walk",
+  createAction({
+    key: ACTION_KEYS.moonwalk,
+    label: ACTION_LABELS.moonwalk,
+    type: ACTION_TYPES.SPECIAL,
+    clipKey: ENERGY_LEVEL_TO_CLIP[ACTION_KEYS.moonwalk],
     available: true,
-    baseWeight: 18,
-    clipSpeed: 0.74,
+    baseWeight: 5,
+    clipSpeed: 1,
     worldSpeed: 0.08,
     motionKind: "walk",
   }),
-  walk: createAction({
-    key: ACTION_KEYS.walk,
-    label: ACTION_LABELS.walk,
-    type: ACTION_TYPES.MAIN,
-    clipKey: "walk",
-    available: true,
-    baseWeight: 34,
-    clipSpeed: 0.96,
-    worldSpeed: 0.14,
-    motionKind: "walk",
-  }),
-  fastWalk: createAction({
-    key: ACTION_KEYS.fastWalk,
-    label: ACTION_LABELS.fastWalk,
-    type: ACTION_TYPES.MAIN,
-    clipKey: "walk",
-    available: true,
-    baseWeight: 14,
-    clipSpeed: 1.18,
-    worldSpeed: 0.2,
-    motionKind: "walk",
-  }),
-  run: createAction({
-    key: ACTION_KEYS.run,
-    label: ACTION_LABELS.run,
-    type: ACTION_TYPES.MAIN,
-    clipKey: "run",
-    available: true,
-    baseWeight: 22,
-    clipSpeed: 1.1,
-    worldSpeed: 0.26,
-    motionKind: "run",
-  }),
-  sleepyIdle: createAction({
-    key: ACTION_KEYS.sleepyIdle,
-    label: ACTION_LABELS.sleepyIdle,
-    type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.9,
-    worldSpeed: 0.0,
-    motionKind: "neutral",
-  }),
-  lookingDown: createAction({
-    key: ACTION_KEYS.lookingDown,
-    label: ACTION_LABELS.lookingDown,
-    type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.9,
-    worldSpeed: 0.0,
-    motionKind: "neutral",
-  }),
-  slowTiredWalk: createAction({
-    key: ACTION_KEYS.slowTiredWalk,
-    label: ACTION_LABELS.slowTiredWalk,
-    type: ACTION_TYPES.MAIN,
-    clipKey: "walk",
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.68,
-    worldSpeed: 0.06,
-    motionKind: "walk",
-  }),
-  stretchSitting: createAction({
-    key: ACTION_KEYS.stretchSitting,
-    label: ACTION_LABELS.stretchSitting,
-    type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.9,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  idleBreathing: createAction({
-    key: ACTION_KEYS.idleBreathing,
-    label: ACTION_LABELS.idleBreathing,
-    type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.9,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  yawn: createAction({
-    key: ACTION_KEYS.yawn,
-    label: ACTION_LABELS.yawn,
-    type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.9,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  weightShift: createAction({
-    key: ACTION_KEYS.weightShift,
-    label: ACTION_LABELS.weightShift,
-    type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.9,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  stopAndRest: createAction({
-    key: ACTION_KEYS.stopAndRest,
-    label: ACTION_LABELS.stopAndRest,
-    type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.9,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  headNod: createAction({
-    key: ACTION_KEYS.headNod,
-    label: ACTION_LABELS.headNod,
-    type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.9,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  slowTurn: createAction({
-    key: ACTION_KEYS.slowTurn,
-    label: ACTION_LABELS.slowTurn,
-    type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.9,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  relaxedIdle: createAction({
-    key: ACTION_KEYS.relaxedIdle,
-    label: ACTION_LABELS.relaxedIdle,
-    type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.92,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  casualWalk: createAction({
-    key: ACTION_KEYS.casualWalk,
-    label: ACTION_LABELS.casualWalk,
-    type: ACTION_TYPES.MAIN,
-    clipKey: "walk",
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 1.0,
-    worldSpeed: 0.14,
-    motionKind: "walk",
-  }),
-  exploreWalk: createAction({
-    key: ACTION_KEYS.exploreWalk,
-    label: ACTION_LABELS.exploreWalk,
-    type: ACTION_TYPES.MAIN,
-    clipKey: "walk",
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 1.0,
-    worldSpeed: 0.16,
-    motionKind: "walk",
-  }),
-  stretch: createAction({
-    key: ACTION_KEYS.stretch,
-    label: ACTION_LABELS.stretch,
-    type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.9,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  lightJog: createAction({
-    key: ACTION_KEYS.lightJog,
-    label: ACTION_LABELS.lightJog,
-    type: ACTION_TYPES.MAIN,
-    clipKey: "walk",
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 1.08,
-    worldSpeed: 0.18,
-    motionKind: "walk",
-  }),
-  lookAround: createAction({
-    key: ACTION_KEYS.lookAround,
-    label: ACTION_LABELS.lookAround,
-    type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.9,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  turnLeftRight: createAction({
-    key: ACTION_KEYS.turnLeftRight,
-    label: ACTION_LABELS.turnLeftRight,
-    type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.9,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  smallPause: createAction({
-    key: ACTION_KEYS.smallPause,
-    label: ACTION_LABELS.smallPause,
-    type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.9,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  footTap: createAction({
-    key: ACTION_KEYS.footTap,
-    label: ACTION_LABELS.footTap,
-    type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.9,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  idleTransition: createAction({
-    key: ACTION_KEYS.idleTransition,
-    label: ACTION_LABELS.idleTransition,
-    type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.9,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  quickTurn: createAction({
-    key: ACTION_KEYS.quickTurn,
-    label: ACTION_LABELS.quickTurn,
-    type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.95,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  bounceIdle: createAction({
-    key: ACTION_KEYS.bounceIdle,
-    label: ACTION_LABELS.bounceIdle,
-    type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.95,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  fastStop: createAction({
-    key: ACTION_KEYS.fastStop,
-    label: ACTION_LABELS.fastStop,
-    type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.95,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  lookAroundFast: createAction({
-    key: ACTION_KEYS.lookAroundFast,
-    label: ACTION_LABELS.lookAroundFast,
-    type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.95,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  shortHop: createAction({
-    key: ACTION_KEYS.shortHop,
-    label: ACTION_LABELS.shortHop,
-    type: ACTION_TYPES.TRANSITION,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 0.95,
-    worldSpeed: 0,
-    motionKind: "neutral",
-  }),
-  happyRun: createAction({
-    key: ACTION_KEYS.happyRun,
-    label: ACTION_LABELS.happyRun,
-    type: ACTION_TYPES.MAIN,
-    clipKey: "run",
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 1.16,
-    worldSpeed: 0.3,
-    motionKind: "run",
-  }),
-  energeticWalk: createAction({
-    key: ACTION_KEYS.energeticWalk,
-    label: ACTION_LABELS.energeticWalk,
-    type: ACTION_TYPES.MAIN,
-    clipKey: "walk",
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 1.14,
-    worldSpeed: 0.2,
-    motionKind: "walk",
-  }),
-  dashStart: createAction({
-    key: ACTION_KEYS.dashStart,
-    label: ACTION_LABELS.dashStart,
-    type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 1.12,
-    worldSpeed: 0.24,
-    motionKind: "run",
-  }),
-  excitedIdle: createAction({
-    key: ACTION_KEYS.excitedIdle,
-    label: ACTION_LABELS.excitedIdle,
-    type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 1.0,
-    worldSpeed: 0.04,
-    motionKind: "neutral",
-  }),
-  activePatrol: createAction({
-    key: ACTION_KEYS.activePatrol,
-    label: ACTION_LABELS.activePatrol,
-    type: ACTION_TYPES.MAIN,
-    clipKey: null,
-    available: false,
-    baseWeight: 0.25,
-    clipSpeed: 1.08,
-    worldSpeed: 0.22,
-    motionKind: "walk",
-  }),
-};
+];
 
-const STATE_PROFILES = {
-  [ENERGY_STATES.LOW_ENERGY]: {
-    label: "LOW",
-    background: ["#f0f1ea", "#faf8f3"],
-    stage: "#f3efe6",
-    bubbleSurface: "#f7f2ea",
-    effect: "cloudy",
-    cloudSpeed: 0.28,
-    brightness: 0.88,
-    mainActionKeys: [
-      ACTION_KEYS.idle,
-      ACTION_KEYS.tired,
-      ACTION_KEYS.slowWalk,
-      ACTION_KEYS.sleepyIdle,
-      ACTION_KEYS.lookingDown,
-      ACTION_KEYS.slowTiredWalk,
-      ACTION_KEYS.stretchSitting,
-      ACTION_KEYS.idleBreathing,
-    ],
-    transitionActionKeys: [
-      ACTION_KEYS.yawn,
-      ACTION_KEYS.weightShift,
-      ACTION_KEYS.stopAndRest,
-      ACTION_KEYS.headNod,
-      ACTION_KEYS.slowTurn,
-    ],
-    weightBias: {
-      [ACTION_KEYS.idle]: 10,
-      [ACTION_KEYS.tired]: 18,
-      [ACTION_KEYS.slowWalk]: 6,
-      [ACTION_KEYS.walk]: -12,
-      [ACTION_KEYS.fastWalk]: -18,
-      [ACTION_KEYS.run]: -24,
-    },
-    clipSpeedScale: 0.9,
-    worldSpeedScale: 0.7,
-  },
-  [ENERGY_STATES.NORMAL_ENERGY]: {
-    label: "NORMAL",
-    background: ["#f7f5ef", "#eef3f7"],
-    stage: "#f3f4f8",
-    bubbleSurface: "#f5f4fb",
-    effect: "float",
-    cloudSpeed: 0.62,
-    brightness: 1,
-    mainActionKeys: [
-      ACTION_KEYS.idle,
-      ACTION_KEYS.walk,
-      ACTION_KEYS.relaxedIdle,
-      ACTION_KEYS.casualWalk,
-      ACTION_KEYS.exploreWalk,
-      ACTION_KEYS.stretch,
-      ACTION_KEYS.lightJog,
-    ],
-    transitionActionKeys: [
-      ACTION_KEYS.lookAround,
-      ACTION_KEYS.turnLeftRight,
-      ACTION_KEYS.smallPause,
-      ACTION_KEYS.footTap,
-      ACTION_KEYS.idleTransition,
-    ],
-    weightBias: {
-      [ACTION_KEYS.idle]: 6,
-      [ACTION_KEYS.walk]: 18,
-      [ACTION_KEYS.slowWalk]: 4,
-      [ACTION_KEYS.fastWalk]: 4,
-      [ACTION_KEYS.run]: -12,
-    },
-    clipSpeedScale: 1,
-    worldSpeedScale: 1,
-  },
-  [ENERGY_STATES.HIGH_ENERGY]: {
-    label: "HIGH",
-    background: ["#eef8ef", "#f7fcf4"],
-    stage: "#edf8f0",
-    bubbleSurface: "#edf8ef",
-    effect: "sparkle",
-    cloudSpeed: 1.15,
-    brightness: 1.05,
-    mainActionKeys: [
-      ACTION_KEYS.run,
-      ACTION_KEYS.fastWalk,
-      ACTION_KEYS.idle,
-      ACTION_KEYS.happyRun,
-      ACTION_KEYS.energeticWalk,
-      ACTION_KEYS.dashStart,
-      ACTION_KEYS.excitedIdle,
-      ACTION_KEYS.activePatrol,
-    ],
-    transitionActionKeys: [
-      ACTION_KEYS.quickTurn,
-      ACTION_KEYS.bounceIdle,
-      ACTION_KEYS.fastStop,
-      ACTION_KEYS.lookAroundFast,
-      ACTION_KEYS.shortHop,
-    ],
-    weightBias: {
-      [ACTION_KEYS.run]: 22,
-      [ACTION_KEYS.fastWalk]: 18,
-      [ACTION_KEYS.walk]: 8,
-      [ACTION_KEYS.idle]: 4,
-      [ACTION_KEYS.tired]: -12,
-    },
-    clipSpeedScale: 1.08,
-    worldSpeedScale: 1.18,
-  },
-};
+export function getEnergyLevel(steps, goal = DEFAULT_STEP_GOAL) {
+  const ratio = getStepRatio(steps, goal);
 
-const LONG_TERM_PROFILES = {
-  [LONG_TERM_STATES.WEAK]: {
-    weightBias: {
-      [ACTION_KEYS.idle]: 8,
-      [ACTION_KEYS.tired]: 12,
-      [ACTION_KEYS.slowWalk]: 4,
-      [ACTION_KEYS.walk]: -4,
-      [ACTION_KEYS.fastWalk]: -6,
-      [ACTION_KEYS.run]: -10,
-    },
-    clipSpeedScale: 0.95,
-    worldSpeedScale: 0.9,
-  },
-  [LONG_TERM_STATES.HEALTHY]: {
-    weightBias: {},
-    clipSpeedScale: 1,
-    worldSpeedScale: 1,
-  },
-  [LONG_TERM_STATES.ACTIVE]: {
-    weightBias: {
-      [ACTION_KEYS.idle]: -4,
-      [ACTION_KEYS.tired]: -8,
-      [ACTION_KEYS.walk]: 6,
-      [ACTION_KEYS.fastWalk]: 10,
-      [ACTION_KEYS.run]: 12,
-    },
-    clipSpeedScale: 1.04,
-    worldSpeedScale: 1.06,
-  },
-};
+  if (ratio < 0.05) return 0;
+  if (ratio < 0.15) return 1;
+  if (ratio < 0.3) return 2;
+  if (ratio < 0.5) return 3;
+  if (ratio < 0.7) return 4;
+  if (ratio < 1) return 5;
+  return 6;
+}
 
 export function getEnergyState(steps, goal = DEFAULT_STEP_GOAL) {
-  const ratio = getStepRatio(steps, goal);
-  if (ratio < 0.35) return ENERGY_STATES.LOW_ENERGY;
-  if (ratio < 0.85) return ENERGY_STATES.NORMAL_ENERGY;
+  const level = getEnergyLevel(steps, goal);
+
+  if (level <= 1) return ENERGY_STATES.LOW_ENERGY;
+  if (level <= 4) return ENERGY_STATES.NORMAL_ENERGY;
   return ENERGY_STATES.HIGH_ENERGY;
 }
 
@@ -657,27 +145,25 @@ export function getLongTermState(history = [], goal = DEFAULT_STEP_GOAL) {
 }
 
 export function buildBehaviorProfile({ steps = 0, history = [], goal = DEFAULT_STEP_GOAL, overrides = {} } = {}) {
-  const growth = getGrowthProgress(history, goal);
+  const energyLevel = overrides.forceEnergyLevel ?? getEnergyLevel(steps, goal);
   const rawEnergyState = getEnergyState(steps, goal);
   const rawLongTermState = getLongTermState(history, goal);
   const energyState = overrides.forceShortTermState ?? rawEnergyState;
   const longTermState = overrides.forceLongTermState ?? rawLongTermState;
-  const energyProfile = STATE_PROFILES[energyState] ?? STATE_PROFILES[ENERGY_STATES.NORMAL_ENERGY];
-  const longTermProfile = LONG_TERM_PROFILES[longTermState] ?? LONG_TERM_PROFILES[LONG_TERM_STATES.HEALTHY];
-  const timing = resolveTiming(overrides);
-  const mainActions = buildActionPool(energyProfile.mainActionKeys, ACTION_TYPES.MAIN, {
-    stateProfile: energyProfile,
-    longTermProfile,
-    timing,
-    overrides,
-  });
-  const transitionActions = buildActionPool(energyProfile.transitionActionKeys, ACTION_TYPES.TRANSITION, {
-    stateProfile: energyProfile,
-    longTermProfile,
-    timing,
-    overrides,
-  });
-  const allActions = [...mainActions, ...transitionActions];
+  const backgroundState = overrides.forceBackgroundState ?? energyState;
+  const mainActions = MAIN_ACTION_LIBRARY.map((action) => ({
+    ...action,
+    clipSpeed: roundToThree(action.clipSpeed * (overrides.animationSpeedMultiplier ?? 1)),
+    worldSpeed: roundToThree(action.worldSpeed * resolveMovementMultiplier(action.motionKind, overrides)),
+    weight: overrides.weightOverrides?.[action.key] ?? action.baseWeight,
+  }));
+  const specialActions = SPECIAL_ACTION_LIBRARY.map((action) => ({
+    ...action,
+    clipSpeed: roundToThree(action.clipSpeed * (overrides.animationSpeedMultiplier ?? 1)),
+    worldSpeed: roundToThree(action.worldSpeed * resolveMovementMultiplier(action.motionKind, overrides)),
+    weight: overrides.weightOverrides?.[action.key] ?? action.baseWeight,
+  }));
+  const allActions = [...mainActions, ...specialActions];
   const actionMap = allActions.reduce((map, action) => {
     map[action.key] = action;
     return map;
@@ -686,53 +172,65 @@ export function buildBehaviorProfile({ steps = 0, history = [], goal = DEFAULT_S
     map[action.key] = action;
     return map;
   }, {});
-  const transitionActionMap = transitionActions.reduce((map, action) => {
+  const transitionActionMap = specialActions.reduce((map, action) => {
     map[action.key] = action;
     return map;
   }, {});
-  const defaultMainActionKey = pickDefaultActionKey(mainActions, ACTION_KEYS.idle);
-  const defaultTransitionActionKey = pickDefaultActionKey(transitionActions, ACTION_KEYS.idleTransition);
+
+  const defaultMainActionKey = ENERGY_LEVEL_TO_STATE[energyLevel] ?? ACTION_KEYS.energy3;
+  const energyAction = mainActionMap[defaultMainActionKey] ?? mainActions[3] ?? mainActions[0];
+  const forcedAction = resolveActionByKey(allActions, overrides.forcedActionKey);
 
   return {
+    energyLevel,
     energyState,
     longTermState,
-    backgroundState: overrides.forceBackgroundState ?? energyState,
+    backgroundState,
     forcedActionKey: overrides.forcedActionKey ?? null,
     mainActions,
-    transitionActions,
+    transitionActions: specialActions,
+    specialActions,
     allActions,
     actionMap,
     mainActionMap,
     transitionActionMap,
     defaultMainActionKey,
-    defaultTransitionActionKey,
+    defaultTransitionActionKey: ACTION_KEYS.hipHopDancing,
+    currentAction: forcedAction ?? energyAction,
+    animationState: forcedAction?.key ?? energyAction.key,
+    animationClip: ENERGY_LEVEL_TO_CLIP[forcedAction?.key ?? energyAction.key] ?? energyAction.clipKey,
+    animationSpeed:
+      roundToThree((overrides.animationSpeedMultiplier ?? 1) * (ENERGY_LEVEL_TO_ANIMATION_SPEED[forcedAction?.key ?? energyAction.key] ?? 1)),
     mood: {
-      background: energyProfile.background,
-      stage: energyProfile.stage,
-      bubbleSurface: energyProfile.bubbleSurface,
-      effect: energyProfile.effect,
-      brightness: energyProfile.brightness,
-      cloudSpeed: energyProfile.cloudSpeed,
+      background: getMoodBackgroundForEnergyState(backgroundState),
+      stage: getMoodStageForEnergyState(backgroundState),
+      bubbleSurface: getMoodBubbleSurfaceForEnergyState(backgroundState),
+      effect: getMoodEffectForEnergyState(backgroundState),
+      brightness: getMoodBrightnessForEnergyState(backgroundState),
+      cloudSpeed: getMoodCloudSpeedForEnergyState(backgroundState),
     },
-    timing,
+    timing: {
+      specialRetryRange: [8, 18],
+      specialDurationRange: [2.4, 3.8],
+    },
     speed: {
       walking: overrides.walkingSpeedMultiplier ?? 1,
       running: overrides.runningSpeedMultiplier ?? 1,
       animation: overrides.animationSpeedMultiplier ?? 1,
     },
+    specialActionPool: [
+      { key: ACTION_KEYS.energy6, clipKey: ENERGY_LEVEL_TO_CLIP[ACTION_KEYS.energy6], weight: 80, label: ACTION_LABELS.energy6 },
+      { key: ACTION_KEYS.hipHopDancing, clipKey: ENERGY_LEVEL_TO_CLIP[ACTION_KEYS.hipHopDancing], weight: 15, label: ACTION_LABELS.hipHopDancing },
+      { key: ACTION_KEYS.moonwalk, clipKey: ENERGY_LEVEL_TO_CLIP[ACTION_KEYS.moonwalk], weight: 5, label: ACTION_LABELS.moonwalk },
+    ],
     signature: buildBehaviorSignature({
+      energyLevel,
       energyState,
       longTermState,
+      backgroundState,
       overrides,
-      timing,
-      speed: {
-        walking: overrides.walkingSpeedMultiplier ?? 1,
-        running: overrides.runningSpeedMultiplier ?? 1,
-        animation: overrides.animationSpeedMultiplier ?? 1,
-      },
-      weightOverrides: overrides.weightOverrides ?? {},
       mainActions,
-      transitionActions,
+      specialActions,
     }),
   };
 }
@@ -768,7 +266,7 @@ export function getActionLabel(actionKey) {
 }
 
 export function getActionKindLabel(kind) {
-  if (kind === ACTION_TYPES.TRANSITION) return "Transition";
+  if (kind === ACTION_TYPES.SPECIAL) return "Special";
   return "Main";
 }
 
@@ -796,56 +294,6 @@ function createAction({
   };
 }
 
-function resolveTiming(overrides) {
-  return {
-    mainDurationRange: normalizeRange(overrides.mainDurationRange ?? DEFAULT_TIMING.mainDurationRange, DEFAULT_TIMING.mainDurationRange),
-    transitionDurationRange: normalizeRange(
-      overrides.transitionDurationRange ?? DEFAULT_TIMING.transitionDurationRange,
-      DEFAULT_TIMING.transitionDurationRange,
-    ),
-    waitDurationRange: normalizeRange(overrides.waitDurationRange ?? DEFAULT_TIMING.waitDurationRange, DEFAULT_TIMING.waitDurationRange),
-  };
-}
-
-function buildActionPool(actionKeys = [], type, { stateProfile, longTermProfile, timing, overrides }) {
-  return actionKeys
-    .map((key) => {
-      const base = ACTION_LIBRARY[key];
-      if (!base) return null;
-
-      const weightOverride = overrides.weightOverrides?.[key];
-      const weightBias =
-        (stateProfile.weightBias?.[key] ?? 0) +
-        (longTermProfile.weightBias?.[key] ?? 0);
-      const movementMultiplier = resolveMovementMultiplier(base.motionKind, overrides);
-      const speedMultiplier = roundToThree(
-        (stateProfile.clipSpeedScale ?? 1) *
-          (longTermProfile.clipSpeedScale ?? 1) *
-          (overrides.animationSpeedMultiplier ?? 1) *
-          movementMultiplier,
-      );
-      const worldSpeedMultiplier = roundToThree(
-        (stateProfile.worldSpeedScale ?? 1) *
-          (longTermProfile.worldSpeedScale ?? 1) *
-          (overrides.animationSpeedMultiplier ?? 1) *
-          movementMultiplier,
-      );
-      const weight = Math.max(0, typeof weightOverride === "number" ? weightOverride : base.baseWeight + weightBias);
-
-      return {
-        ...base,
-        type,
-        weight,
-        durationRange: type === ACTION_TYPES.MAIN ? timing.mainDurationRange : timing.transitionDurationRange,
-        waitRange: timing.waitDurationRange,
-        clipSpeed: roundToThree(base.clipSpeed * speedMultiplier),
-        worldSpeed: roundToThree(base.worldSpeed * worldSpeedMultiplier),
-        playable: Boolean(base.available && base.clipKey),
-      };
-    })
-    .filter(Boolean);
-}
-
 function resolveMovementMultiplier(motionKind, overrides) {
   if (motionKind === "walk") {
     return overrides.walkingSpeedMultiplier ?? 1;
@@ -858,60 +306,143 @@ function resolveMovementMultiplier(motionKind, overrides) {
   return 1;
 }
 
-function pickDefaultActionKey(actions, fallbackKey) {
-  if (!actions.length) return fallbackKey;
-  return actions.reduce((best, action) => (action.weight > best.weight ? action : best), actions[0])?.key ?? fallbackKey;
+function getMotionKindForEnergyKey(key) {
+  switch (key) {
+    case ACTION_KEYS.energy0:
+    case ACTION_KEYS.energy1:
+    case ACTION_KEYS.energy2:
+    case ACTION_KEYS.energy3:
+      return "neutral";
+    case ACTION_KEYS.energy4:
+      return "walk";
+    case ACTION_KEYS.energy5:
+    case ACTION_KEYS.energy6:
+      return "run";
+    default:
+      return "neutral";
+  }
+}
+
+function getWorldSpeedForEnergyKey(key) {
+  switch (key) {
+    case ACTION_KEYS.energy0:
+      return 0.0;
+    case ACTION_KEYS.energy1:
+      return 0.0;
+    case ACTION_KEYS.energy2:
+      return 0.0;
+    case ACTION_KEYS.energy3:
+      return 0.02;
+    case ACTION_KEYS.energy4:
+      return 0.14;
+    case ACTION_KEYS.energy5:
+      return 0.26;
+    case ACTION_KEYS.energy6:
+      return 0.26;
+    default:
+      return 0.0;
+  }
 }
 
 function buildBehaviorSignature({
+  energyLevel,
   energyState,
   longTermState,
+  backgroundState,
   overrides,
-  timing,
-  speed,
-  weightOverrides,
   mainActions,
-  transitionActions,
+  specialActions,
 }) {
-  const weightSignature = Object.keys(weightOverrides)
-    .sort()
-    .map((key) => `${key}:${weightOverrides[key]}`)
-    .join(",");
-
   return [
-    energyState,
-    longTermState,
-    overrides.forceShortTermState ?? "",
-    overrides.forceLongTermState ?? "",
-    overrides.forceBackgroundState ?? "",
-    overrides.forcedActionKey ?? "",
-    `w:${speed.walking}`,
-    `r:${speed.running}`,
-    `a:${speed.animation}`,
-    `md:${timing.mainDurationRange.join("-")}`,
-    `td:${timing.transitionDurationRange.join("-")}`,
-    `wd:${timing.waitDurationRange.join("-")}`,
-    `weights:${weightSignature}`,
-    `main:${mainActions.map((action) => `${action.key}:${action.weight}`).join("|")}`,
-    `trans:${transitionActions.map((action) => `${action.key}:${action.weight}`).join("|")}`,
+    `el:${energyLevel}`,
+    `es:${energyState}`,
+    `ls:${longTermState}`,
+    `bs:${backgroundState}`,
+    `fa:${overrides.forcedActionKey ?? ""}`,
+    `w:${overrides.walkingSpeedMultiplier ?? 1}`,
+    `r:${overrides.runningSpeedMultiplier ?? 1}`,
+    `a:${overrides.animationSpeedMultiplier ?? 1}`,
+    `main:${mainActions.map((action) => `${action.key}:${formatWeight(action.weight)}`).join("|")}`,
+    `special:${specialActions.map((action) => `${action.key}:${formatWeight(action.weight)}`).join("|")}`,
   ].join(";");
-}
-
-function normalizeRange(range, fallbackRange) {
-  if (!Array.isArray(range) || range.length < 2) return [...fallbackRange];
-
-  const min = Number(range[0]);
-  const max = Number(range[1]);
-  if (!Number.isFinite(min) || !Number.isFinite(max)) return [...fallbackRange];
-
-  if (max < min) return [max, min];
-  return [roundToTwo(min), roundToTwo(max)];
-}
-
-function roundToTwo(value) {
-  return Math.round(value * 100) / 100;
 }
 
 function roundToThree(value) {
   return Math.round(value * 1000) / 1000;
+}
+
+function formatWeight(value) {
+  return Number.isFinite(value) ? Math.round(value) : 0;
+}
+
+function getMoodBackgroundForEnergyState(energyState) {
+  switch (energyState) {
+    case ENERGY_STATES.LOW_ENERGY:
+      return ["#f2f0ea", "#fbfaf6"];
+    case ENERGY_STATES.HIGH_ENERGY:
+      return ["#eef8ef", "#f7fcf4"];
+    case ENERGY_STATES.NORMAL_ENERGY:
+    default:
+      return ["#f7f5ef", "#eef3f7"];
+  }
+}
+
+function getMoodStageForEnergyState(energyState) {
+  switch (energyState) {
+    case ENERGY_STATES.LOW_ENERGY:
+      return "#f3efe5";
+    case ENERGY_STATES.HIGH_ENERGY:
+      return "#edf8f0";
+    case ENERGY_STATES.NORMAL_ENERGY:
+    default:
+      return "#f3f4f8";
+  }
+}
+
+function getMoodBubbleSurfaceForEnergyState(energyState) {
+  switch (energyState) {
+    case ENERGY_STATES.LOW_ENERGY:
+      return "#f7f2e9";
+    case ENERGY_STATES.HIGH_ENERGY:
+      return "#edf8ef";
+    case ENERGY_STATES.NORMAL_ENERGY:
+    default:
+      return "#f5f4fb";
+  }
+}
+
+function getMoodEffectForEnergyState(energyState) {
+  switch (energyState) {
+    case ENERGY_STATES.LOW_ENERGY:
+      return "cloudy";
+    case ENERGY_STATES.HIGH_ENERGY:
+      return "sparkle";
+    case ENERGY_STATES.NORMAL_ENERGY:
+    default:
+      return "float";
+  }
+}
+
+function getMoodBrightnessForEnergyState(energyState) {
+  switch (energyState) {
+    case ENERGY_STATES.LOW_ENERGY:
+      return 0.88;
+    case ENERGY_STATES.HIGH_ENERGY:
+      return 1.05;
+    case ENERGY_STATES.NORMAL_ENERGY:
+    default:
+      return 1;
+  }
+}
+
+function getMoodCloudSpeedForEnergyState(energyState) {
+  switch (energyState) {
+    case ENERGY_STATES.LOW_ENERGY:
+      return 0.28;
+    case ENERGY_STATES.HIGH_ENERGY:
+      return 1.15;
+    case ENERGY_STATES.NORMAL_ENERGY:
+    default:
+      return 0.62;
+  }
 }

@@ -3,218 +3,113 @@ import { PanResponder, StyleSheet, Text, View } from "react-native";
 import { useFrame } from "@react-three/fiber";
 import { BufferGeometry, DoubleSide, Float32BufferAttribute, Vector3 } from "three";
 
-import { ACTION_KEYS, ACTION_TYPES, getActionKindLabel, pickWeightedAction, resolveActionByKey } from "../game/behavior.js";
+import { pickWeightedAction } from "../game/behavior.js";
 import { GLBCharacterModel } from "../models/GLBCharacterModel.js";
 import { StageCanvas } from "../scene/StageCanvas.web.js";
 import { getRotationFromDrag } from "../scene/rotationMath.js";
 import { STAGE_LAYOUT } from "../scene/stageConfig.js";
 
-/**
- * 색상 조정
- * grass = 지구 색
- * path = 길 색
- */
 const MINI_WORLD_THEME = {
   grass: "#8fbe70",
-  /* #d89a4a #ff00ff #8fbe70 */
   path: "#d89a4a",
 };
 
-/**
- * 지구/캐릭터 전체 조정
- */
 const MINI_WORLD_LAYOUT = {
-  // 지구 크기. 커질수록 지구가 크게 보임.
   radius: 8.8,
-
-  // 지구를 아래로 내리는 값. 더 음수면 지구가 아래로 내려감.
   centerOffsetY: -8.65,
-
-  // 캐릭터 크기. 커질수록 캐릭터가 커짐.
   characterScale: 0.5,
-
-  // 지구를 얼마나 보여줄지. Math.PI면 반구 정도.
   sphereThetaLength: Math.PI,
 };
 
-/**
- * 길 조정
- * 지금 목표: 캐릭터 발밑을 앞뒤로 지나는 "자오선 길"
- */
 const MINI_WORLD_PATH = {
-  // 길 폭. 커질수록 길이 넓어짐.
   halfWidth: 0.7,
-
-  // 길을 지구 표면에서 얼마나 띄울지.
-  // 길이 안 보이면 이 값을 올려라. 1.0 ~ 1.4까지 테스트.
   lift: 0.007,
-
-  // 길이 지나가는 중심 X 위치.
-  // 0이면 캐릭터 중앙 발밑. 좌우로 밀고 싶으면 -0.5 / 0.5 등으로 조정.
   centerX: 0,
-
-  // 길 해상도. 높을수록 부드럽지만 무거움.
   segments: 128,
-
-  // 길 폭 방향 분할. 높을수록 길 가장자리가 부드러움.
   stripSegments: 8,
 };
 
-function useBehaviorPlayback(behavior) {
-  const [snapshot, setSnapshot] = useState(() => createPlaybackSnapshot(behavior));
-  const [clock, setClock] = useState(() => Date.now());
-  const timerRef = useRef(null);
-  const lastPlayableClipRef = useRef("idle");
+const ENERGY_MOTION_KIND = {
+  0: "neutral",
+  1: "neutral",
+  2: "neutral",
+  3: "neutral",
+  4: "walk",
+  5: "run",
+  6: "run",
+};
+
+const BONUS_ACTION_DURATION_MS = {
+  hipHopDancing: 3400,
+  moonwalk: 2800,
+};
+
+function useBonusActionPlayback(energyLevel, actionPool = []) {
+  const [bonusAction, setBonusAction] = useState(null);
+  const retryTimerRef = useRef(null);
+  const finishTimerRef = useRef(null);
 
   useEffect(() => {
-    const interval = setInterval(() => setClock(Date.now()), 250);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+    if (finishTimerRef.current) {
+      clearTimeout(finishTimerRef.current);
+      finishTimerRef.current = null;
     }
 
-    const mainActions = behavior?.mainActions ?? [];
-    const transitionActions = behavior?.transitionActions ?? [];
-    const forcedAction = resolveActionByKey(behavior?.allActions, behavior?.forcedActionKey);
+    setBonusAction(null);
 
-    if (!mainActions.length) {
-      setSnapshot(createPlaybackSnapshot(behavior));
+    if (energyLevel !== 6 || !actionPool.length) {
       return undefined;
     }
 
     let active = true;
 
-    const applyAction = (action, phase, nextActionPreview = null, phaseDurationMs = null) => {
-      if (!active || !action) return;
-
-      const playableClipKey = action.playable ? action.clipKey : lastPlayableClipRef.current || "idle";
-      if (action.playable && action.clipKey) {
-        lastPlayableClipRef.current = action.clipKey;
-      }
-
-      setSnapshot((current) => ({
-        ...current,
-        phase,
-        currentAction: action,
-        currentActionType: phase === "wait" ? current.currentActionType : action.type,
-        clipActionKey: playableClipKey,
-        nextActionPreview,
-        currentWeight: action.weight,
-        currentSpeedMultiplier: action.clipSpeed,
-        phaseEndsAt: phaseDurationMs ? Date.now() + phaseDurationMs : null,
-      }));
-    };
-
-    const scheduleWait = (nextStage, currentAction, nextActionPreview) => {
-      if (!active) return;
-
-      const [minWait, maxWait] = behavior?.timing?.waitDurationRange ?? [1, 4];
-      const waitMs = randomBetween(minWait, maxWait) * 1000;
-      applyAction(currentAction, "wait", nextActionPreview, waitMs);
-
-      timerRef.current = setTimeout(() => {
+    const scheduleNextAttempt = () => {
+      const delayMs = randomBetween(8, 18) * 1000;
+      retryTimerRef.current = setTimeout(() => {
         if (!active) return;
 
-        if (nextStage === "transition") {
-          scheduleTransition(nextActionPreview?.key ?? null);
+        const chosen = pickWeightedAction(actionPool);
+        if (!chosen || chosen.key === "energy6") {
+          scheduleNextAttempt();
           return;
         }
 
-        scheduleMain(nextActionPreview?.key ?? null);
-      }, waitMs);
+        setBonusAction(chosen);
+        finishTimerRef.current = setTimeout(() => {
+          if (!active) return;
+          setBonusAction(null);
+          scheduleNextAttempt();
+        }, BONUS_ACTION_DURATION_MS[chosen.key] ?? 3000);
+      }, delayMs);
     };
 
-    const scheduleMain = (previousMainKey = null) => {
-      if (!active) return;
-
-      const nextAction = pickWeightedAction(mainActions, previousMainKey) ?? resolveActionByKey(mainActions, behavior.defaultMainActionKey) ?? mainActions[0];
-      const nextPreview = pickWeightedAction(transitionActions, behavior.defaultTransitionActionKey) ?? transitionActions[0] ?? null;
-      const [minDuration, maxDuration] = nextAction.durationRange ?? behavior.timing.mainDurationRange;
-      const actionMs = randomBetween(minDuration, maxDuration) * 1000;
-
-      applyAction(nextAction, "main", nextPreview, actionMs);
-
-      timerRef.current = setTimeout(() => {
-        if (!active) return;
-        scheduleWait("transition", nextAction, nextPreview);
-      }, actionMs);
-    };
-
-    const scheduleTransition = (previousTransitionKey = null) => {
-      if (!active) return;
-
-      const nextAction =
-        pickWeightedAction(transitionActions, previousTransitionKey) ??
-        resolveActionByKey(transitionActions, behavior.defaultTransitionActionKey) ??
-        transitionActions[0];
-      const nextPreview = pickWeightedAction(mainActions, behavior.defaultMainActionKey) ?? mainActions[0] ?? null;
-      const [minDuration, maxDuration] = nextAction.durationRange ?? behavior.timing.transitionDurationRange;
-      const actionMs = randomBetween(minDuration, maxDuration) * 1000;
-
-      applyAction(nextAction, "transition", nextPreview, actionMs);
-
-      timerRef.current = setTimeout(() => {
-        if (!active) return;
-        scheduleWait("main", nextAction, nextPreview);
-      }, actionMs);
-    };
-
-    if (forcedAction) {
-      applyAction(forcedAction, forcedAction.type, null, null);
-      return () => {
-        active = false;
-        if (timerRef.current) {
-          clearTimeout(timerRef.current);
-          timerRef.current = null;
-        }
-      };
-    }
-
-    scheduleMain();
+    scheduleNextAttempt();
 
     return () => {
       active = false;
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-        timerRef.current = null;
+      if (retryTimerRef.current) {
+        clearTimeout(retryTimerRef.current);
+        retryTimerRef.current = null;
+      }
+      if (finishTimerRef.current) {
+        clearTimeout(finishTimerRef.current);
+        finishTimerRef.current = null;
       }
     };
-  }, [behavior?.signature]);
+  }, [energyLevel]);
 
-  return useMemo(() => {
-    const remainingDuration = snapshot.phaseEndsAt ? Math.max(0, (snapshot.phaseEndsAt - clock) / 1000) : null;
-    return {
-      ...snapshot,
-      remainingDuration,
-    };
-  }, [clock, snapshot]);
-}
-
-function createPlaybackSnapshot(behavior) {
-  const fallbackAction = behavior?.mainActionMap?.[behavior?.defaultMainActionKey] ?? behavior?.mainActions?.[0] ?? null;
-
-  return {
-    phase: "idle",
-    currentAction: fallbackAction,
-    currentActionType: fallbackAction?.type ?? ACTION_TYPES.MAIN,
-    clipActionKey: fallbackAction?.clipKey ?? "idle",
-    nextActionPreview: null,
-    currentWeight: fallbackAction?.weight ?? 0,
-    currentSpeedMultiplier: fallbackAction?.clipSpeed ?? 1,
-    remainingDuration: null,
-    phaseEndsAt: null,
-  };
+  return bonusAction;
 }
 
 export function CharacterStage({ character, state, onInteractionChange }) {
   const [rotation, setRotation] = useState(STAGE_LAYOUT.defaultRotation);
   const rotationRef = useRef(STAGE_LAYOUT.defaultRotation);
   const dragStartRef = useRef(STAGE_LAYOUT.defaultRotation);
-  const playback = useBehaviorPlayback(state.behavior);
+  const bonusAction = useBonusActionPlayback(state.energyLevel ?? 3, state.behavior?.specialActionPool ?? []);
 
   const panResponder = useMemo(
     () =>
@@ -254,29 +149,34 @@ export function CharacterStage({ character, state, onInteractionChange }) {
         <StageEffect effect={state.effect} mood={state.sceneMood} />
       </View>
       <StageCanvas>
-        <AnimatedCharacter character={character} rotation={rotation} state={state} playback={playback} />
+        <AnimatedCharacter
+          character={character}
+          rotation={rotation}
+          state={state}
+          bonusAction={bonusAction}
+        />
       </StageCanvas>
-      {state.debugVisible ? <BehaviorDebugOverlay state={state} playback={playback} /> : null}
+      {state.debugVisible ? <BehaviorDebugOverlay state={state} bonusAction={bonusAction} /> : null}
       <View style={styles.gestureHotspot} {...panResponder.panHandlers} />
     </View>
   );
 }
 
-function AnimatedCharacter({ character, rotation, state, playback }) {
+function AnimatedCharacter({ character, rotation, state, bonusAction }) {
   const rootRef = useRef(null);
-  const actionKey = playback?.currentAction?.key ?? state.animationState ?? ACTION_KEYS.idle;
-  const actionClipSpeed = playback?.currentSpeedMultiplier ?? state.animationSpeed ?? 1;
-  const worldRotationSpeed = playback?.currentAction?.worldSpeed ?? 0;
-  const clipAnimationState = playback?.clipActionKey ?? actionKey;
+  const energyLevel = state.energyLevel ?? 3;
+  const actionKey = bonusAction?.key ?? state.animationState ?? `energy${energyLevel}`;
+  const actionClipSpeed = state.animationSpeed ?? 1;
+  const worldMotionKind = bonusAction?.motionKind ?? ENERGY_MOTION_KIND[energyLevel] ?? "neutral";
+  const loopMode = bonusAction ? "once" : "repeat";
 
   useFrame((frameState) => {
     if (!rootRef.current) return;
 
     const t = frameState.clock.getElapsedTime() * actionClipSpeed;
-    const bobAmount =
-      actionKey === "walk" || actionKey === "run"
-        ? state.bobAmount * 0.12
-        : state.bobAmount * 0.08;
+    const bobAmount = worldMotionKind === "walk" || worldMotionKind === "run"
+      ? state.bobAmount * 0.12
+      : state.bobAmount * 0.08;
 
     rootRef.current.rotation.x = rotation.x;
     rootRef.current.rotation.y = rotation.y;
@@ -288,29 +188,28 @@ function AnimatedCharacter({ character, rotation, state, playback }) {
 
   return (
     <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY, 0]}>
-      <MiniWorld motionState={playback?.currentAction?.motionKind ?? actionKey} rotationSpeed={worldRotationSpeed} />
+      <MiniWorld motionState={worldMotionKind} />
 
       <group position={[0, 0.16, 0]} scale={MINI_WORLD_LAYOUT.characterScale}>
-        <GLBCharacterModel character={character} animationState={clipAnimationState} animationSpeed={actionClipSpeed} />
+        <GLBCharacterModel
+          character={character}
+          animationState={actionKey}
+          animationSpeed={actionClipSpeed}
+          loopMode={loopMode}
+        />
       </group>
     </group>
   );
 }
 
-function BehaviorDebugOverlay({ state, playback }) {
-  const currentAction = playback?.currentAction;
-  const nextPreview = playback?.nextActionPreview;
-
+function BehaviorDebugOverlay({ state, bonusAction }) {
   return (
     <View style={styles.debugOverlay} pointerEvents="none">
-      <DebugLine label="Current Short Term State" value={state.energyState ?? "n/a"} />
+      <DebugLine label="Energy Level" value={state.energyLevel ?? "n/a"} />
+      <DebugLine label="Current Energy State" value={state.energyState ?? "n/a"} />
       <DebugLine label="Current Long Term State" value={state.longTermState ?? "n/a"} />
-      <DebugLine label="Current Action" value={currentAction?.label ?? "idle"} />
-      <DebugLine label="Current Action Type" value={playback?.phase === "wait" ? "Waiting" : getActionKindLabel(playback?.currentActionType)} />
-      <DebugLine label="Current Weight" value={formatDebugNumber(playback?.currentWeight)} />
-      <DebugLine label="Current Speed Multiplier" value={formatDebugNumber(playback?.currentSpeedMultiplier)} />
-      <DebugLine label="Remaining Duration" value={formatDebugNumber(playback?.remainingDuration)} />
-      <DebugLine label="Next Action Preview" value={nextPreview?.label ?? "none"} />
+      <DebugLine label="Current Clip" value={state.animationState ?? "n/a"} />
+      <DebugLine label="Bonus Action" value={bonusAction?.label ?? "running"} />
     </View>
   );
 }
@@ -343,7 +242,6 @@ function MiniWorld({ motionState, rotationSpeed = 0 }) {
   useFrame((_, delta) => {
     if (!worldRef.current) return;
 
-    // X축 회전 = 지구가 앞으로 굴러가며 길이 캐릭터 발밑을 지나감.
     worldRef.current.rotation.x -= getWorldRotationSpeed(motionState, rotationSpeed) * delta;
   });
 
@@ -365,10 +263,7 @@ function MiniWorld({ motionState, rotationSpeed = 0 }) {
           <meshStandardMaterial color={MINI_WORLD_THEME.grass} />
         </mesh>
 
-        <mesh 
-          geometry={pathGeometry}
-          renderOrder={0}
-        >
+        <mesh geometry={pathGeometry} renderOrder={0}>
           <meshStandardMaterial
             color={MINI_WORLD_THEME.path}
             side={DoubleSide}
@@ -382,12 +277,6 @@ function MiniWorld({ motionState, rotationSpeed = 0 }) {
   );
 }
 
-/**
- * 캐릭터 발밑을 앞뒤로 지나는 자오선 길 geometry.
- *
- * x = 길의 좌우 폭
- * y/z = 구를 앞뒤로 감싸는 방향
- */
 function buildMeridianPathGeometry({
   radius,
   halfWidth,
@@ -427,10 +316,6 @@ function buildMeridianPathGeometry({
   return geometry;
 }
 
-/**
- * 자오선 길의 한 점을 구 표면 위로 투영.
- * 길이 안 보이면 lift를 올리면 된다.
- */
 function projectMeridianBandPoint(radius, x, angle) {
   const safeX = Math.max(-radius * 0.85, Math.min(radius * 0.85, x));
   const yzRadius = Math.sqrt(radius * radius - safeX * safeX);
@@ -454,7 +339,7 @@ function getWorldRotationSpeed(motionState, rotationSpeed = 0) {
       return 0.14;
     case "tired":
       return 0.004;
-    case "idle":
+    case "neutral":
     default:
       return 0.02;
   }
@@ -463,12 +348,6 @@ function getWorldRotationSpeed(motionState, rotationSpeed = 0) {
 function randomBetween(min, max) {
   if (max <= min) return min;
   return min + Math.random() * (max - min);
-}
-
-function formatDebugNumber(value) {
-  if (value == null || Number.isNaN(value)) return "n/a";
-  if (typeof value === "number") return value.toFixed(2).replace(/\.00$/, "");
-  return String(value);
 }
 
 function StageEffect({ effect, mood }) {

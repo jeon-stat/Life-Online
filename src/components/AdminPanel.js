@@ -1,54 +1,33 @@
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { theme } from "../constants/theme.js";
-import { getActionKindLabel } from "../game/behavior.js";
 
-const STATE_LABELS = {
-  LOW_ENERGY: "낮음",
-  NORMAL_ENERGY: "보통",
-  HIGH_ENERGY: "높음",
-  WEAK: "허약",
-  HEALTHY: "건강",
-  ACTIVE: "활발",
-};
+const ENERGY_OPTIONS = [
+  { key: null, label: "Auto" },
+  { key: 0, label: "0" },
+  { key: 1, label: "1" },
+  { key: 2, label: "2" },
+  { key: 3, label: "3" },
+  { key: 4, label: "4" },
+  { key: 5, label: "5" },
+  { key: 6, label: "6" },
+];
 
-const ACTION_LABELS_KO = {
-  idle: "서 있기",
-  tired: "앉기",
-  slowWalk: "느리게 걷기",
-  walk: "걷기",
-  fastWalk: "빠르게 걷기",
-  run: "뛰기",
-  sleepyIdle: "졸린 서 있기",
-  lookingDown: "아래 보기",
-  slowTiredWalk: "피곤한 느린 걷기",
-  stretchSitting: "앉아서 스트레칭",
-  idleBreathing: "호흡하기",
-  yawn: "하품",
-  weightShift: "중심 옮기기",
-  stopAndRest: "멈추고 쉬기",
-  headNod: "고개 끄덕이기",
-  slowTurn: "천천히 돌기",
-  relaxedIdle: "편안한 서 있기",
-  casualWalk: "평범하게 걷기",
-  exploreWalk: "둘러보기 걷기",
-  stretch: "스트레칭",
-  lightJog: "가벼운 조깅",
-  lookAround: "주변 보기",
-  turnLeftRight: "좌우 보기",
-  smallPause: "짧은 멈춤",
-  footTap: "발 톡톡",
-  idleTransition: "서 있기 전환",
-  quickTurn: "빠른 회전",
-  bounceIdle: "들썩이기",
-  fastStop: "빠른 멈춤",
-  lookAroundFast: "빠르게 주변 보기",
-  shortHop: "짧은 점프",
-  happyRun: "신나는 뛰기",
-  energeticWalk: "활기찬 걷기",
-  dashStart: "달리기 시작",
-  excitedIdle: "신난 서 있기",
-  activePatrol: "활동적인 배회",
+const LONG_TERM_OPTIONS = [
+  { key: null, label: "Auto" },
+  { key: "WEAK", label: "Weak" },
+  { key: "HEALTHY", label: "Healthy" },
+  { key: "ACTIVE", label: "Active" },
+];
+
+const ENERGY_LABELS = {
+  0: "Sitting Idle",
+  1: "Yawn",
+  2: "Breathing Idle",
+  3: "Neutral Idle",
+  4: "Walking",
+  5: "Running",
+  6: "Running + Special",
 };
 
 export function AdminPanel({ admin, behavior }) {
@@ -56,163 +35,40 @@ export function AdminPanel({ admin, behavior }) {
     return null;
   }
 
-  const shortState = admin.forcedShortTermState ?? behavior?.energyState ?? "LOW_ENERGY";
-  const longState = admin.forcedLongTermState ?? behavior?.longTermState ?? "WEAK";
-  const backgroundState = admin.forcedBackgroundState ?? behavior?.backgroundState ?? shortState;
-  const forcedAction = admin.forcedActionKey ?? "자동";
+  const currentEnergyLevel = behavior?.energyLevel ?? 3;
+  const currentEnergyLabel = ENERGY_LABELS[currentEnergyLevel] ?? "Unknown";
   const selectedSkinTone = admin.skinTones?.find((tone) => tone.id === admin.skinToneId) ?? null;
+  const forcedEnergyLevel = admin.forcedEnergyLevel ?? null;
+  const forcedLongTermState = admin.forcedLongTermState ?? null;
 
   return (
     <View style={styles.shell}>
-      <Text style={styles.title}>행동 테스트 패널</Text>
+      <Text style={styles.title}>Admin Panel</Text>
       <Text style={styles.caption}>
-        개발자 전용 패널입니다. 상태, 행동, 시간, 속도, 배경 분위기를 빠르게 테스트할 수 있습니다.
+        Energy level, long-term state, and skin tone only. Use Energy Level to preview the animation.
       </Text>
 
       <View style={styles.summaryCard}>
-        <SummaryLine label="현재 단기 상태" value={formatState(shortState)} />
-        <SummaryLine label="현재 장기 상태" value={formatState(longState)} />
-        <SummaryLine label="현재 배경 분위기" value={formatState(backgroundState)} />
-        <SummaryLine label="현재 강제 행동" value={forcedAction} />
+        <SummaryLine label="Current Energy" value={`${currentEnergyLevel} / ${currentEnergyLabel}`} />
+        <SummaryLine label="Current Long Term" value={behavior?.longTermState ?? "Unknown"} />
+        <SummaryLine label="Current Clip" value={behavior?.animationClip ?? "neutral-idle"} />
         <SummaryLine
-          label="현재 피부색"
-          value={selectedSkinTone ? selectedSkinTone.label : "미선택"}
+          label="Forced Energy"
+          value={forcedEnergyLevel === null ? "Auto" : `${forcedEnergyLevel} / ${ENERGY_LABELS[forcedEnergyLevel] ?? "Unknown"}`}
         />
+        <SummaryLine label="Forced Long Term" value={forcedLongTermState ?? "Auto"} />
+        <SummaryLine label="Skin Tone" value={selectedSkinTone ? selectedSkinTone.label : "None"} />
       </View>
 
-      <Pressable onPress={() => admin.setForcedActionKey(null)} style={styles.clearActionButton}>
-        <Text style={styles.clearActionLabel}>강제 행동 해제</Text>
-      </Pressable>
-
-      <Section title="1. 단기 상태 강제 변경">
-        <ButtonRow
-          items={[
-            { key: "LOW_ENERGY", label: "낮음" },
-            { key: "NORMAL_ENERGY", label: "보통" },
-            { key: "HIGH_ENERGY", label: "높음" },
-          ]}
-          selected={admin.forcedShortTermState}
-          onSelect={(value) => admin.setForcedShortTermState(value)}
-          onClear={() => admin.setForcedShortTermState(null)}
-        />
+      <Section title="Energy Override">
+        <OptionRow items={ENERGY_OPTIONS} selected={forcedEnergyLevel} onSelect={admin.setForcedEnergyLevel} />
       </Section>
 
-      <Section title="2. 장기 상태 강제 변경">
-        <ButtonRow
-          items={[
-            { key: "WEAK", label: "허약" },
-            { key: "HEALTHY", label: "건강" },
-            { key: "ACTIVE", label: "활발" },
-          ]}
-          selected={admin.forcedLongTermState}
-          onSelect={(value) => admin.setForcedLongTermState(value)}
-          onClear={() => admin.setForcedLongTermState(null)}
-        />
+      <Section title="Long-Term State">
+        <OptionRow items={LONG_TERM_OPTIONS} selected={forcedLongTermState} onSelect={admin.setForcedLongTermState} />
       </Section>
 
-      <Section title="3. 배경 분위기 강제 적용">
-        <ButtonRow
-          items={[
-            { key: "LOW_ENERGY", label: "낮음" },
-            { key: "NORMAL_ENERGY", label: "보통" },
-            { key: "HIGH_ENERGY", label: "높음" },
-          ]}
-          selected={admin.forcedBackgroundState}
-          onSelect={(value) => admin.setForcedBackgroundState(value)}
-          onClear={() => admin.setForcedBackgroundState(null)}
-        />
-      </Section>
-
-      <Section title="4. 행동 테스트">
-        <Text style={styles.poolTitle}>메인 행동 풀</Text>
-        <ActionPool
-          actions={behavior?.mainActions ?? []}
-          forcedActionKey={admin.forcedActionKey}
-          onForceAction={admin.setForcedActionKey}
-          onAdjustWeight={admin.adjustWeightOverride}
-        />
-
-        <Text style={[styles.poolTitle, { marginTop: 12 }]}>전환 행동 풀</Text>
-        <ActionPool
-          actions={behavior?.transitionActions ?? []}
-          forcedActionKey={admin.forcedActionKey}
-          onForceAction={admin.setForcedActionKey}
-          onAdjustWeight={admin.adjustWeightOverride}
-        />
-      </Section>
-
-      <Section title="5. 속도 테스트">
-        <RangeEditor
-          label="걷기 속도 배수"
-          value={admin.walkingSpeedMultiplier}
-          onChange={admin.setWalkingSpeedMultiplier}
-          step={0.1}
-        />
-        <RangeEditor
-          label="뛰기 속도 배수"
-          value={admin.runningSpeedMultiplier}
-          onChange={admin.setRunningSpeedMultiplier}
-          step={0.1}
-        />
-        <RangeEditor
-          label="애니메이션 속도 배수"
-          value={admin.animationSpeedMultiplier}
-          onChange={admin.setAnimationSpeedMultiplier}
-          step={0.1}
-        />
-      </Section>
-
-      <Section title="6. 시간 테스트">
-        <RangeEditor
-          label="메인 행동 지속 시간"
-          value={admin.mainDurationRange}
-          onChange={(min, max) => admin.setMainDurationRange(min, max)}
-          pair
-        />
-        <RangeEditor
-          label="전환 행동 지속 시간"
-          value={admin.transitionDurationRange}
-          onChange={(min, max) => admin.setTransitionDurationRange(min, max)}
-          pair
-        />
-        <RangeEditor
-          label="랜덤 대기 시간"
-          value={admin.waitDurationRange}
-          onChange={(min, max) => admin.setWaitDurationRange(min, max)}
-          pair
-        />
-      </Section>
-
-      <Section title="7. 가중치 테스트">
-        <View style={styles.actionGrid}>
-          {(behavior?.allActions ?? []).map((action) => {
-            const selected = admin.forcedActionKey === action.key;
-
-            return (
-              <View key={action.key} style={[styles.actionCard, selected && styles.actionCardSelected]}>
-                <Text style={styles.actionName}>{getAdminActionLabel(action.key, action.label)}</Text>
-                <Text style={styles.actionMeta}>
-                  {`${getActionKindLabel(action.type) === "Transition" ? "전환" : "메인"} · ${action.available ? "실제 클립" : "임시 항목"}`}
-                </Text>
-                <Text style={styles.actionMeta}>{`가중치 ${formatWeight(action.weight)}`}</Text>
-                <View style={styles.actionButtonRow}>
-                  <Pressable onPress={() => admin.adjustWeightOverride(action.key, -1)} style={styles.miniButton}>
-                    <Text style={styles.miniButtonLabel}>-</Text>
-                  </Pressable>
-                  <Pressable onPress={() => admin.adjustWeightOverride(action.key, 1)} style={styles.miniButton}>
-                    <Text style={styles.miniButtonLabel}>+</Text>
-                  </Pressable>
-                  <Pressable onPress={() => admin.setForcedActionKey(action.key)} style={styles.forceButton}>
-                    <Text style={styles.forceButtonLabel}>강제</Text>
-                  </Pressable>
-                </View>
-              </View>
-            );
-          })}
-        </View>
-      </Section>
-
-      <Section title="8. 피부색 설정">
+      <Section title="Skin Tone">
         <View style={styles.skinToneGrid}>
           {(admin.skinTones ?? []).map((tone) => {
             const selected = admin.skinToneId === tone.id;
@@ -230,12 +86,14 @@ export function AdminPanel({ admin, behavior }) {
         </View>
       </Section>
 
-      <Pressable onPress={admin.resetBehavior} style={styles.resetButton}>
-        <Text style={styles.resetLabel}>행동 설정 초기화</Text>
-      </Pressable>
-
-      <Pressable onPress={admin.resetMock} style={styles.resetButtonSecondary}>
-        <Text style={styles.resetLabelSecondary}>모의 데이터 초기화</Text>
+      <Pressable
+        onPress={() => {
+          admin.resetBehavior?.();
+          admin.setSkinTone(admin.skinTones?.[0]?.id ?? null);
+        }}
+        style={styles.resetButton}
+      >
+        <Text style={styles.resetLabel}>Reset Admin Overrides</Text>
       </Pressable>
     </View>
   );
@@ -259,232 +117,110 @@ function Section({ title, children }) {
   );
 }
 
-function ButtonRow({ items, selected, onSelect, onClear }) {
+function OptionRow({ items, selected, onSelect }) {
   return (
-    <View style={styles.row}>
+    <View style={styles.optionRow}>
       {items.map((item) => {
         const active = selected === item.key;
         return (
           <Pressable
-            key={item.key}
-            onPress={() => onSelect(item.key)}
-            style={[styles.button, active && styles.buttonSelected]}
+            key={String(item.key ?? "auto")}
+            onPress={() => onSelect?.(item.key)}
+            style={[styles.optionChip, active && styles.optionChipSelected]}
           >
-            <Text style={styles.buttonLabel}>{item.label}</Text>
+            <Text style={styles.optionLabel}>{item.label}</Text>
           </Pressable>
         );
       })}
-      <Pressable onPress={onClear} style={styles.button}>
-        <Text style={styles.buttonLabel}>해제</Text>
-      </Pressable>
     </View>
   );
-}
-
-function ActionPool({ actions, forcedActionKey, onForceAction, onAdjustWeight }) {
-  return (
-    <View style={styles.poolWrap}>
-      {actions.map((action) => {
-        const selected = forcedActionKey === action.key;
-
-        return (
-          <View key={action.key} style={[styles.poolRow, selected && styles.poolRowSelected]}>
-            <View style={styles.poolText}>
-              <Text style={styles.poolName}>{getAdminActionLabel(action.key, action.label)}</Text>
-              <Text style={styles.poolMeta}>
-                {`${getActionKindLabel(action.type) === "Transition" ? "전환" : "메인"} · ${action.available ? "실제 클립" : "임시 항목"} · 가중치 ${formatWeight(action.weight)}`}
-              </Text>
-            </View>
-            <View style={styles.poolControls}>
-              <Pressable onPress={() => onAdjustWeight(action.key, -1)} style={styles.miniButton}>
-                <Text style={styles.miniButtonLabel}>-</Text>
-              </Pressable>
-              <Pressable onPress={() => onAdjustWeight(action.key, 1)} style={styles.miniButton}>
-                <Text style={styles.miniButtonLabel}>+</Text>
-              </Pressable>
-              <Pressable onPress={() => onForceAction(action.key)} style={styles.forceButton}>
-                <Text style={styles.forceButtonLabel}>강제</Text>
-              </Pressable>
-            </View>
-          </View>
-        );
-      })}
-    </View>
-  );
-}
-
-function RangeEditor({ label, value, onChange, step = 0.1, pair = false }) {
-  const [localMin, localMax] = pair ? value : [value, value];
-
-  return (
-    <View style={styles.rangeBlock}>
-      <Text style={styles.rangeLabel}>{label}</Text>
-      {pair ? (
-        <View style={styles.rangeRow}>
-          <TextInput
-            value={String(localMin)}
-            keyboardType="decimal-pad"
-            style={styles.input}
-            onChangeText={(text) => onChange(parseFloat(text || "0"), localMax)}
-          />
-          <Text style={styles.rangeDash}>~</Text>
-          <TextInput
-            value={String(localMax)}
-            keyboardType="decimal-pad"
-            style={styles.input}
-            onChangeText={(text) => onChange(localMin, parseFloat(text || "0"))}
-          />
-        </View>
-      ) : (
-        <View style={styles.rangeRow}>
-          <Pressable onPress={() => onChange(roundToOne((Number(value) || 1) - step))} style={styles.smallAdjust}>
-            <Text style={styles.smallAdjustLabel}>-</Text>
-          </Pressable>
-          <TextInput
-            value={String(value)}
-            keyboardType="decimal-pad"
-            style={styles.input}
-            onChangeText={(text) => onChange(parseFloat(text || "1"))}
-          />
-          <Pressable onPress={() => onChange(roundToOne((Number(value) || 1) + step))} style={styles.smallAdjust}>
-            <Text style={styles.smallAdjustLabel}>+</Text>
-          </Pressable>
-        </View>
-      )}
-    </View>
-  );
-}
-
-function formatWeight(value) {
-  return Number.isFinite(value) ? value.toFixed(2).replace(/\.00$/, "") : "0";
-}
-
-function roundToOne(value) {
-  return Math.round(value * 10) / 10;
-}
-
-function formatState(value) {
-  return STATE_LABELS[value] ?? value;
-}
-
-function getAdminActionLabel(actionKey, fallbackLabel) {
-  return ACTION_LABELS_KO[actionKey] ?? fallbackLabel;
 }
 
 const styles = StyleSheet.create({
   shell: {
-    marginTop: theme.spacing.lg,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.lg,
-    backgroundColor: "#fff4ef",
+    position: "absolute",
+    top: 18,
+    right: 18,
+    width: 320,
+    maxWidth: "88%",
+    borderRadius: theme.radius.xl,
+    padding: 14,
+    backgroundColor: "rgba(255, 250, 244, 0.96)",
     borderWidth: 1,
-    borderColor: "#f0d6c3",
-    gap: 14,
+    borderColor: "#efd7c4",
+    shadowColor: "#000",
+    shadowOpacity: 0.09,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+    gap: 12,
   },
   title: {
     color: theme.colors.ink,
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "900",
   },
   caption: {
     color: theme.colors.inkSoft,
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 12,
+    lineHeight: 17,
     fontWeight: "700",
   },
   summaryCard: {
-    borderRadius: theme.radius.md,
-    backgroundColor: "#fffaf5",
-    borderWidth: 1,
-    borderColor: "#f2ddcb",
+    borderRadius: theme.radius.lg,
     padding: 12,
-    gap: 8,
+    backgroundColor: "#fffdf9",
+    borderWidth: 1,
+    borderColor: "#efcfbc",
+    gap: 7,
   },
   summaryLine: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
+    gap: 2,
   },
   summaryLabel: {
     color: theme.colors.inkSoft,
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.4,
   },
   summaryValue: {
     color: theme.colors.ink,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "900",
   },
   section: {
-    gap: 10,
+    gap: 8,
   },
   sectionTitle: {
-    color: theme.colors.ink,
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  poolTitle: {
     color: theme.colors.ink,
     fontSize: 12,
     fontWeight: "900",
   },
-  row: {
+  optionRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
   },
-  button: {
+  optionChip: {
+    minWidth: 56,
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: theme.radius.pill,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 9,
     backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "#efcbb1",
+    borderColor: "#efcfbc",
   },
-  buttonSelected: {
-    backgroundColor: "#fff2e9",
+  optionChipSelected: {
+    backgroundColor: "#fff0e5",
     borderColor: "#b45c3a",
   },
-  buttonLabel: {
+  optionLabel: {
     color: theme.colors.ink,
     fontSize: 12,
     fontWeight: "900",
-  },
-  poolWrap: {
-    gap: 8,
-  },
-  poolRow: {
-    borderRadius: theme.radius.md,
-    padding: 10,
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#efd1bd",
-    gap: 8,
-  },
-  poolRowSelected: {
-    backgroundColor: "#fff4ee",
-    borderColor: "#b45c3a",
-  },
-  poolText: {
-    gap: 2,
-  },
-  poolName: {
-    color: theme.colors.ink,
-    fontSize: 13,
-    fontWeight: "900",
-  },
-  poolMeta: {
-    color: theme.colors.inkSoft,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  poolControls: {
-    flexDirection: "row",
-    gap: 8,
-    alignItems: "center",
-  },
-  actionGrid: {
-    gap: 8,
   },
   skinToneGrid: {
     flexDirection: "row",
@@ -492,19 +228,19 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   skinToneChip: {
-    minWidth: 78,
+    minWidth: 82,
     borderRadius: theme.radius.md,
     paddingHorizontal: 10,
     paddingVertical: 10,
     backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "#efd1bd",
+    borderColor: "#efcfbc",
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
   },
   skinToneChipSelected: {
-    backgroundColor: "#fff4ee",
+    backgroundColor: "#fff0e5",
     borderColor: "#b45c3a",
   },
   skinToneSwatch: {
@@ -519,140 +255,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "900",
   },
-  actionCard: {
-    borderRadius: theme.radius.md,
-    padding: 10,
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#efd1bd",
-    gap: 6,
-  },
-  actionCardSelected: {
-    backgroundColor: "#fff4ee",
-    borderColor: "#b45c3a",
-  },
-  actionName: {
-    color: theme.colors.ink,
-    fontSize: 13,
-    fontWeight: "900",
-  },
-  actionMeta: {
-    color: theme.colors.inkSoft,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  actionButtonRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 4,
-  },
-  miniButton: {
-    minWidth: 30,
-    minHeight: 30,
-    borderRadius: theme.radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff8f2",
-    borderWidth: 1,
-    borderColor: "#efcbb1",
-  },
-  miniButtonLabel: {
-    color: theme.colors.ink,
-    fontSize: 12,
-    fontWeight: "900",
-  },
-  forceButton: {
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    backgroundColor: "#fce7d8",
-  },
-  forceButtonLabel: {
-    color: "#9f4e33",
-    fontSize: 11,
-    fontWeight: "900",
-  },
-  rangeBlock: {
-    gap: 6,
-  },
-  rangeLabel: {
-    color: theme.colors.ink,
-    fontSize: 12,
-    fontWeight: "900",
-  },
-  rangeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  input: {
-    minWidth: 72,
-    borderRadius: theme.radius.md,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: "#efcbb1",
-    color: theme.colors.ink,
-    fontSize: 12,
-    fontWeight: "800",
-  },
-  rangeDash: {
-    color: theme.colors.inkSoft,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  smallAdjust: {
-    minWidth: 30,
-    minHeight: 30,
-    borderRadius: theme.radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff8f2",
-    borderWidth: 1,
-    borderColor: "#efcbb1",
-  },
-  smallAdjustLabel: {
-    color: theme.colors.ink,
-    fontSize: 12,
-    fontWeight: "900",
-  },
   resetButton: {
-    marginTop: 4,
+    marginTop: 2,
     borderRadius: theme.radius.md,
     paddingVertical: 12,
     alignItems: "center",
     backgroundColor: "#fce7d8",
-  },
-  resetButtonSecondary: {
-    borderRadius: theme.radius.md,
-    paddingVertical: 12,
-    alignItems: "center",
-    backgroundColor: "#fff7f0",
-    borderWidth: 1,
-    borderColor: "#f0d6c3",
-  },
-  clearActionButton: {
-    borderRadius: theme.radius.md,
-    paddingVertical: 11,
-    alignItems: "center",
-    backgroundColor: "#fff7f0",
-    borderWidth: 1,
-    borderColor: "#f0d6c3",
-  },
-  clearActionLabel: {
-    color: theme.colors.ink,
-    fontSize: 12,
-    fontWeight: "900",
   },
   resetLabel: {
     color: "#9f4e33",
-    fontSize: 12,
-    fontWeight: "900",
-  },
-  resetLabelSecondary: {
-    color: theme.colors.ink,
     fontSize: 12,
     fontWeight: "900",
   },

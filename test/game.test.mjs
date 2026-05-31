@@ -4,20 +4,23 @@ import test from "node:test";
 import { CHARACTER_CLASSES } from "../src/characters.js";
 import { buildCharacterViewModel } from "../src/game/characterState.js";
 import { getLevelProgress, getStreak, getTotalXp } from "../src/game/progression.js";
-import { DEFAULT_STEP_GOAL, getCharacterStatus } from "../src/game/stepRules.js";
+import { DEFAULT_STEP_GOAL, getEnergyLevel } from "../src/game/stepRules.js";
 import { ADMIN_STEP_PRESETS, buildMockHistory } from "../src/data/mockStepData.js";
 
 test("uses one shared imported character model", () => {
   assert.equal(CHARACTER_CLASSES.length, 1);
   assert.equal(CHARACTER_CLASSES[0].id, "custom-chibi");
-  assert.equal(CHARACTER_CLASSES[0].modelUrl, "models/character.glb");
+  assert.equal(CHARACTER_CLASSES[0].modelUrl, "models/chibi_animated.glb");
 });
 
-test("character status follows the walking thresholds", () => {
-  assert.equal(getCharacterStatus(0, DEFAULT_STEP_GOAL), "tired");
-  assert.equal(getCharacterStatus(2000, DEFAULT_STEP_GOAL), "idle");
-  assert.equal(getCharacterStatus(5000, DEFAULT_STEP_GOAL), "active");
-  assert.equal(getCharacterStatus(6500, DEFAULT_STEP_GOAL), "happy");
+test("energy level follows the new 0-to-6 tiers", () => {
+  assert.equal(getEnergyLevel(0, DEFAULT_STEP_GOAL), 0);
+  assert.equal(getEnergyLevel(700, DEFAULT_STEP_GOAL), 1);
+  assert.equal(getEnergyLevel(1600, DEFAULT_STEP_GOAL), 2);
+  assert.equal(getEnergyLevel(2600, DEFAULT_STEP_GOAL), 3);
+  assert.equal(getEnergyLevel(3800, DEFAULT_STEP_GOAL), 4);
+  assert.equal(getEnergyLevel(5200, DEFAULT_STEP_GOAL), 5);
+  assert.equal(getEnergyLevel(6500, DEFAULT_STEP_GOAL), 6);
 });
 
 test("progression rewards daily goal completion and builds levels", () => {
@@ -40,7 +43,7 @@ test("streak counts only consecutive goal clears from today backwards", () => {
   assert.equal(getStreak(history, DEFAULT_STEP_GOAL), 2);
 });
 
-test("character view model reuses one model but changes mood output", () => {
+test("character view model maps high energy to the running base clip", () => {
   const history = buildMockHistory({ todaySteps: 6500 });
   const viewModel = buildCharacterViewModel({
     todayRecord: history[0],
@@ -48,7 +51,8 @@ test("character view model reuses one model but changes mood output", () => {
     goal: DEFAULT_STEP_GOAL,
   });
 
-  assert.equal(viewModel.status, "happy");
+  assert.equal(viewModel.energyLevel, 6);
+  assert.equal(viewModel.animationState, "energy6");
   assert.equal(typeof viewModel.bubbleText, "string");
   assert.equal(viewModel.level >= 1, true);
 });

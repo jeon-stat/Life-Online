@@ -9,6 +9,18 @@ export function getStepProgress(steps, goal = DEFAULT_STEP_GOAL) {
   return Math.max(0, Math.min(getStepRatio(steps, goal), 1.2));
 }
 
+export function getEnergyLevel(steps, goal = DEFAULT_STEP_GOAL) {
+  const ratio = getStepRatio(steps, goal);
+
+  if (ratio < 0.05) return 0;
+  if (ratio < 0.15) return 1;
+  if (ratio < 0.3) return 2;
+  if (ratio < 0.5) return 3;
+  if (ratio < 0.7) return 4;
+  if (ratio < 1) return 5;
+  return 6;
+}
+
 export function getEnergyState(steps, goal = DEFAULT_STEP_GOAL) {
   const ratio = getStepRatio(steps, goal);
 

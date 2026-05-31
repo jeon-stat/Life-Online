@@ -8,17 +8,8 @@ import { DEFAULT_STEP_GOAL, getStepProgress } from "./stepRules.js";
 export function buildCharacterViewModel({ todayRecord, history, goal = DEFAULT_STEP_GOAL, admin = null }) {
   const steps = todayRecord?.steps ?? 0;
   const behaviorOverrides = {
-    forceShortTermState: admin?.forcedShortTermState ?? null,
+    forceEnergyLevel: admin?.forcedEnergyLevel ?? null,
     forceLongTermState: admin?.forcedLongTermState ?? null,
-    forceBackgroundState: admin?.forcedBackgroundState ?? null,
-    forcedActionKey: admin?.forcedActionKey ?? null,
-    weightOverrides: admin?.weightOverrides ?? {},
-    walkingSpeedMultiplier: admin?.walkingSpeedMultiplier ?? 1,
-    runningSpeedMultiplier: admin?.runningSpeedMultiplier ?? 1,
-    animationSpeedMultiplier: admin?.animationSpeedMultiplier ?? 1,
-    mainDurationRange: admin?.mainDurationRange ?? [8, 15],
-    transitionDurationRange: admin?.transitionDurationRange ?? [1, 3],
-    waitDurationRange: admin?.waitDurationRange ?? [1, 4],
   };
   const behavior = buildBehaviorProfile({ steps, history, goal, overrides: behaviorOverrides });
   const energyTheme = theme.status[behavior.backgroundState] ?? theme.status[behavior.energyState];
@@ -28,15 +19,16 @@ export function buildCharacterViewModel({ todayRecord, history, goal = DEFAULT_S
   const growth = getGrowthProgress(history, goal);
   const personality = getPersonality(history, goal);
   const memories = getMemories(history, goal);
-  const forcedAction = behavior.actionMap[behavior.forcedActionKey] ?? null;
-  const defaultAction = behavior.mainActionMap[behavior.defaultMainActionKey] ?? behavior.mainActions[0] ?? null;
-  const animationState = forcedAction?.clipKey ?? defaultAction?.clipKey ?? "idle";
+  const animationState = behavior.animationState ?? behavior.defaultMainActionKey ?? "energy3";
+  const animationClip = behavior.animationClip ?? "neutral-idle";
+  const currentAction = behavior.currentAction ?? behavior.actionMap?.[animationState] ?? null;
 
   return {
     steps,
     goal,
     status: behavior.energyState,
     energyState: behavior.energyState,
+    energyLevel: behavior.energyLevel,
     longTermState: behavior.longTermState,
     backgroundState: behavior.backgroundState,
     growthLabel: growthTheme.label,
@@ -60,6 +52,8 @@ export function buildCharacterViewModel({ todayRecord, history, goal = DEFAULT_S
     animationSpeed: energyTheme.animationSpeed,
     bobAmount: energyTheme.bobAmount,
     animationState,
+    animationClip,
+    currentAction,
     behavior,
     behaviorOverrides,
     debugVisible: Boolean(admin?.visible),

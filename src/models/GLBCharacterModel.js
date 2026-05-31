@@ -1,6 +1,6 @@
 import { useFrame, useLoader } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
-import { AnimationMixer, Box3, Color, LoopRepeat, MeshStandardMaterial } from "three";
+import { AnimationMixer, Box3, Color, LoopOnce, LoopRepeat, MeshStandardMaterial } from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 
@@ -30,7 +30,12 @@ function pickAnimationClip(clips = [], animationMap = {}, stateKey = "idle", def
   return clips[0];
 }
 
-export function GLBCharacterModel({ character, animationState = "idle", animationSpeed = 1 }) {
+export function GLBCharacterModel({
+  character,
+  animationState = "energy3",
+  animationSpeed = 1,
+  loopMode = "repeat",
+}) {
   const gltf = useLoader(GLTFLoader, character.modelUrl);
   const mixerRef = useRef(null);
   const scale = character.modelScale ?? [3, 3, 3];
@@ -111,7 +116,8 @@ export function GLBCharacterModel({ character, animationState = "idle", animatio
     const action = mixer.clipAction(selectedClip);
     action.reset();
     action.enabled = true;
-    action.setLoop(LoopRepeat, Infinity);
+    action.clampWhenFinished = loopMode === "once";
+    action.setLoop(loopMode === "once" ? LoopOnce : LoopRepeat, loopMode === "once" ? 1 : Infinity);
     action.setEffectiveTimeScale(animationSpeed);
     action.setEffectiveWeight(1);
     action.fadeIn(0.2);
@@ -123,7 +129,7 @@ export function GLBCharacterModel({ character, animationState = "idle", animatio
       mixer.stopAllAction();
       mixerRef.current = null;
     };
-  }, [animationSpeed, scene, selectedClip]);
+  }, [animationSpeed, loopMode, scene, selectedClip]);
 
   useFrame((_, delta) => {
     mixerRef.current?.update(delta);
