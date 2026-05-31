@@ -120,6 +120,8 @@ export function CharacterStage({ character, state, onInteractionChange }) {
   const rotationRef = useRef(STAGE_LAYOUT.defaultRotation);
   const dragStartRef = useRef(STAGE_LAYOUT.defaultRotation);
   const bonusAction = useBonusActionPlayback(state.energyLevel ?? 3, state.behavior?.specialActionPool ?? []);
+  const energyLevel = state.energyLevel ?? 3;
+  const actionKey = bonusAction?.key ?? ENERGY_LEVEL_TO_ACTION_KEY[energyLevel] ?? "energy3";
 
   const panResponder = useMemo(
     () =>
@@ -175,8 +177,7 @@ export function CharacterStage({ character, state, onInteractionChange }) {
 function AnimatedCharacter({ character, rotation, state, bonusAction }) {
   const rootRef = useRef(null);
   const energyLevel = state.energyLevel ?? 3;
-  const baseActionKey = ENERGY_LEVEL_TO_ACTION_KEY[energyLevel] ?? "energy3";
-  const actionKey = bonusAction?.key ?? baseActionKey;
+  const actionKey = bonusAction?.key ?? ENERGY_LEVEL_TO_ACTION_KEY[energyLevel] ?? "energy3";
   const actionClipSpeed = state.animationSpeed ?? 1;
   const worldMotionKind = bonusAction?.motionKind ?? ENERGY_MOTION_KIND[energyLevel] ?? "neutral";
   const loopMode = bonusAction ? "once" : "repeat";
