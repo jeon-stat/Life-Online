@@ -58,6 +58,8 @@ function useBonusActionPlayback(energyLevel, actionPool = []) {
   const [bonusAction, setBonusAction] = useState(null);
   const retryTimerRef = useRef(null);
   const finishTimerRef = useRef(null);
+  const actionPoolSignature = actionPool.map((action) => `${action.key}:${action.weight ?? 0}`).join("|");
+  const specialChance = Math.min(1, Math.max(0, actionPool.reduce((sum, action) => sum + (action.weight ?? 0), 0) / 100));
 
   useEffect(() => {
     if (retryTimerRef.current) {
@@ -82,8 +84,13 @@ function useBonusActionPlayback(energyLevel, actionPool = []) {
       retryTimerRef.current = setTimeout(() => {
         if (!active) return;
 
+        if (Math.random() >= specialChance) {
+          scheduleNextAttempt();
+          return;
+        }
+
         const chosen = pickWeightedAction(actionPool);
-        if (!chosen || chosen.key === "energy6") {
+        if (!chosen) {
           scheduleNextAttempt();
           return;
         }
@@ -110,7 +117,7 @@ function useBonusActionPlayback(energyLevel, actionPool = []) {
         finishTimerRef.current = null;
       }
     };
-  }, [energyLevel]);
+  }, [actionPoolSignature, energyLevel, specialChance]);
 
   return bonusAction;
 }

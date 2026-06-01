@@ -27,7 +27,7 @@ const ENERGY_LABELS = {
   3: "Neutral Idle",
   4: "Walking",
   5: "Running",
-  6: "Running + Special",
+  6: "Running",
 };
 
 export function AdminPanel({ admin, behavior }) {
@@ -40,8 +40,8 @@ export function AdminPanel({ admin, behavior }) {
   const selectedSkinTone = admin.skinTones?.find((tone) => tone.id === admin.skinToneId) ?? null;
   const forcedEnergyLevel = admin.forcedEnergyLevel ?? null;
   const forcedLongTermState = admin.forcedLongTermState ?? null;
-  const energySixPool = buildChanceRows(behavior?.specialActionPool ?? []);
-  const specialChanceLabel = formatSpecialChanceLabel(behavior?.specialActionPool ?? []);
+  const specialChanceRows = buildSpecialChanceRows(behavior?.specialActionPool ?? [], behavior?.specialActionChance ?? 0.2);
+  const specialChanceLabel = formatSpecialChanceLabel(behavior?.specialActionChance ?? 0.2);
 
   return (
     <View style={styles.shell}>
@@ -73,9 +73,9 @@ export function AdminPanel({ admin, behavior }) {
       <Section title="Energy 6 Chance">
         <Text style={styles.sectionNote}>Only used when Energy Level is 6.</Text>
         <Text style={styles.sectionNote}>{specialChanceLabel}</Text>
-        {energySixPool.length ? (
+        {specialChanceRows.length ? (
           <View style={styles.chanceList}>
-            {energySixPool.map((row) => (
+            {specialChanceRows.map((row) => (
               <View key={row.key} style={styles.chanceRow}>
                 <Text style={styles.chanceLabel}>{row.label}</Text>
                 <Text style={styles.chanceValue}>{row.percentLabel}</Text>
@@ -155,33 +155,33 @@ function OptionRow({ items, selected, onSelect }) {
   );
 }
 
-function buildChanceRows(actions) {
+function buildSpecialChanceRows(actions, specialChance = 0.2) {
   const validActions = actions.filter((action) => Number.isFinite(action.weight) && action.weight > 0);
-  const totalWeight = validActions.reduce((sum, action) => sum + action.weight, 0);
+  const specialTotalPercent = Math.max(0, Math.min(100, Math.round(specialChance * 100)));
+  const runningPercent = Math.max(0, 100 - specialTotalPercent);
 
-  if (!totalWeight) return [];
+  const rows = [
+    { key: "running", label: "Running", percentLabel: `${runningPercent}%` },
+  ];
 
-  return validActions.map((action) => {
-    const percent = (action.weight / totalWeight) * 100;
+  const specialRows = validActions.map((action, index) => {
+    const label = index === 0 ? "Special 1" : "Special 2";
+    const actionLabel = action.label ?? action.key;
+    const percent = Math.round((action.weight / 100) * 100);
+
     return {
       key: action.key,
-      label: action.label ?? action.key,
-      percentLabel: `${Math.round(percent)}%`,
+      label: `${label} (${actionLabel})`,
+      percentLabel: `${percent}%`,
     };
   });
+
+  return [...rows, ...specialRows];
 }
 
-function formatSpecialChanceLabel(actions) {
-  const validActions = actions.filter((action) => Number.isFinite(action.weight) && action.weight > 0);
-  const totalWeight = validActions.reduce((sum, action) => sum + action.weight, 0);
-
-  if (!totalWeight) return "Special action chance: not configured.";
-
-  const specialWeight = validActions
-    .filter((action) => action.key !== "energy6")
-    .reduce((sum, action) => sum + action.weight, 0);
-
-  return `Special actions total: ${Math.round((specialWeight / totalWeight) * 100)}%`;
+function formatSpecialChanceLabel(specialChance = 0.2) {
+  const percent = Math.max(0, Math.min(100, Math.round(specialChance * 100)));
+  return `Special actions total: ${percent}%`;
 }
 
 const styles = StyleSheet.create({

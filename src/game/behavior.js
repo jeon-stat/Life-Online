@@ -37,7 +37,7 @@ export const ACTION_LABELS = {
   energy3: "Neutral Idle",
   energy4: "Walking",
   energy5: "Running",
-  energy6: "Running + Special",
+  energy6: "Running",
   hipHopDancing: "Hip Hop Dancing",
   moonwalk: "Moonwalk",
 };
@@ -181,6 +181,9 @@ export function buildBehaviorProfile({ steps = 0, history = [], goal = DEFAULT_S
     map[action.key] = action;
     return map;
   }, {});
+  const specialActionChance = roundToThree(
+    Math.min(1, specialActions.reduce((sum, action) => sum + (action.weight ?? action.baseWeight ?? 0), 0) / 100),
+  );
 
   const defaultMainActionKey = ENERGY_LEVEL_TO_STATE[energyLevel] ?? ACTION_KEYS.energy3;
   const energyAction = mainActionMap[defaultMainActionKey] ?? mainActions[3] ?? mainActions[0];
@@ -224,10 +227,10 @@ export function buildBehaviorProfile({ steps = 0, history = [], goal = DEFAULT_S
       animation: overrides.animationSpeedMultiplier ?? 1,
     },
     specialActionPool: [
-      { key: ACTION_KEYS.energy6, clipKey: ENERGY_LEVEL_TO_CLIP[ACTION_KEYS.energy6], weight: 80, label: ACTION_LABELS.energy6 },
       { key: ACTION_KEYS.hipHopDancing, clipKey: ENERGY_LEVEL_TO_CLIP[ACTION_KEYS.hipHopDancing], weight: 15, label: ACTION_LABELS.hipHopDancing },
       { key: ACTION_KEYS.moonwalk, clipKey: ENERGY_LEVEL_TO_CLIP[ACTION_KEYS.moonwalk], weight: 5, label: ACTION_LABELS.moonwalk },
     ],
+    specialActionChance,
     signature: buildBehaviorSignature({
       energyLevel,
       energyState,
