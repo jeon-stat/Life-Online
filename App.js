@@ -14,7 +14,7 @@ import { theme } from "./src/constants/theme.js";
 
 const TABS = [
   { id: "home", label: "\uC0B0\uCC45" },
-  { id: "history", label: "\uAE30\uB85D" },
+  { id: "history", label: "\uBC1C\uC790\uAD6D" },
   { id: "character", label: "\uCE90\uB9AD\uD130" },
 ];
 
