@@ -52,9 +52,9 @@ export function AdminPanel({ admin, behavior }) {
 
   return (
     <View style={styles.shell}>
-      <Text style={styles.title}>Admin Panel</Text>
+      <Text style={styles.title}>개발자 패널</Text>
       <Text style={styles.caption}>
-        Energy level, special action, long-term state, and skin tone only. Use Energy Level to preview the animation.
+        에너지 단계, 스페셜 동작, 장기 상태, 피부톤만 조작할 수 있는 개발자용 패널이에요.
       </Text>
 
       <View style={styles.summaryCard}>
@@ -208,11 +208,9 @@ function formatSpecialActionSelectionLabel(key) {
 
 const styles = StyleSheet.create({
   shell: {
-    position: "absolute",
-    top: 18,
-    right: 18,
-    width: 320,
-    maxWidth: "88%",
+    position: "relative",
+    width: "100%",
+    maxWidth: "100%",
     borderRadius: theme.radius.xl,
     padding: 14,
     backgroundColor: "rgba(255, 250, 244, 0.96)",
@@ -222,7 +220,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.09,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },
-    elevation: 8,
+    elevation: 3,
     gap: 12,
   },
   title: {
