@@ -2,7 +2,8 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { theme } from "../constants/theme.js";
 import { useStepData } from "../data/stepDataProvider.js";
-import { buildCharacterViewModel } from "../game/characterState.js";
+import { getMemories } from "../game/memories.js";
+import { getStreak } from "../game/progression.js";
 import { getEnergyLevel } from "../game/stepRules.js";
 
 const ENERGY_META = {
@@ -18,12 +19,12 @@ const ENERGY_META = {
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 
 export function HistoryScreen() {
-  const { today, history, goal } = useStepData();
-  const viewState = buildCharacterViewModel({ todayRecord: today, history, goal });
+  const { history, goal } = useStepData();
   const trail = history.slice(0, 7);
-  const weekSummary = buildWeekSummary(trail, goal);
+  const streak = getStreak(history, goal);
+  const weekSummary = buildWeekSummary(trail, goal, streak);
   const logEntries = buildTrailLogs(trail, goal);
-  const topRecords = buildTopRecords(trail, goal);
+  const memories = getMemories(history, goal).slice(0, 2);
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -38,9 +39,8 @@ export function HistoryScreen() {
       <View style={styles.summaryGrid}>
         <SummaryStat label="이번 주 총 걸음 수" value={`${formatNumber(weekSummary.totalSteps)}보`} />
         <SummaryStat label="하루 평균 걸음 수" value={`${formatNumber(weekSummary.averageSteps)}보`} />
-        <SummaryStat label="가장 많이 걸은 날" value={weekSummary.bestDayLabel} />
-        <SummaryStat label="최고 에너지 단계" value={`${weekSummary.maxEnergyLevel} / ${ENERGY_META[weekSummary.maxEnergyLevel]?.label ?? "알 수 없음"}`} />
-        <SummaryStat label="연속 달성일" value={`${viewState.streak}일`} />
+        <SummaryStat label="최고 걸음 수" value={`${formatNumber(weekSummary.bestSteps)}보`} />
+        <SummaryStat label="연속 달성일" value={`${streak}일`} />
       </View>
 
       <Section title="이번 주 문장 요약">
@@ -88,11 +88,18 @@ export function HistoryScreen() {
         </View>
       </Section>
 
-      <Section title="최고 기록">
-        <View style={styles.bestGrid}>
-          <BestRecord label="최고 걸음 수" value={`${formatNumber(topRecords.maxSteps)}보`} />
-          <BestRecord label="최고 에너지 6 달성 횟수" value={`${topRecords.energy6Count}회`} />
-          <BestRecord label="최장 연속 달성일" value={`${topRecords.longestStreak}일`} />
+      <Section title="추억">
+        <View style={styles.memoryList}>
+          {memories.length ? (
+            memories.map((memory) => (
+              <View key={memory.id} style={styles.memoryItem}>
+                <Text style={styles.memoryTitle}>{memory.title}</Text>
+                <Text style={styles.memoryText}>{memory.summary}</Text>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.emptyText}>아직 저장된 추억이 없어요. 오늘의 산책이 첫 추억이 될 수 있어요.</Text>
+          )}
         </View>
       </Section>
     </ScrollView>
@@ -108,15 +115,6 @@ function SummaryStat({ label, value }) {
   );
 }
 
-function BestRecord({ label, value }) {
-  return (
-    <View style={styles.bestRecord}>
-      <Text style={styles.bestRecordLabel}>{label}</Text>
-      <Text style={styles.bestRecordValue}>{value}</Text>
-    </View>
-  );
-}
-
 function Section({ title, children }) {
   return (
     <View style={styles.section}>
@@ -126,91 +124,104 @@ function Section({ title, children }) {
   );
 }
 
-function buildWeekSummary(history, goal) {
+function buildWeekSummary(history, goal, streak) {
   const totalSteps = history.reduce((sum, record) => sum + (record.steps ?? 0), 0);
   const averageSteps = history.length ? Math.round(totalSteps / history.length) : 0;
   const bestRecord = history.reduce((best, record) => {
-    if (!best || (record.steps ?? 0) > (best.steps ?? 0)) return record;
+    if (!best || (record.steps ?? 0) > (best.steps ?? 0)) {
+      return record;
+    }
+
     return best;
   }, null);
-  const counts = countEnergyLevels(history, goal);
-  const maxEnergyLevel = findMaxEnergyLevel(history, goal);
-  const strongestFragments = buildEnergyFragments(counts);
+  const energyCounts = countEnergyLevels(history, goal);
+  const walkingDays = (energyCounts[3] ?? 0) + (energyCounts[4] ?? 0);
+  const runningDays = (energyCounts[5] ?? 0) + (energyCounts[6] ?? 0);
+  const calmDays = (energyCounts[0] ?? 0) + (energyCounts[1] ?? 0) + (energyCounts[2] ?? 0);
 
   return {
     totalSteps,
     averageSteps,
-    bestDayLabel: bestRecord ? formatTrailDateLabel(bestRecord.date, bestRecord.id === history[0]?.id) : "기록 없음",
-    maxEnergyLevel,
-    narrative: strongestFragments.length
-      ? `이번 주 캐릭터는 ${strongestFragments.join(", ")}을 기록했어요.`
-      : "이번 주 캐릭터의 발자국이 아직 쌓이지 않았어요.",
+    bestSteps: bestRecord?.steps ?? 0,
+    bestDayLabel: bestRecord ? formatTrailDateLabel(bestRecord.date, bestRecord.id === history[0]?.id) : "",
+    narrative: buildWeeklyNarrative({
+      walkingDays,
+      runningDays,
+      calmDays,
+      streak,
+      bestDayLabel: bestRecord ? formatTrailDateLabel(bestRecord.date, bestRecord.id === history[0]?.id) : "",
+    }),
   };
+}
+
+function buildWeeklyNarrative({ walkingDays, runningDays, calmDays, streak, bestDayLabel }) {
+  const parts = [];
+
+  if (walkingDays > 0) {
+    parts.push(`${walkingDays}일은 산책했고`);
+  }
+
+  if (runningDays > 0) {
+    parts.push(`${runningDays}일은 힘차게 뛰었어요`);
+  }
+
+  if (!parts.length && calmDays > 0) {
+    parts.push(`${calmDays}일은 차분히 쉬었어요`);
+  }
+
+  if (!parts.length) {
+    parts.push("이번 주는 조용히 움직였어요");
+  }
+
+  const bestDayText = bestDayLabel ? ` 가장 많이 걸은 날은 ${bestDayLabel}이에요.` : "";
+  const streakText = streak > 0 ? ` 연속 산책일은 ${streak}일이에요.` : "";
+
+  return `이번 주 캐릭터는 ${parts.join(", ")}.${bestDayText}${streakText}`;
 }
 
 function buildTrailLogs(history, goal) {
-  return history.slice(0, 4).map((record, index) => {
-    const energyLevel = getEnergyLevel(record.steps, goal);
-    const meta = ENERGY_META[energyLevel] ?? ENERGY_META[3];
+  const latest = history[0] ?? null;
+  const bestRecord = history.reduce((best, record) => {
+    if (!best || (record?.steps ?? 0) > (best?.steps ?? 0)) {
+      return record;
+    }
 
-    return {
-      key: record.id,
-      shortDate: formatWeekdayLabel(record.date, index === 0),
-      tone: meta.tone,
-      text: buildTrailSentence(record.date, energyLevel, index === 0),
-    };
-  });
-}
+    return best;
+  }, null);
+  const todayEnergy = getEnergyLevel(latest?.steps ?? 0, goal);
+  const bestEnergy = getEnergyLevel(bestRecord?.steps ?? 0, goal);
+  const todayTone = ENERGY_META[todayEnergy] ?? ENERGY_META[3];
+  const bestTone = ENERGY_META[bestEnergy] ?? ENERGY_META[3];
+  const goalDays = history.reduce((count, record) => count + ((record?.steps ?? 0) >= goal ? 1 : 0), 0);
 
-function buildTopRecords(history, goal) {
-  const maxSteps = history.reduce((max, record) => Math.max(max, record.steps ?? 0), 0);
-  const energy6Count = history.reduce((count, record) => count + (getEnergyLevel(record.steps, goal) === 6 ? 1 : 0), 0);
-  const longestStreak = getLongestGoalStreak(history, goal);
-
-  return {
-    maxSteps,
-    energy6Count,
-    longestStreak,
-  };
-}
-
-function buildEnergyFragments(counts) {
-  const entries = Object.entries(counts)
-    .map(([level, count]) => ({ level: Number(level), count }))
-    .filter((entry) => entry.count > 0)
-    .sort((a, b) => b.count - a.count || b.level - a.level)
-    .slice(0, 3);
-
-  return entries.map(({ level, count }) => `${ENERGY_META[level]?.label ?? `${level}단계`} ${count}일`);
+  return [
+    {
+      key: "today",
+      shortDate: "오늘",
+      tone: todayTone.tone,
+      text: latest ? `오늘은 ${ENERGY_META[todayEnergy]?.label ?? "평온"} 상태까지 도달했어요.` : "오늘 기록이 아직 없어요.",
+    },
+    {
+      key: "best",
+      shortDate: bestRecord ? formatWeekdayLabel(bestRecord.date, bestRecord.id === latest?.id) : "기록",
+      tone: bestTone.tone,
+      text: bestRecord ? `이번 주 가장 활발했던 날은 ${formatTrailDateLabel(bestRecord.date, bestRecord.id === latest?.id)}이에요.` : "아직 가장 활발했던 날이 없어요.",
+    },
+    {
+      key: "goal",
+      shortDate: "목표",
+      tone: "#c06b3e",
+      text: goalDays > 0 ? `이번 주 목표를 ${goalDays}일 달성했어요.` : "이번 주 목표 달성 기록이 아직 없어요.",
+    },
+  ];
 }
 
 function countEnergyLevels(history, goal) {
   return history.reduce((acc, record) => {
-    const level = getEnergyLevel(record.steps, goal);
+    const level = getEnergyLevel(record?.steps ?? 0, goal);
     acc[level] = (acc[level] ?? 0) + 1;
     return acc;
   }, {});
-}
-
-function findMaxEnergyLevel(history, goal) {
-  return history.reduce((maxLevel, record) => Math.max(maxLevel, getEnergyLevel(record.steps, goal)), 0);
-}
-
-function getLongestGoalStreak(history, goal) {
-  let best = 0;
-  let current = 0;
-
-  for (const record of history) {
-    if ((record.steps ?? 0) >= goal) {
-      current += 1;
-      best = Math.max(best, current);
-      continue;
-    }
-
-    current = 0;
-  }
-
-  return best;
 }
 
 function buildTrailSentence(date, energyLevel, isToday) {
@@ -441,29 +452,32 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     fontWeight: "800",
   },
-  bestGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  memoryList: {
     gap: 10,
   },
-  bestRecord: {
-    width: "48.5%",
+  memoryItem: {
     borderRadius: theme.radius.lg,
     padding: 14,
     backgroundColor: "#fffdf8",
     borderWidth: 1,
     borderColor: "#ecdac5",
+    gap: 6,
   },
-  bestRecordLabel: {
-    color: theme.colors.inkSoft,
-    fontSize: 11,
-    lineHeight: 15,
-    fontWeight: "800",
-  },
-  bestRecordValue: {
-    marginTop: 8,
+  memoryTitle: {
     color: theme.colors.ink,
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: "900",
+  },
+  memoryText: {
+    color: theme.colors.inkSoft,
+    fontSize: 13,
+    lineHeight: 20,
+    fontWeight: "700",
+  },
+  emptyText: {
+    color: theme.colors.inkSoft,
+    fontSize: 13,
+    lineHeight: 20,
+    fontWeight: "700",
   },
 });
