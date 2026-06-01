@@ -33,7 +33,6 @@ const ENERGY_LABELS = {
 const ENERGY_6_SPECIAL_OPTIONS = [
   { key: null, label: "Auto" },
   { key: "hipHopDancing", label: "Special 1" },
-  { key: "moonwalk", label: "Special 2" },
 ];
 
 export function AdminPanel({ admin, behavior }) {
@@ -202,10 +201,6 @@ function formatSpecialActionSelectionLabel(key) {
 
   if (key === "hipHopDancing") {
     return "Special 1 (Hip Hop Dancing)";
-  }
-
-  if (key === "moonwalk") {
-    return "Special 2 (Moonwalk)";
   }
 
   return String(key);

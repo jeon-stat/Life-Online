@@ -101,7 +101,7 @@ function normalizeSpecialActionKey(value) {
   if (value === null) return null;
 
   const key = String(value);
-  if (key === "hipHopDancing" || key === "moonwalk") {
+  if (key === "hipHopDancing") {
     return key;
   }
 

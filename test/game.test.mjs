@@ -56,10 +56,10 @@ test("character view model maps high energy to the special dance clip", () => {
   assert.equal(viewModel.animationClip, "hip-hop-dancing");
   assert.equal(typeof viewModel.bubbleText, "string");
   assert.equal(viewModel.level >= 1, true);
-  assert.equal(viewModel.behavior.specialActionPool.length, 2);
+  assert.equal(viewModel.behavior.specialActionPool.length, 1);
   assert.deepEqual(
     viewModel.behavior.specialActionPool.map((action) => action.weight),
-    [50, 50],
+    [100],
   );
 });
 
@@ -90,14 +90,14 @@ test("forced special action drives the energy 6 dance selection", () => {
     admin: {
       forcedEnergyLevel: null,
       forcedLongTermState: null,
-      forcedSpecialActionKey: "moonwalk",
+      forcedSpecialActionKey: "hipHopDancing",
     },
   });
 
   assert.equal(viewModel.energyLevel, 6);
-  assert.equal(viewModel.behavior.forcedSpecialActionKey, "moonwalk");
-  assert.equal(viewModel.animationState, "moonwalk");
-  assert.equal(viewModel.animationClip, "moonwalk");
+  assert.equal(viewModel.behavior.forcedSpecialActionKey, "hipHopDancing");
+  assert.equal(viewModel.animationState, "hipHopDancing");
+  assert.equal(viewModel.animationClip, "hip-hop-dancing");
 });
 
 test("admin presets stay limited to mock step scenarios", () => {

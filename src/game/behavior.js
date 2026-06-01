@@ -235,14 +235,8 @@ export function buildBehaviorProfile({ steps = 0, history = [], goal = DEFAULT_S
       {
         key: ACTION_KEYS.hipHopDancing,
         clipKey: ENERGY_LEVEL_TO_CLIP[ACTION_KEYS.hipHopDancing],
-        weight: 50,
+        weight: 100,
         label: ACTION_LABELS.hipHopDancing,
-      },
-      {
-        key: ACTION_KEYS.moonwalk,
-        clipKey: ENERGY_LEVEL_TO_CLIP[ACTION_KEYS.moonwalk],
-        weight: 50,
-        label: ACTION_LABELS.moonwalk,
       },
     ],
     specialActionChance,
