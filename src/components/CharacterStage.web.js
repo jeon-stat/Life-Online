@@ -36,7 +36,7 @@ const ENERGY_MOTION_KIND = {
   3: "neutral",
   4: "walk",
   5: "run",
-  6: "run",
+  6: "neutral",
 };
 
 const ENERGY_LEVEL_TO_ACTION_KEY = {
@@ -49,86 +49,45 @@ const ENERGY_LEVEL_TO_ACTION_KEY = {
   6: "energy6",
 };
 
-const BONUS_ACTION_DURATION_MS = {
-  hipHopDancing: 3400,
-  moonwalk: 2800,
-};
-
-function useBonusActionPlayback(energyLevel, actionPool = []) {
-  const [bonusAction, setBonusAction] = useState(null);
-  const retryTimerRef = useRef(null);
-  const finishTimerRef = useRef(null);
+function useEnergy6SpecialAction(energyLevel, actionPool = [], forcedSpecialActionKey = null) {
+  const [selectedActionKey, setSelectedActionKey] = useState(null);
   const actionPoolSignature = actionPool.map((action) => `${action.key}:${action.weight ?? 0}`).join("|");
-  const specialChance = Math.min(1, Math.max(0, actionPool.reduce((sum, action) => sum + (action.weight ?? 0), 0) / 100));
 
   useEffect(() => {
-    if (retryTimerRef.current) {
-      clearTimeout(retryTimerRef.current);
-      retryTimerRef.current = null;
-    }
-    if (finishTimerRef.current) {
-      clearTimeout(finishTimerRef.current);
-      finishTimerRef.current = null;
-    }
-
-    setBonusAction(null);
-
     if (energyLevel !== 6 || !actionPool.length) {
+      setSelectedActionKey(null);
       return undefined;
     }
 
-    let active = true;
+    const forcedAction = actionPool.find((action) => action.key === forcedSpecialActionKey) ?? null;
+    if (forcedAction) {
+      setSelectedActionKey(forcedAction.key);
+      return undefined;
+    }
 
-    const scheduleNextAttempt = () => {
-      const delayMs = randomBetween(8, 18) * 1000;
-      retryTimerRef.current = setTimeout(() => {
-        if (!active) return;
+    const chosen = pickWeightedAction(actionPool);
+    setSelectedActionKey(chosen?.key ?? actionPool[0]?.key ?? null);
 
-        if (Math.random() >= specialChance) {
-          scheduleNextAttempt();
-          return;
-        }
+    return undefined;
+  }, [actionPoolSignature, energyLevel, forcedSpecialActionKey]);
 
-        const chosen = pickWeightedAction(actionPool);
-        if (!chosen) {
-          scheduleNextAttempt();
-          return;
-        }
-
-        setBonusAction(chosen);
-        finishTimerRef.current = setTimeout(() => {
-          if (!active) return;
-          setBonusAction(null);
-          scheduleNextAttempt();
-        }, BONUS_ACTION_DURATION_MS[chosen.key] ?? 3000);
-      }, delayMs);
-    };
-
-    scheduleNextAttempt();
-
-    return () => {
-      active = false;
-      if (retryTimerRef.current) {
-        clearTimeout(retryTimerRef.current);
-        retryTimerRef.current = null;
-      }
-      if (finishTimerRef.current) {
-        clearTimeout(finishTimerRef.current);
-        finishTimerRef.current = null;
-      }
-    };
-  }, [actionPoolSignature, energyLevel, specialChance]);
-
-  return bonusAction;
+  return actionPool.find((action) => action.key === selectedActionKey) ?? null;
 }
 
 export function CharacterStage({ character, state, onInteractionChange }) {
   const [rotation, setRotation] = useState(STAGE_LAYOUT.defaultRotation);
   const rotationRef = useRef(STAGE_LAYOUT.defaultRotation);
   const dragStartRef = useRef(STAGE_LAYOUT.defaultRotation);
-  const bonusAction = useBonusActionPlayback(state.energyLevel ?? 3, state.behavior?.specialActionPool ?? []);
   const energyLevel = state.energyLevel ?? 3;
-  const actionKey = bonusAction?.key ?? ENERGY_LEVEL_TO_ACTION_KEY[energyLevel] ?? "energy3";
+  const specialAction = useEnergy6SpecialAction(
+    energyLevel,
+    state.behavior?.specialActionPool ?? [],
+    state.behavior?.forcedSpecialActionKey ?? null,
+  );
+  const actionKey =
+    energyLevel === 6
+      ? specialAction?.key ?? state.behavior?.defaultTransitionActionKey ?? ENERGY_LEVEL_TO_ACTION_KEY[energyLevel] ?? "energy6"
+      : ENERGY_LEVEL_TO_ACTION_KEY[energyLevel] ?? "energy3";
 
   const panResponder = useMemo(
     () =>
@@ -172,22 +131,25 @@ export function CharacterStage({ character, state, onInteractionChange }) {
           character={character}
           rotation={rotation}
           state={state}
-          bonusAction={bonusAction}
+          specialAction={specialAction}
         />
       </StageCanvas>
-      {state.debugVisible ? <BehaviorDebugOverlay state={state} bonusAction={bonusAction} actionKey={actionKey} /> : null}
+      {state.debugVisible ? <BehaviorDebugOverlay state={state} specialAction={specialAction} actionKey={actionKey} /> : null}
       <View style={styles.gestureHotspot} {...panResponder.panHandlers} />
     </View>
   );
 }
 
-function AnimatedCharacter({ character, rotation, state, bonusAction }) {
+function AnimatedCharacter({ character, rotation, state, specialAction }) {
   const rootRef = useRef(null);
   const energyLevel = state.energyLevel ?? 3;
-  const actionKey = bonusAction?.key ?? ENERGY_LEVEL_TO_ACTION_KEY[energyLevel] ?? "energy3";
+  const actionKey =
+    energyLevel === 6
+      ? specialAction?.key ?? state.behavior?.defaultTransitionActionKey ?? ENERGY_LEVEL_TO_ACTION_KEY[energyLevel] ?? "energy6"
+      : ENERGY_LEVEL_TO_ACTION_KEY[energyLevel] ?? "energy3";
   const actionClipSpeed = state.animationSpeed ?? 1;
-  const worldMotionKind = bonusAction?.motionKind ?? ENERGY_MOTION_KIND[energyLevel] ?? "neutral";
-  const loopMode = bonusAction ? "once" : "repeat";
+  const worldMotionKind = specialAction?.motionKind ?? ENERGY_MOTION_KIND[energyLevel] ?? "neutral";
+  const loopMode = "repeat";
 
   useFrame((frameState) => {
     if (!rootRef.current) return;
@@ -221,14 +183,14 @@ function AnimatedCharacter({ character, rotation, state, bonusAction }) {
   );
 }
 
-function BehaviorDebugOverlay({ state, bonusAction, actionKey }) {
+function BehaviorDebugOverlay({ state, specialAction, actionKey }) {
   return (
     <View style={styles.debugOverlay} pointerEvents="none">
       <DebugLine label="Energy Level" value={state.energyLevel ?? "n/a"} />
       <DebugLine label="Current Energy State" value={state.energyState ?? "n/a"} />
       <DebugLine label="Current Long Term State" value={state.longTermState ?? "n/a"} />
       <DebugLine label="Current Clip" value={actionKey ?? state.animationState ?? "n/a"} />
-      <DebugLine label="Bonus Action" value={bonusAction?.label ?? "running"} />
+      <DebugLine label="Energy 6 Special" value={specialAction?.label ?? "Auto"} />
     </View>
   );
 }
@@ -362,11 +324,6 @@ function getWorldRotationSpeed(motionState, rotationSpeed = 0) {
     default:
       return 0.02;
   }
-}
-
-function randomBetween(min, max) {
-  if (max <= min) return min;
-  return min + Math.random() * (max - min);
 }
 
 function StageEffect({ effect, mood }) {

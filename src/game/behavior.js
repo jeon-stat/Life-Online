@@ -37,7 +37,7 @@ export const ACTION_LABELS = {
   energy3: "Neutral Idle",
   energy4: "Walking",
   energy5: "Running",
-  energy6: "Running",
+  energy6: "Special",
   hipHopDancing: "Hip Hop Dancing",
   moonwalk: "Moonwalk",
 };
@@ -59,7 +59,7 @@ const ENERGY_LEVEL_TO_CLIP = {
   [ACTION_KEYS.energy3]: "neutral-idle",
   [ACTION_KEYS.energy4]: "walking",
   [ACTION_KEYS.energy5]: "running",
-  [ACTION_KEYS.energy6]: "running",
+  [ACTION_KEYS.energy6]: "hip-hop-dancing",
   [ACTION_KEYS.hipHopDancing]: "hip-hop-dancing",
   [ACTION_KEYS.moonwalk]: "moonwalk",
 };
@@ -71,7 +71,7 @@ const ENERGY_LEVEL_TO_ANIMATION_SPEED = {
   [ACTION_KEYS.energy3]: 1.0,
   [ACTION_KEYS.energy4]: 1.02,
   [ACTION_KEYS.energy5]: 1.08,
-  [ACTION_KEYS.energy6]: 1.1,
+  [ACTION_KEYS.energy6]: 1.0,
   [ACTION_KEYS.hipHopDancing]: 1.0,
   [ACTION_KEYS.moonwalk]: 1.0,
 };
@@ -97,10 +97,10 @@ const SPECIAL_ACTION_LIBRARY = [
     type: ACTION_TYPES.SPECIAL,
     clipKey: ENERGY_LEVEL_TO_CLIP[ACTION_KEYS.hipHopDancing],
     available: true,
-    baseWeight: 15,
+    baseWeight: 50,
     clipSpeed: 1,
-    worldSpeed: 0.18,
-    motionKind: "run",
+    worldSpeed: 0.04,
+    motionKind: "neutral",
   }),
   createAction({
     key: ACTION_KEYS.moonwalk,
@@ -108,10 +108,10 @@ const SPECIAL_ACTION_LIBRARY = [
     type: ACTION_TYPES.SPECIAL,
     clipKey: ENERGY_LEVEL_TO_CLIP[ACTION_KEYS.moonwalk],
     available: true,
-    baseWeight: 5,
+    baseWeight: 50,
     clipSpeed: 1,
-    worldSpeed: 0.08,
-    motionKind: "walk",
+    worldSpeed: 0.04,
+    motionKind: "neutral",
   }),
 ];
 
@@ -187,7 +187,11 @@ export function buildBehaviorProfile({ steps = 0, history = [], goal = DEFAULT_S
 
   const defaultMainActionKey = ENERGY_LEVEL_TO_STATE[energyLevel] ?? ACTION_KEYS.energy3;
   const energyAction = mainActionMap[defaultMainActionKey] ?? mainActions[3] ?? mainActions[0];
+  const forcedSpecialAction = energyLevel === 6
+    ? resolveActionByKey(specialActions, overrides.forceSpecialActionKey)
+    : null;
   const forcedAction = resolveActionByKey(allActions, overrides.forcedActionKey);
+  const currentAction = forcedSpecialAction ?? forcedAction ?? energyAction;
 
   return {
     energyLevel,
@@ -195,6 +199,7 @@ export function buildBehaviorProfile({ steps = 0, history = [], goal = DEFAULT_S
     longTermState,
     backgroundState,
     forcedActionKey: overrides.forcedActionKey ?? null,
+    forcedSpecialActionKey: forcedSpecialAction?.key ?? null,
     mainActions,
     transitionActions: specialActions,
     specialActions,
@@ -204,11 +209,11 @@ export function buildBehaviorProfile({ steps = 0, history = [], goal = DEFAULT_S
     transitionActionMap,
     defaultMainActionKey,
     defaultTransitionActionKey: ACTION_KEYS.hipHopDancing,
-    currentAction: forcedAction ?? energyAction,
-    animationState: forcedAction?.key ?? energyAction.key,
-    animationClip: ENERGY_LEVEL_TO_CLIP[forcedAction?.key ?? energyAction.key] ?? energyAction.clipKey,
+    currentAction,
+    animationState: currentAction.key,
+    animationClip: ENERGY_LEVEL_TO_CLIP[currentAction.key] ?? currentAction.clipKey,
     animationSpeed:
-      roundToThree((overrides.animationSpeedMultiplier ?? 1) * (ENERGY_LEVEL_TO_ANIMATION_SPEED[forcedAction?.key ?? energyAction.key] ?? 1)),
+      roundToThree((overrides.animationSpeedMultiplier ?? 1) * (ENERGY_LEVEL_TO_ANIMATION_SPEED[currentAction.key] ?? 1)),
     mood: {
       background: getMoodBackgroundForEnergyState(backgroundState),
       stage: getMoodStageForEnergyState(backgroundState),
@@ -227,8 +232,18 @@ export function buildBehaviorProfile({ steps = 0, history = [], goal = DEFAULT_S
       animation: overrides.animationSpeedMultiplier ?? 1,
     },
     specialActionPool: [
-      { key: ACTION_KEYS.hipHopDancing, clipKey: ENERGY_LEVEL_TO_CLIP[ACTION_KEYS.hipHopDancing], weight: 15, label: ACTION_LABELS.hipHopDancing },
-      { key: ACTION_KEYS.moonwalk, clipKey: ENERGY_LEVEL_TO_CLIP[ACTION_KEYS.moonwalk], weight: 5, label: ACTION_LABELS.moonwalk },
+      {
+        key: ACTION_KEYS.hipHopDancing,
+        clipKey: ENERGY_LEVEL_TO_CLIP[ACTION_KEYS.hipHopDancing],
+        weight: 50,
+        label: ACTION_LABELS.hipHopDancing,
+      },
+      {
+        key: ACTION_KEYS.moonwalk,
+        clipKey: ENERGY_LEVEL_TO_CLIP[ACTION_KEYS.moonwalk],
+        weight: 50,
+        label: ACTION_LABELS.moonwalk,
+      },
     ],
     specialActionChance,
     signature: buildBehaviorSignature({
@@ -324,8 +339,9 @@ function getMotionKindForEnergyKey(key) {
     case ACTION_KEYS.energy4:
       return "walk";
     case ACTION_KEYS.energy5:
-    case ACTION_KEYS.energy6:
       return "run";
+    case ACTION_KEYS.energy6:
+      return "neutral";
     default:
       return "neutral";
   }
@@ -346,7 +362,7 @@ function getWorldSpeedForEnergyKey(key) {
     case ACTION_KEYS.energy5:
       return 0.26;
     case ACTION_KEYS.energy6:
-      return 0.26;
+      return 0.04;
     default:
       return 0.0;
   }
@@ -367,6 +383,7 @@ function buildBehaviorSignature({
     `ls:${longTermState}`,
     `bs:${backgroundState}`,
     `fa:${overrides.forcedActionKey ?? ""}`,
+    `fs:${overrides.forceSpecialActionKey ?? ""}`,
     `w:${overrides.walkingSpeedMultiplier ?? 1}`,
     `r:${overrides.runningSpeedMultiplier ?? 1}`,
     `a:${overrides.animationSpeedMultiplier ?? 1}`,

@@ -43,7 +43,7 @@ test("streak counts only consecutive goal clears from today backwards", () => {
   assert.equal(getStreak(history, DEFAULT_STEP_GOAL), 2);
 });
 
-test("character view model maps high energy to the running base clip", () => {
+test("character view model maps high energy to the special dance clip", () => {
   const history = buildMockHistory({ todaySteps: 6500 });
   const viewModel = buildCharacterViewModel({
     todayRecord: history[0],
@@ -53,8 +53,14 @@ test("character view model maps high energy to the running base clip", () => {
 
   assert.equal(viewModel.energyLevel, 6);
   assert.equal(viewModel.animationState, "energy6");
+  assert.equal(viewModel.animationClip, "hip-hop-dancing");
   assert.equal(typeof viewModel.bubbleText, "string");
   assert.equal(viewModel.level >= 1, true);
+  assert.equal(viewModel.behavior.specialActionPool.length, 2);
+  assert.deepEqual(
+    viewModel.behavior.specialActionPool.map((action) => action.weight),
+    [50, 50],
+  );
 });
 
 test("forced energy level drives the visible behavior state", () => {
@@ -73,6 +79,25 @@ test("forced energy level drives the visible behavior state", () => {
   assert.equal(viewModel.energyState, "LOW_ENERGY");
   assert.equal(viewModel.animationState, "energy0");
   assert.equal(viewModel.backgroundState, "LOW_ENERGY");
+});
+
+test("forced special action drives the energy 6 dance selection", () => {
+  const history = buildMockHistory({ todaySteps: 6500 });
+  const viewModel = buildCharacterViewModel({
+    todayRecord: history[0],
+    history,
+    goal: DEFAULT_STEP_GOAL,
+    admin: {
+      forcedEnergyLevel: null,
+      forcedLongTermState: null,
+      forcedSpecialActionKey: "moonwalk",
+    },
+  });
+
+  assert.equal(viewModel.energyLevel, 6);
+  assert.equal(viewModel.behavior.forcedSpecialActionKey, "moonwalk");
+  assert.equal(viewModel.animationState, "moonwalk");
+  assert.equal(viewModel.animationClip, "moonwalk");
 });
 
 test("admin presets stay limited to mock step scenarios", () => {

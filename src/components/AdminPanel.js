@@ -27,8 +27,14 @@ const ENERGY_LABELS = {
   3: "Neutral Idle",
   4: "Walking",
   5: "Running",
-  6: "Running",
+  6: "Special",
 };
+
+const ENERGY_6_SPECIAL_OPTIONS = [
+  { key: null, label: "Auto" },
+  { key: "hipHopDancing", label: "Special 1" },
+  { key: "moonwalk", label: "Special 2" },
+];
 
 export function AdminPanel({ admin, behavior }) {
   if (!admin?.visible || !admin?.canOverride) {
@@ -40,14 +46,16 @@ export function AdminPanel({ admin, behavior }) {
   const selectedSkinTone = admin.skinTones?.find((tone) => tone.id === admin.skinToneId) ?? null;
   const forcedEnergyLevel = admin.forcedEnergyLevel ?? null;
   const forcedLongTermState = admin.forcedLongTermState ?? null;
-  const specialChanceRows = buildSpecialChanceRows(behavior?.specialActionPool ?? [], behavior?.specialActionChance ?? 0.2);
-  const specialChanceLabel = formatSpecialChanceLabel(behavior?.specialActionChance ?? 0.2);
+  const forcedSpecialActionKey = admin.forcedSpecialActionKey ?? null;
+  const specialChanceRows = buildSpecialChanceRows(behavior?.specialActionPool ?? []);
+  const specialChanceLabel = formatSpecialChanceLabel(behavior?.specialActionChance ?? 1);
+  const forcedSpecialActionLabel = formatSpecialActionSelectionLabel(forcedSpecialActionKey);
 
   return (
     <View style={styles.shell}>
       <Text style={styles.title}>Admin Panel</Text>
       <Text style={styles.caption}>
-        Energy level, long-term state, and skin tone only. Use Energy Level to preview the animation.
+        Energy level, special action, long-term state, and skin tone only. Use Energy Level to preview the animation.
       </Text>
 
       <View style={styles.summaryCard}>
@@ -58,6 +66,7 @@ export function AdminPanel({ admin, behavior }) {
           label="Forced Energy"
           value={forcedEnergyLevel === null ? "Auto" : `${forcedEnergyLevel} / ${ENERGY_LABELS[forcedEnergyLevel] ?? "Unknown"}`}
         />
+        <SummaryLine label="Energy 6 Special" value={forcedSpecialActionLabel} />
         <SummaryLine label="Forced Long Term" value={forcedLongTermState ?? "Auto"} />
         <SummaryLine label="Skin Tone" value={selectedSkinTone ? selectedSkinTone.label : "None"} />
       </View>
@@ -68,6 +77,11 @@ export function AdminPanel({ admin, behavior }) {
 
       <Section title="Long-Term State">
         <OptionRow items={LONG_TERM_OPTIONS} selected={forcedLongTermState} onSelect={admin.setForcedLongTermState} />
+      </Section>
+
+      <Section title="Energy 6 Special">
+        <Text style={styles.sectionNote}>Choose which special action to force when Energy Level is 6.</Text>
+        <OptionRow items={ENERGY_6_SPECIAL_OPTIONS} selected={forcedSpecialActionKey} onSelect={admin.setForcedSpecialActionKey} />
       </Section>
 
       <Section title="Energy 6 Chance">
@@ -155,19 +169,18 @@ function OptionRow({ items, selected, onSelect }) {
   );
 }
 
-function buildSpecialChanceRows(actions, specialChance = 0.2) {
+function buildSpecialChanceRows(actions) {
   const validActions = actions.filter((action) => Number.isFinite(action.weight) && action.weight > 0);
-  const specialTotalPercent = Math.max(0, Math.min(100, Math.round(specialChance * 100)));
-  const runningPercent = Math.max(0, 100 - specialTotalPercent);
+  const totalWeight = validActions.reduce((sum, action) => sum + action.weight, 0);
 
-  const rows = [
-    { key: "running", label: "Running", percentLabel: `${runningPercent}%` },
-  ];
+  if (!totalWeight) {
+    return [];
+  }
 
-  const specialRows = validActions.map((action, index) => {
-    const label = index === 0 ? "Special 1" : "Special 2";
+  return validActions.map((action, index) => {
+    const label = `Special ${index + 1}`;
     const actionLabel = action.label ?? action.key;
-    const percent = Math.round((action.weight / 100) * 100);
+    const percent = Math.round((action.weight / totalWeight) * 100);
 
     return {
       key: action.key,
@@ -175,13 +188,27 @@ function buildSpecialChanceRows(actions, specialChance = 0.2) {
       percentLabel: `${percent}%`,
     };
   });
-
-  return [...rows, ...specialRows];
 }
 
-function formatSpecialChanceLabel(specialChance = 0.2) {
+function formatSpecialChanceLabel(specialChance = 1) {
   const percent = Math.max(0, Math.min(100, Math.round(specialChance * 100)));
   return `Special actions total: ${percent}%`;
+}
+
+function formatSpecialActionSelectionLabel(key) {
+  if (key === null) {
+    return "Auto";
+  }
+
+  if (key === "hipHopDancing") {
+    return "Special 1 (Hip Hop Dancing)";
+  }
+
+  if (key === "moonwalk") {
+    return "Special 2 (Moonwalk)";
+  }
+
+  return String(key);
 }
 
 const styles = StyleSheet.create({

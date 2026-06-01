@@ -13,6 +13,7 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
   const [behaviorAdmin, setBehaviorAdmin] = useState(() => ({
     forcedEnergyLevel: null,
     forcedLongTermState: null,
+    forcedSpecialActionKey: null,
   }));
   const isMockMode = mode === "mock";
   const history = isMockMode ? mockState.history : [];
@@ -63,11 +64,19 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
           if (!adminEnabled) return;
           setBehaviorAdmin((current) => ({ ...current, forcedLongTermState: nextState }));
         },
+        setForcedSpecialActionKey: (nextKey) => {
+          if (!adminEnabled) return;
+          setBehaviorAdmin((current) => ({
+            ...current,
+            forcedSpecialActionKey: normalizeSpecialActionKey(nextKey),
+          }));
+        },
         resetBehavior: () => {
           if (!adminEnabled) return;
           setBehaviorAdmin({
             forcedEnergyLevel: null,
             forcedLongTermState: null,
+            forcedSpecialActionKey: null,
           });
         },
         resetMock: () => {
@@ -86,6 +95,17 @@ function clampNumber(value, min, max) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return min;
   return Math.max(min, Math.min(max, numeric));
+}
+
+function normalizeSpecialActionKey(value) {
+  if (value === null) return null;
+
+  const key = String(value);
+  if (key === "hipHopDancing" || key === "moonwalk") {
+    return key;
+  }
+
+  return null;
 }
 
 export function useStepData() {

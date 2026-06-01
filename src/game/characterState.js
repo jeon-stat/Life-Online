@@ -10,6 +10,7 @@ export function buildCharacterViewModel({ todayRecord, history, goal = DEFAULT_S
   const behaviorOverrides = {
     forceEnergyLevel: admin?.forcedEnergyLevel ?? null,
     forceLongTermState: admin?.forcedLongTermState ?? null,
+    forceSpecialActionKey: admin?.forcedSpecialActionKey ?? null,
   };
   const behavior = buildBehaviorProfile({ steps, history, goal, overrides: behaviorOverrides });
   const energyTheme = theme.status[behavior.backgroundState] ?? theme.status[behavior.energyState];

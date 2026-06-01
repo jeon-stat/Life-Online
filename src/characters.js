@@ -29,7 +29,7 @@ export const CHARACTER_CLASSES = [
       energy3: "neutral-idle",
       energy4: "walking",
       energy5: "running",
-      energy6: "running",
+      energy6: "hip-hop-dancing",
       hipHopDancing: "hip-hop-dancing",
       moonwalk: "moonwalk",
     },
