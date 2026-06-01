@@ -42,10 +42,20 @@ export function GLBCharacterModel({
   const basePosition = character.modelOffset ?? [0, -1, 0];
   const pivotOffsetY = (character.modelPivotY ?? 0) * scale[1];
   const skinTone = character.skinTone ?? character.palette?.skin ?? null;
-  const skinBaseColor = useMemo(() => {
+  const skinMaterial = useMemo(() => {
     if (!skinTone) return null;
 
-    return compensateForLighting(new Color(skinTone));
+    return new MeshStandardMaterial({
+      color: new Color(skinTone),
+      skinning: true,
+      flatShading: false,
+      metalness: 0,
+      roughness: 1,
+      envMapIntensity: 0,
+      emissive: new Color(0x000000),
+      emissiveIntensity: 0,
+      toneMapped: false,
+    });
   }, [skinTone]);
 
   const scene = useMemo(() => {
@@ -56,36 +66,24 @@ export function GLBCharacterModel({
       node.castShadow = false;
       node.receiveShadow = false;
 
+      if (skinMaterial) {
+        node.material = skinMaterial;
+        return;
+      }
+
       const materials = Array.isArray(node.material) ? node.material : [node.material];
       const tunedMaterials = materials.map((material) => {
         if (!material) return material;
 
-        if (skinTone) {
-          const skinMaterial = new MeshStandardMaterial({
-            color: skinBaseColor ? skinBaseColor.clone() : new Color(skinTone),
-            skinning: true,
-            flatShading: false,
-            metalness: 0,
-            roughness: 0.88,
-            envMapIntensity: 0,
-          });
-          skinMaterial.emissive = skinBaseColor ? skinBaseColor.clone().multiplyScalar(0.015) : new Color(skinTone).multiplyScalar(0.015);
-          skinMaterial.emissiveIntensity = 0.03;
-          skinMaterial.needsUpdate = true;
-          return skinMaterial;
-        }
-
         const nextMaterial = material.clone();
-
         nextMaterial.needsUpdate = true;
-
         return nextMaterial;
       });
 
       node.material = Array.isArray(node.material) ? tunedMaterials : tunedMaterials[0];
     });
     return baseScene;
-  }, [gltf.scene, skinTone]);
+  }, [gltf.scene, skinMaterial]);
 
   const groundAlignedPosition = useMemo(() => {
     scene.updateMatrixWorld(true);
@@ -147,13 +145,3 @@ export function GLBCharacterModel({
   );
 }
 
-function compensateForLighting(color) {
-  const base = color.clone();
-  const hsl = {};
-  base.getHSL(hsl);
-
-  hsl.s = Math.max(0.12, hsl.s * 0.88);
-  hsl.l = Math.min(0.92, hsl.l * 1.06);
-
-  return new Color().setHSL(hsl.h, hsl.s, hsl.l);
-}
