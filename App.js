@@ -1,4 +1,4 @@
-import { Platform, SafeAreaView, StyleSheet, View } from "react-native";
+import { Platform, SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
 import { Pressable, Text } from "react-native";
@@ -9,8 +9,10 @@ import { AuthScreen } from "./src/screens/AuthScreen.js";
 import { HomeScreen } from "./src/screens/HomeScreen.js";
 import { HistoryScreen } from "./src/screens/HistoryScreen.js";
 import { CharacterScreen } from "./src/screens/CharacterScreen.js";
+import { AdminPanel } from "./src/components/AdminPanel.js";
 import { BottomTabs } from "./src/components/BottomTabs.js";
 import { theme } from "./src/constants/theme.js";
+import { buildCharacterViewModel } from "./src/game/characterState.js";
 
 const TABS = [
   { id: "home", label: "\uC0B0\uCC45" },
@@ -60,7 +62,17 @@ function AppContent() {
 }
 
 function AppShell({ activeTab, onChangeTab }) {
-  const { admin } = useStepData();
+  const { today, history, goal, admin } = useStepData();
+  const viewState = useMemo(
+    () =>
+      buildCharacterViewModel({
+        todayRecord: today,
+        history,
+        goal,
+        admin,
+      }),
+    [admin, goal, history, today],
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -70,6 +82,14 @@ function AppShell({ activeTab, onChangeTab }) {
           {activeTab === "history" ? <HistoryScreen /> : null}
           {activeTab === "character" ? <CharacterScreen /> : null}
         </View>
+
+        {admin?.visible && admin?.canOverride ? (
+          <View style={styles.adminPanelOverlay} pointerEvents="box-none">
+            <ScrollView contentContainerStyle={styles.adminPanelScrollContent} showsVerticalScrollIndicator={false}>
+              <AdminPanel admin={admin} behavior={viewState.behavior} />
+            </ScrollView>
+          </View>
+        ) : null}
 
         {admin?.visible ? (
           <Pressable
@@ -109,6 +129,17 @@ const styles = StyleSheet.create({
   },
   screenArea: {
     flex: 1,
+  },
+  adminPanelOverlay: {
+    position: "absolute",
+    top: 56,
+    left: 14,
+    right: 14,
+    bottom: 84,
+    zIndex: 40,
+  },
+  adminPanelScrollContent: {
+    paddingBottom: 12,
   },
   adminToggle: {
     position: "absolute",

@@ -1,7 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { useAuth } from "../auth/AuthProvider.js";
-import { AdminPanel } from "../components/AdminPanel.js";
 import { useStepData } from "../data/stepDataProvider.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
 import { theme } from "../constants/theme.js";
@@ -160,13 +159,6 @@ export function CharacterScreen() {
         </View>
       </View>
 
-      {admin?.visible && admin?.canOverride ? (
-        <View style={styles.devSection}>
-          <Text style={styles.devSectionTitle}>개발자 패널</Text>
-          <Text style={styles.devSectionText}>유저용 화면과 분리해서 아래쪽에만 보여줘요.</Text>
-          <AdminPanel admin={admin} behavior={viewState.behavior} />
-        </View>
-      ) : null}
     </ScrollView>
   );
 }
@@ -494,21 +486,6 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   placeholderText: {
-    color: theme.colors.inkSoft,
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: "700",
-  },
-  devSection: {
-    gap: 10,
-    paddingTop: 4,
-  },
-  devSectionTitle: {
-    color: theme.colors.ink,
-    fontSize: 16,
-    fontWeight: "900",
-  },
-  devSectionText: {
     color: theme.colors.inkSoft,
     fontSize: 12,
     lineHeight: 18,
