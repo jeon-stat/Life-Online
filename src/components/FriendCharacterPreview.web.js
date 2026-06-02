@@ -19,21 +19,13 @@ const ENERGY_LEVEL_TO_ACTION_KEY = {
 };
 
 export function FriendCharacterPreview({ friend, size = 88 }) {
-  const wrapperHeight = Math.round(size * 1.36);
+  const wrapperHeight = Math.round(size * 1.18);
   const character = useMemo(() => resolvePreviewCharacter(friend), [friend?.avatarCharacterId, friend?.skinTone]);
   const energyLevel = Math.max(0, Math.min(6, friend?.energyLevel ?? 3));
   const actionKey = ENERGY_LEVEL_TO_ACTION_KEY[energyLevel] ?? "energy3";
 
   return (
     <View style={[styles.shell, { width: size, height: wrapperHeight }]}>
-      <View style={styles.sky} />
-      <View style={styles.sparkOne} />
-      <View style={styles.sparkTwo} />
-      <View style={styles.sparkThree} />
-      <View style={styles.sparkFour} />
-      <View style={styles.grassBand} />
-      <View style={styles.pathBand} />
-
       <StageCanvas>
         <PreviewCharacter character={character} actionKey={actionKey} />
       </StageCanvas>
@@ -87,63 +79,6 @@ const styles = StyleSheet.create({
     position: "relative",
     overflow: "hidden",
     borderRadius: 18,
-    backgroundColor: "#eef8ee",
-  },
-  sky: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#eef8ee",
-  },
-  sparkOne: {
-    position: "absolute",
-    top: "12%",
-    left: "12%",
-    width: 10,
-    height: 10,
-    borderRadius: 999,
-    backgroundColor: "#f6cf75",
-  },
-  sparkTwo: {
-    position: "absolute",
-    top: "20%",
-    right: "14%",
-    width: 9,
-    height: 9,
-    borderRadius: 999,
-    backgroundColor: "#f6cf75",
-  },
-  sparkThree: {
-    position: "absolute",
-    top: "34%",
-    left: "20%",
-    width: 8,
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: "#f6cf75",
-  },
-  sparkFour: {
-    position: "absolute",
-    top: "26%",
-    right: "22%",
-    width: 7,
-    height: 7,
-    borderRadius: 999,
-    backgroundColor: "#f6cf75",
-  },
-  grassBand: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: "28%",
-    backgroundColor: "#9ab868",
-  },
-  pathBand: {
-    position: "absolute",
-    left: "42%",
-    bottom: 0,
-    width: "16%",
-    height: "54%",
-    backgroundColor: "#d69a43",
-    transform: [{ skewX: "-10deg" }],
+    backgroundColor: "#f4f7f1",
   },
 });
