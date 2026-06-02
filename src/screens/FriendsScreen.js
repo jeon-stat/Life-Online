@@ -197,7 +197,7 @@ export function FriendsScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.pageTitleWrap}>
-        <Text style={styles.pageTitle}>??</Text>
+        <Text style={styles.pageTitle}>친구</Text>
       </View>
 
       <View style={styles.tabCard}>
@@ -257,27 +257,27 @@ export function FriendsScreen() {
           <>
             <View style={styles.groupActionCard}>
               <View style={styles.groupActionHeader}>
-                <Text style={styles.groupActionTitle}>?? ??</Text>
-                {selectedGroup.system ? <Text style={styles.groupActionHint}>??? ??</Text> : null}
+                <Text style={styles.groupActionTitle}>그룹 설정</Text>
+                {selectedGroup.system ? <Text style={styles.groupActionHint}>시스템 그룹</Text> : null}
               </View>
               {selectedGroup.system ? (
-                <Text style={styles.groupActionNote}>?? ??? ?? ??? ??? ? ? ???.</Text>
+                <Text style={styles.groupActionNote}>전체 그룹은 이름 변경과 삭제를 할 수 없어요.</Text>
               ) : (
                 <>
                   <View style={styles.inlineInputRow}>
                     <TextInput
                       value={renameGroupName}
                       onChangeText={setRenameGroupName}
-                      placeholder="?? ??"
-                      placeholderTextColor={theme.colors.inkSoft}
+                      placeholder="그룹명"
+                    placeholderTextColor={theme.colors.inkSoft}
                       style={styles.textInput}
                     />
                     <Pressable onPress={renameGroup} style={styles.secondaryButton}>
-                      <Text style={styles.secondaryButtonLabel}>?? ??</Text>
+                      <Text style={styles.secondaryButtonLabel}>이름 변경</Text>
                     </Pressable>
                   </View>
                   <Pressable onPress={deleteGroup} style={styles.dangerButton}>
-                    <Text style={styles.dangerButtonLabel}>?? ??</Text>
+                    <Text style={styles.dangerButtonLabel}>그룹 삭제</Text>
                   </Pressable>
                 </>
               )}
@@ -285,7 +285,7 @@ export function FriendsScreen() {
 
             <View style={styles.groupActionCard}>
               <View style={styles.groupActionHeader}>
-                <Text style={styles.groupActionTitle}>??</Text>
+                <Text style={styles.groupActionTitle}>그룹</Text>
                 <Pressable
                   onPress={() => {
                     setShowCreateGroup((current) => !current);
@@ -293,7 +293,7 @@ export function FriendsScreen() {
                   style={[styles.groupActionToggle, showCreateGroup && styles.groupActionToggleActive]}
                 >
                   <Text style={[styles.groupActionToggleLabel, showCreateGroup && styles.groupActionToggleLabelActive]}>
-                    ? ? ?? ???
+                    ＋ 새 그룹 만들기
                   </Text>
                 </Pressable>
               </View>
@@ -303,12 +303,12 @@ export function FriendsScreen() {
                   <TextInput
                     value={newGroupName}
                     onChangeText={setNewGroupName}
-                    placeholder="???"
+                    placeholder="그룹명"
                     placeholderTextColor={theme.colors.inkSoft}
                     style={styles.textInput}
                   />
                   <Pressable onPress={createGroup} style={styles.primaryButton}>
-                    <Text style={styles.primaryButtonLabel}>??</Text>
+                    <Text style={styles.primaryButtonLabel}>생성</Text>
                   </Pressable>
                 </View>
               ) : null}
@@ -337,7 +337,7 @@ export function FriendsScreen() {
           </View>
 
           <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>{getRankingTitle(rankMode, selectedGroup.name)}</Text>
+            <Text style={styles.listTitle}>친구 목록</Text>
           </View>
 
           {rankedFriends.length ? (
@@ -361,7 +361,7 @@ export function FriendsScreen() {
       ) : (
         <>
           <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>?? ??</Text>
+            <Text style={styles.listTitle}>친구 목록</Text>
           </View>
 
           <View style={styles.friendGrid}>

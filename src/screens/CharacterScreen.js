@@ -12,7 +12,7 @@ const LONG_TERM_META = {
     color: "#b06d57",
     softBg: "#fff3ee",
     border: "#f0d1c5",
-    icon: "💤",
+    icon: "😵",
   },
   HEALTHY: {
     label: "건강",
@@ -20,7 +20,7 @@ const LONG_TERM_META = {
     color: "#4f7a57",
     softBg: "#eef8ee",
     border: "#cfe8cf",
-    icon: "❤️",
+    icon: "🙂",
   },
   ACTIVE: {
     label: "활발",
@@ -28,7 +28,7 @@ const LONG_TERM_META = {
     color: "#c06b3e",
     softBg: "#fff2e4",
     border: "#f3d0b0",
-    icon: "⚡",
+    icon: "✨",
   },
 };
 
@@ -51,6 +51,10 @@ export function CharacterScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.pageTitleWrap}>
+        <Text style={styles.pageTitle}>캐릭터</Text>
+      </View>
+
       <View style={styles.profileCard}>
         <View style={styles.profileHeader}>
           <View style={styles.profileCopy}>
@@ -67,7 +71,7 @@ export function CharacterScreen() {
 
         <View style={styles.profileGrid}>
           <MiniStat icon="👣" label="누적" value={`${formatNumber(growth.lifetimeSteps ?? 0)}보`} />
-          <MiniStat icon="🎯" label="목표" value={`${growth.achievedDays ?? 0}일`} />
+          <MiniStat icon="🏁" label="달성" value={`${growth.achievedDays ?? 0}일`} />
           <MiniStat icon="🔥" label="연속" value={`${growth.streak ?? 0}일`} />
         </View>
 
@@ -79,29 +83,30 @@ export function CharacterScreen() {
       </View>
 
       <View style={styles.card}>
-        <SectionHeader title="장기 상태" subtitle="누적 걸음 기반으로 허약, 건강, 활발 느낌을 보여줘요." />
+        <SectionHeader title="장기 상태" />
 
         <View style={[styles.longTermBanner, { backgroundColor: longTermMeta.softBg, borderColor: longTermMeta.border }]}>
           <Text style={styles.longTermIcon}>{longTermMeta.icon}</Text>
           <View style={styles.longTermCopy}>
             <Text style={[styles.longTermBannerLabel, { color: longTermMeta.color }]}>{longTermMeta.label}</Text>
+            <Text style={styles.longTermBannerDescription}>{longTermMeta.description}</Text>
           </View>
         </View>
       </View>
 
       <View style={styles.card}>
-        <SectionHeader title="누적 기록" subtitle="기록은 숫자로, 설명은 짧게만 보여줘요." />
+        <SectionHeader title="성장 기록" />
 
         <View style={styles.metricGrid}>
           <MetricCard icon="👣" label="누적" value={`${formatNumber(growth.lifetimeSteps ?? 0)}보`} />
-          <MetricCard icon="🎯" label="목표" value={`${growth.achievedDays ?? 0}일`} />
+          <MetricCard icon="🏁" label="달성" value={`${growth.achievedDays ?? 0}일`} />
           <MetricCard icon="🔥" label="연속" value={`${growth.streak ?? 0}일`} />
-          <MetricCard icon="⚡" label="단계" value={growth.growthLabel ?? "초기"} />
+          <MetricCard icon="✨" label="기록" value={growth.growthLabel ?? "성장 중"} />
         </View>
       </View>
 
       <View style={styles.card}>
-        <SectionHeader title="피부색" subtitle="바디 전체에 바로 적용돼요." />
+        <SectionHeader title="피부 톤" />
 
         <View style={styles.skinToneGrid}>
           {(admin.skinTones ?? []).map((tone) => {
@@ -113,19 +118,19 @@ export function CharacterScreen() {
                 onPress={() => admin.setSkinTone?.(tone.id)}
                 style={[styles.skinToneChip, selected && styles.skinToneChipSelected]}
               >
-                <View style={[styles.skinToneSwatch, { backgroundColor: tone.color }]} />
-                <View style={styles.skinToneTextBlock}>
-                  <Text style={styles.skinToneLabel}>{tone.label}</Text>
-                  <Text style={styles.skinToneNote}>{selected ? "선택됨" : "적용"}</Text>
-                </View>
-              </Pressable>
-            );
-          })}
+                  <View style={[styles.skinToneSwatch, { backgroundColor: tone.color }]} />
+                  <View style={styles.skinToneTextBlock}>
+                    <Text style={styles.skinToneLabel}>{tone.label}</Text>
+                    <Text style={styles.skinToneNote}>{selected ? "선택됨" : "탭해서 적용"}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
         </View>
       </View>
 
       <View style={styles.card}>
-        <SectionHeader title="커스터마이징" subtitle="나중에 확장될 자리만 미리 잡아둬요." />
+        <SectionHeader title="준비 중" />
 
         <View style={styles.customizationGrid}>
           {CUSTOMIZATION_SLOTS.map((slot) => (
@@ -183,6 +188,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
     gap: theme.spacing.md,
+  },
+  pageTitleWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 4,
+  },
+  pageTitle: {
+    color: theme.colors.ink,
+    fontSize: 22,
+    fontWeight: "900",
+    letterSpacing: 0.6,
   },
   profileCard: {
     borderRadius: theme.radius.xl,

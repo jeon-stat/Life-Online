@@ -7,13 +7,13 @@ import { getStreak } from "../game/progression.js";
 import { getEnergyLevel } from "../game/stepRules.js";
 
 const ENERGY_META = {
-  0: { label: "완전 휴식", icon: "🛌", tone: "#8a94a2" },
+  0: { label: "완전 휴식", icon: "🛏️", tone: "#8a94a2" },
   1: { label: "졸린 하루", icon: "😴", tone: "#8aa0c5" },
   2: { label: "숨 고르기", icon: "🌬️", tone: "#5f9ea0" },
-  3: { label: "평온", icon: "🙂", tone: "#7aa37e" },
-  4: { label: "산책", icon: "🚶", tone: "#e2a24a" },
+  3: { label: "평온", icon: "🍃", tone: "#7aa37e" },
+  4: { label: "산책", icon: "👣", tone: "#e2a24a" },
   5: { label: "달리기", icon: "🏃", tone: "#db7c52" },
-  6: { label: "최고 컨디션", icon: "⚡", tone: "#c95f4f" },
+  6: { label: "최고 컨디션", icon: "✨", tone: "#c95f4f" },
 };
 
 export function HistoryScreen() {
@@ -26,13 +26,20 @@ export function HistoryScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.pageTitleWrap}>
+        <Text style={styles.pageTitle}>발자국</Text>
+      </View>
+
       <View style={styles.summaryGrid}>
         <SummaryStat icon="🔥" label="연속" value={`${streak}일`} />
-        <SummaryStat icon="👣" label="합계" value={`${formatNumber(weekSummary.totalSteps)}보`} />
+        <SummaryStat icon="👣" label="주간" value={`${formatNumber(weekSummary.totalSteps)}보`} />
         <SummaryStat icon="🏆" label="최고" value={`${formatNumber(weekSummary.bestSteps)}보`} />
         <SummaryStat icon="📊" label="평균" value={`${formatNumber(weekSummary.averageSteps)}보`} />
       </View>
 
+      <View style={styles.summarySentenceCard}>
+        <Text style={styles.summarySentence}>{weekSummary.narrative}</Text>
+      </View>
 
       <Section title="최근 7일">
         <View style={styles.trailGrid}>
@@ -46,7 +53,9 @@ export function HistoryScreen() {
                 <View style={styles.trailHead}>
                   <Text style={styles.trailDate}>{dateLabel}</Text>
                   <View style={[styles.energyBadge, { backgroundColor: `${meta.tone}1A`, borderColor: `${meta.tone}33` }]}>
-                    <Text style={[styles.energyBadgeText, { color: meta.tone }]}>{`${meta.icon} E${energyLevel}`}</Text>
+                    <Text style={[styles.energyBadgeText, { color: meta.tone }]}>
+                      {`${meta.icon} E${energyLevel}`}
+                    </Text>
                   </View>
                 </View>
 
@@ -58,7 +67,7 @@ export function HistoryScreen() {
         </View>
       </Section>
 
-      <Section title="로그">
+      <Section title="기록">
         <View style={styles.logList}>
           {logEntries.map((entry) => (
             <View key={entry.key} style={styles.logItem}>
@@ -75,11 +84,10 @@ export function HistoryScreen() {
             memories.map((memory) => (
               <View key={memory.id} style={styles.memoryItem}>
                 <Text style={styles.memoryTitle}>{memory.title}</Text>
-                
               </View>
             ))
           ) : (
-            <Text style={styles.emptyText}>아직 저장된 추억이 없어요.</Text>
+            <Text style={styles.emptyText}>아직 쌓인 추억이 없어요.</Text>
           )}
         </View>
       </Section>
@@ -145,7 +153,7 @@ function buildWeeklyNarrative({ walkingDays, runningDays, streak, bestDayLabel }
   }
 
   if (!parts.length) {
-    parts.push("조용히 움직였어요");
+    parts.push("조용히 쉬었어요");
   }
 
   const bestDayText = bestDayLabel ? `, 최고는 ${bestDayLabel}` : "";
@@ -170,18 +178,18 @@ function buildTrailLogs(history, goal) {
   return [
     {
       key: "today",
-      icon: ENERGY_META[todayEnergy]?.icon ?? "??",
-      text: latest ? `?? ? E${todayEnergy} ? ${formatNumber(latest.steps)}?` : "?? ?? ??",
+      icon: ENERGY_META[todayEnergy]?.icon ?? "👣",
+      text: latest ? `오늘 · E${todayEnergy} · ${formatNumber(latest.steps)}보` : "오늘 기록이 없어요.",
     },
     {
       key: "best",
-      icon: ENERGY_META[bestEnergy]?.icon ?? "??",
-      text: bestRecord ? `?? ? ${formatTrailDateLabel(bestRecord.date, bestRecord.id === latest?.id)} ? E${bestEnergy}` : "?? ?? ??",
+      icon: ENERGY_META[bestEnergy]?.icon ?? "🏆",
+      text: bestRecord ? `최고 · ${formatTrailDateLabel(bestRecord.date, bestRecord.id === latest?.id)} · E${bestEnergy}` : "최고 기록이 없어요.",
     },
     {
       key: "goal",
-      icon: "??",
-      text: goalDays > 0 ? `?? ? ${goalDays}?` : "?? ?? ??",
+      icon: "🎯",
+      text: goalDays > 0 ? `목표 · ${goalDays}일 도달` : "목표 도달 기록이 없어요.",
     },
   ];
 }
@@ -220,34 +228,16 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.md,
     gap: theme.spacing.md,
   },
-  heroCard: {
-    borderRadius: theme.radius.xl,
-    padding: 18,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+  pageTitleWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 4,
   },
-  kicker: {
-    color: "#4c7b71",
-    fontSize: 11,
-    lineHeight: 16,
-    fontWeight: "900",
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-  },
-  heroTitle: {
-    marginTop: 8,
+  pageTitle: {
     color: theme.colors.ink,
-    fontSize: 21,
-    lineHeight: 28,
+    fontSize: 22,
     fontWeight: "900",
-  },
-  heroText: {
-    marginTop: 8,
-    color: theme.colors.inkSoft,
-    fontSize: 13,
-    lineHeight: 19,
-    fontWeight: "700",
+    letterSpacing: 0.6,
   },
   summaryGrid: {
     flexDirection: "row",
@@ -261,19 +251,30 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    gap: 6,
   },
   summaryStatLabel: {
     color: theme.colors.inkSoft,
     fontSize: 11,
-    lineHeight: 15,
     fontWeight: "800",
   },
   summaryStatValue: {
-    marginTop: 8,
     color: theme.colors.ink,
     fontSize: 18,
-    lineHeight: 24,
     fontWeight: "900",
+  },
+  summarySentenceCard: {
+    borderRadius: theme.radius.xl,
+    padding: 14,
+    backgroundColor: "#fffaf2",
+    borderWidth: 1,
+    borderColor: "#f0dcc3",
+  },
+  summarySentence: {
+    color: theme.colors.ink,
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "700",
   },
   section: {
     gap: 10,
@@ -283,28 +284,15 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "900",
   },
-  summarySentenceCard: {
-    borderRadius: theme.radius.lg,
-    padding: 14,
-    backgroundColor: "#fffdf8",
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  summarySentence: {
-    color: theme.colors.ink,
-    fontSize: 13,
-    lineHeight: 20,
-    fontWeight: "700",
-  },
   trailGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
   },
   trailCard: {
     width: "48.5%",
     borderRadius: theme.radius.lg,
-    padding: 14,
+    padding: 12,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -312,23 +300,20 @@ const styles = StyleSheet.create({
   },
   trailHead: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
+    alignItems: "flex-start",
     gap: 8,
   },
   trailDate: {
+    flex: 1,
     color: theme.colors.inkSoft,
     fontSize: 11,
     fontWeight: "800",
-    flex: 1,
   },
   energyBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
     borderRadius: theme.radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderWidth: 1,
   },
   energyBadgeText: {
@@ -337,7 +322,7 @@ const styles = StyleSheet.create({
   },
   trailSteps: {
     color: theme.colors.ink,
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "900",
   },
   trailLabel: {
@@ -346,54 +331,52 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   logList: {
-    gap: 10,
+    gap: 8,
   },
   logItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    padding: 14,
     borderRadius: theme.radius.lg,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
   logIcon: {
-    fontSize: 16,
+    width: 22,
+    textAlign: "center",
+    fontSize: 14,
+    fontWeight: "900",
   },
   logText: {
     flex: 1,
     color: theme.colors.ink,
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 12,
+    lineHeight: 18,
     fontWeight: "700",
   },
   memoryList: {
-    gap: 10,
+    gap: 8,
   },
   memoryItem: {
-    padding: 14,
     borderRadius: theme.radius.lg,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
   memoryTitle: {
     color: theme.colors.ink,
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  memoryText: {
-    marginTop: 6,
-    color: theme.colors.inkSoft,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
     fontWeight: "700",
   },
   emptyText: {
     color: theme.colors.inkSoft,
     fontSize: 13,
-    lineHeight: 20,
+    lineHeight: 19,
     fontWeight: "700",
   },
 });
