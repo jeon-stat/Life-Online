@@ -712,10 +712,9 @@ const styles = StyleSheet.create({
   },
   groupChipRow: {
     gap: 8,
-    paddingRight: theme.spacing.md,
+    paddingHorizontal: 4,
   },
   groupChipScroller: {
-    marginHorizontal: -theme.spacing.md,
     marginTop: 8,
   },
   groupChip: {
