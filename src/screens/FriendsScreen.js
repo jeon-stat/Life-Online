@@ -5,7 +5,7 @@ import { useAuth } from "../auth/AuthProvider.js";
 import { useStepData } from "../data/stepDataProvider.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
 import { getStreak } from "../game/progression.js";
-import { buildFriendRankingData, getFriendSortLabel, sortFriendCards } from "../data/mockFriendData.js";
+import { buildFriendRankingData, sortFriendCards } from "../data/mockFriendData.js";
 import { theme } from "../constants/theme.js";
 
 const RANK_TABS = [
@@ -41,7 +41,11 @@ export function FriendsScreen() {
   const { today, history, goal, admin } = useStepData();
   const { width } = useWindowDimensions();
   const [rankMode, setRankMode] = useState("daily");
-  const characterViewState = useMemo(() => buildCharacterViewModel({ todayRecord: today, history, goal, admin }), [admin, goal, history, today]);
+
+  const characterViewState = useMemo(
+    () => buildCharacterViewModel({ todayRecord: today, history, goal, admin }),
+    [admin, goal, history, today],
+  );
 
   const cardWidth = useMemo(() => {
     const horizontalPadding = theme.spacing.md * 2;
@@ -50,9 +54,11 @@ export function FriendsScreen() {
     const baseWidth = Math.floor((usableWidth - gapSpace) / 3);
     return Math.max(104, Math.min(210, baseWidth));
   }, [width]);
-  const previewSize = useMemo(() => Math.max(58, Math.min(118, Math.round(cardWidth * 0.58))), [cardWidth]);
+
+  const previewSize = useMemo(() => Math.max(62, Math.min(126, Math.round(cardWidth * 0.66))), [cardWidth]);
 
   const weeklySteps = useMemo(() => history.slice(0, 7).reduce((sum, record) => sum + (record?.steps ?? 0), 0), [history]);
+
   const friends = useMemo(
     () =>
       buildFriendRankingData({
@@ -71,9 +77,9 @@ export function FriendsScreen() {
   const myDailyRank = useMemo(() => sortFriendCards(friends, "daily").findIndex((friend) => friend.isMe) + 1, [friends]);
   const topToday = useMemo(() => sortFriendCards(friends, "daily")[0] ?? null, [friends]);
   const topStreak = useMemo(() => sortFriendCards(friends, "streak")[0] ?? null, [friends]);
-  const rankingLabel = getFriendSortLabel(rankMode);
-  const rankingDetails = getRankingDetails(rankMode);
   const friendCount = Math.max(0, friends.filter((friend) => !friend.isMe).length);
+  const rankingLabel = getRankingTitle(rankMode);
+  const rankingDetails = getRankingDetails(rankMode);
 
   if (!rankedFriends.length) {
     return (
@@ -89,7 +95,7 @@ export function FriendsScreen() {
         <Text style={styles.kicker}>친구</Text>
         <Text style={styles.heroTitle}>친구들의 캐릭터를 카드로 구경해요</Text>
         <Text style={styles.heroText}>
-          오늘, 이번 주, 연속 산책 기준으로 친구들의 발자국을 수집형 카드처럼 비교할 수 있어요.
+          오늘, 이번 주, 연속 달성까지 한눈에 비교하면서 서로의 발자국을 가볍게 살펴볼 수 있어요.
         </Text>
       </View>
 
@@ -150,80 +156,61 @@ function SummaryCard({ label, value }) {
 
 function FriendRankCard({ friend, rank, isMe, rankMode, cardWidth, previewSize }) {
   const rankBadge = getRankBadgeStyle(rank);
-  const energyMeta = ENERGY_META[friend.energyLevel] ?? ENERGY_META[3];
-  const longTermMeta = LONG_TERM_META[friend.longTermState] ?? LONG_TERM_META.HEALTHY;
   const info = getModeInfo(friend, rankMode);
 
   return (
     <View style={[styles.friendCard, isMe && styles.friendCardMe, { width: cardWidth, maxWidth: 210 }]}>
-      <View style={styles.friendHeader}>
-        <View style={styles.rankNameRow}>
-          <View style={[styles.rankBadge, rankBadge.badgeStyle]}>
-            <Text style={[styles.rankBadgeLabel, { color: rankBadge.textColor }]}>{rank}</Text>
+      <View style={styles.friendCardContent}>
+        <View style={styles.friendHeader}>
+          <View style={styles.rankNameRow}>
+            <View style={[styles.rankBadge, rankBadge.badgeStyle]}>
+              <Text style={[styles.rankBadgeLabel, { color: rankBadge.textColor }]}>{rank}</Text>
+            </View>
+            <Text style={styles.friendName} numberOfLines={1}>
+              {friend.nickname}
+            </Text>
           </View>
-          <Text style={styles.friendName} numberOfLines={1}>
-            {friend.nickname}
+          {isMe ? <Text style={styles.meLabel}>나</Text> : null}
+        </View>
+
+        <View style={styles.characterStage}>
+          <FriendPreview friend={friend} size={previewSize} />
+        </View>
+
+        <View style={styles.primaryStatBlock}>
+          <Text style={styles.primaryStatLabel}>{info.primaryLabel}</Text>
+          <Text style={styles.primaryStatValue} numberOfLines={1}>
+            {info.primaryValue}
           </Text>
         </View>
-        {isMe ? <Text style={styles.meBadge}>나</Text> : null}
-      </View>
 
-      <View style={styles.previewWrap}>
-        <FriendPreview friend={friend} size={previewSize} />
-      </View>
-
-      <View style={styles.focusBlock}>
-        <Text style={styles.focusLabel}>{info.primaryLabel}</Text>
-        <Text style={styles.focusValue} numberOfLines={1}>
-          {info.primaryValue}
-        </Text>
-      </View>
-
-      <View style={styles.detailRow}>
-        <DetailPill label={info.secondaryLeftLabel} value={info.secondaryLeftValue} />
-        <DetailPill label={info.secondaryRightLabel} value={info.secondaryRightValue} />
-      </View>
-
-      <View style={styles.bottomMetaRow}>
-        <MiniMeta tone={energyMeta.tone} label={`E${friend.energyLevel} ${energyMeta.label}`} />
-        <MiniMeta tone={longTermMeta.tone} label={longTermMeta.label} />
+        <View style={styles.footerInfoRow}>
+          <FooterStat label={info.secondaryLeftLabel} value={info.secondaryLeftValue} />
+          <FooterStat label={info.secondaryRightLabel} value={info.secondaryRightValue} />
+        </View>
       </View>
     </View>
   );
 }
 
 function FriendPreview({ friend, size }) {
-  const shellColor = softenColor(friend.skinTone ?? "#f4cbbb");
+  const skinTone = friend.skinTone ?? "#f4cbbb";
 
   return (
-    <View style={[styles.previewShell, { width: size, height: Math.round(size * 1.08), backgroundColor: shellColor }]}>
-      <View style={[styles.previewHead, { backgroundColor: friend.skinTone ?? "#f4cbbb" }]} />
-      <View style={[styles.previewBody, { backgroundColor: friend.skinTone ?? "#f4cbbb" }]} />
-      <View style={styles.previewShadow} />
-      <Text style={styles.previewText}>미니 프리뷰</Text>
-      <View style={styles.previewTag}>
-        <Text style={styles.previewTagText}>{friend.avatarCharacterId?.includes("custom") ? "내 캐릭터" : "프리뷰"}</Text>
-      </View>
+    <View style={[styles.previewFigure, { width: size, height: Math.round(size * 1.16) }]}>
+      <View style={[styles.previewShadow, { backgroundColor: softenColor(skinTone) }]} />
+      <View style={[styles.previewHead, { backgroundColor: skinTone }]} />
+      <View style={[styles.previewBody, { backgroundColor: skinTone }]} />
     </View>
   );
 }
 
-function DetailPill({ label, value }) {
+function FooterStat({ label, value }) {
   return (
-    <View style={styles.detailPill}>
-      <Text style={styles.detailPillLabel}>{label}</Text>
-      <Text style={styles.detailPillValue} numberOfLines={1}>
+    <View style={styles.footerStat}>
+      <Text style={styles.footerStatLabel}>{label}</Text>
+      <Text style={styles.footerStatValue} numberOfLines={1}>
         {value}
-      </Text>
-    </View>
-  );
-}
-
-function MiniMeta({ label, tone }) {
-  return (
-    <View style={[styles.miniMeta, { backgroundColor: `${tone}18`, borderColor: `${tone}35` }]}>
-      <Text style={[styles.miniMetaText, { color: tone }]} numberOfLines={1}>
-        {label}
       </Text>
     </View>
   );
@@ -233,7 +220,7 @@ function EmptyState() {
   return (
     <View style={styles.emptyCard}>
       <Text style={styles.emptyTitle}>아직 함께 걷는 친구가 없어요.</Text>
-      <Text style={styles.emptyText}>친구를 추가하면 서로의 캐릭터 상태를 볼 수 있어요.</Text>
+      <Text style={styles.emptyText}>친구를 추가하면 서로의 캐릭터 상태를 가볍게 비교할 수 있어요.</Text>
     </View>
   );
 }
@@ -246,47 +233,54 @@ function getModeInfo(friend, rankMode) {
         primaryValue: `${formatNumber(friend.weeklySteps)}보`,
         secondaryLeftLabel: "평균",
         secondaryLeftValue: `${formatNumber(Math.round((friend.weeklySteps ?? 0) / 7))}보`,
-        secondaryRightLabel: "오늘",
-        secondaryRightValue: `${formatNumber(friend.todaySteps)}보`,
+        secondaryRightLabel: "최고",
+        secondaryRightValue: `E${friend.energyLevel}`,
       };
     case "streak":
       return {
         primaryLabel: "연속",
         primaryValue: `${friend.streak}일`,
-        secondaryLeftLabel: "장기 상태",
-        secondaryLeftValue: getLongTermLabel(friend.longTermState),
-        secondaryRightLabel: "에너지",
-        secondaryRightValue: `E${friend.energyLevel}`,
+        secondaryLeftLabel: "누적",
+        secondaryLeftValue: `${formatNumber(friend.weeklySteps)}보`,
+        secondaryRightLabel: "장기",
+        secondaryRightValue: getLongTermLabel(friend.longTermState),
       };
     default:
       return {
         primaryLabel: "오늘",
         primaryValue: `${formatNumber(friend.todaySteps)}보`,
         secondaryLeftLabel: "에너지",
-        secondaryLeftValue: `E${friend.energyLevel} ${getEnergyLabel(friend.energyLevel)}`,
-        secondaryRightLabel: "이번 주",
-        secondaryRightValue: `${formatNumber(friend.weeklySteps)}보`,
+        secondaryLeftValue: `E${friend.energyLevel}`,
+        secondaryRightLabel: "장기",
+        secondaryRightValue: getLongTermLabel(friend.longTermState),
       };
   }
 }
 
-function getEnergyLabel(level) {
-  return ENERGY_META[level]?.label ?? "평온";
-}
-
-function getLongTermLabel(state) {
-  return LONG_TERM_META[state]?.label ?? "건강";
+function getRankingTitle(rankMode) {
+  switch (rankMode) {
+    case "weekly":
+      return "주간 누적 발걸음 순위";
+    case "streak":
+      return "연속 달성 순위";
+    default:
+      return "일간 순위";
+  }
 }
 
 function getRankingDetails(rankMode) {
   switch (rankMode) {
     case "weekly":
-      return { subtitle: "이번 주 누적 걸음이 큰 친구부터 카드가 정렬돼요." };
+      return { subtitle: "이번 주 누적 걸음으로 친구들의 꾸준함을 살펴봐요." };
     case "streak":
-      return { subtitle: "연속 산책일이 긴 친구부터 카드가 정렬돼요." };
+      return { subtitle: "연속 달성으로 산책 습관이 잘 쌓인 친구를 볼 수 있어요." };
     default:
-      return { subtitle: "오늘 걸음이 많은 친구부터 카드가 정렬돼요." };
+      return { subtitle: "오늘의 상태와 걸음을 중심으로 친구 캐릭터를 비교해요." };
   }
+}
+
+function getLongTermLabel(state) {
+  return LONG_TERM_META[state]?.label ?? "건강";
 }
 
 function getRankBadgeStyle(rank) {
@@ -341,20 +335,21 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#eef8f6",
     borderWidth: 1,
-    borderColor: "#cde7e0",
+    borderColor: "#d7ebe6",
   },
   kicker: {
-    color: "#2c7a75",
-    fontSize: 12,
+    color: "#4c7b71",
+    fontSize: 11,
+    lineHeight: 16,
     fontWeight: "900",
-    letterSpacing: 1.2,
     textTransform: "uppercase",
+    letterSpacing: 1.2,
   },
   heroTitle: {
     marginTop: 8,
     color: theme.colors.ink,
-    fontSize: 24,
-    lineHeight: 31,
+    fontSize: 21,
+    lineHeight: 28,
     fontWeight: "900",
   },
   heroText: {
@@ -444,14 +439,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   friendCard: {
+    position: "relative",
     borderRadius: theme.radius.xl,
     padding: 12,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: "#fffdf8",
     borderWidth: 1,
     borderColor: theme.colors.border,
-    gap: 10,
     aspectRatio: 0.68,
     overflow: "hidden",
+  },
+  friendCardContent: {
+    flex: 1,
+    position: "relative",
   },
   friendCardMe: {
     backgroundColor: "#fff7ef",
@@ -463,8 +462,13 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   friendHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2,
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 8,
   },
@@ -493,129 +497,95 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "900",
   },
-  meBadge: {
+  meLabel: {
     color: "#9f4e33",
     fontSize: 10,
     fontWeight: "900",
   },
-  previewWrap: {
-    flex: 1,
+  characterStage: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 28,
+    bottom: 72,
     alignItems: "center",
     justifyContent: "center",
+    pointerEvents: "none",
   },
-  previewShell: {
-    borderRadius: theme.radius.xl,
+  previewFigure: {
+    position: "relative",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.06)",
-    overflow: "hidden",
-  },
-  previewHead: {
-    position: "absolute",
-    top: "18%",
-    width: "42%",
-    aspectRatio: 1,
-    borderRadius: 999,
-    opacity: 0.95,
-  },
-  previewBody: {
-    position: "absolute",
-    bottom: "18%",
-    width: "58%",
-    height: "42%",
-    borderRadius: 999,
-    opacity: 0.95,
   },
   previewShadow: {
     position: "absolute",
-    bottom: "10%",
+    bottom: "7%",
     width: "72%",
-    height: 10,
+    height: "9%",
     borderRadius: 999,
-    backgroundColor: "rgba(0,0,0,0.07)",
+    opacity: 0.55,
   },
-  previewText: {
+  previewHead: {
     position: "absolute",
-    bottom: 12,
-    color: "#ffffff",
-    fontSize: 10,
-    fontWeight: "900",
-    textShadowColor: "rgba(0,0,0,0.22)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    top: "11%",
+    width: "42%",
+    aspectRatio: 1,
+    borderRadius: 999,
+    opacity: 0.98,
   },
-  previewTag: {
+  previewBody: {
     position: "absolute",
-    top: 8,
-    right: 8,
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    backgroundColor: "rgba(255,255,255,0.85)",
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.04)",
+    bottom: "7%",
+    width: "66%",
+    height: "48%",
+    borderRadius: 999,
+    opacity: 0.98,
   },
-  previewTagText: {
-    color: theme.colors.inkSoft,
-    fontSize: 9,
-    fontWeight: "900",
+  primaryStatBlock: {
+    position: "absolute",
+    left: 0,
+    bottom: 52,
+    zIndex: 2,
+    maxWidth: "64%",
   },
-  focusBlock: {
-    gap: 2,
-  },
-  focusLabel: {
+  primaryStatLabel: {
     color: theme.colors.inkSoft,
     fontSize: 10,
     fontWeight: "800",
     textTransform: "uppercase",
-    letterSpacing: 0.4,
+    letterSpacing: 0.5,
   },
-  focusValue: {
+  primaryStatValue: {
     color: theme.colors.ink,
-    fontSize: 15,
-    lineHeight: 18,
+    fontSize: 18,
+    lineHeight: 22,
     fontWeight: "900",
   },
-  detailRow: {
+  footerInfoRow: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 2,
     flexDirection: "row",
-    gap: 6,
+    gap: 8,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(0,0,0,0.06)",
   },
-  detailPill: {
+  footerStat: {
     flex: 1,
-    borderRadius: theme.radius.md,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    backgroundColor: theme.colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     minWidth: 0,
   },
-  detailPillLabel: {
+  footerStatLabel: {
     color: theme.colors.inkSoft,
     fontSize: 9,
     fontWeight: "800",
+    marginBottom: 2,
   },
-  detailPillValue: {
-    marginTop: 3,
+  footerStatValue: {
     color: theme.colors.ink,
-    fontSize: 10,
-    fontWeight: "900",
-  },
-  bottomMetaRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 6,
-  },
-  miniMeta: {
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderWidth: 1,
-    maxWidth: "100%",
-  },
-  miniMetaText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: "900",
   },
   emptyCard: {
