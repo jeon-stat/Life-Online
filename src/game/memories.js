@@ -8,7 +8,7 @@ function formatMemoryDate(date) {
   return `${value.getMonth() + 1}\uC6D4 ${value.getDate()}\uC77C`;
 }
 
-export function getMemories(history = [], goal = DEFAULT_STEP_GOAL) {
+export function getMemories(history = [], goal = DEFAULT_STEP_GOAL, limit = 2) {
   const memories = [];
   const firstGoalReached = [...history].reverse().find((record) => (record?.steps ?? 0) >= goal);
   const bestStepDay = history.reduce((best, record) => {
@@ -46,5 +46,5 @@ export function getMemories(history = [], goal = DEFAULT_STEP_GOAL) {
     });
   }
 
-  return memories.slice(0, 2);
+  return memories.slice(0, limit);
 }
