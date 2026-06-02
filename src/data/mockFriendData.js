@@ -1,5 +1,13 @@
 import { SKIN_TONE_PRESETS } from "../characters.js";
 
+export const FRIEND_GROUPS = [
+  { id: "all", name: "전체", system: true },
+  { id: "workout", name: "운동친구", system: false },
+  { id: "school", name: "학교", system: false },
+  { id: "company", name: "회사", system: false },
+  { id: "family", name: "가족", system: false },
+];
+
 const BASE_FRIENDS = [
   {
     id: "friend-minji",
@@ -12,6 +20,7 @@ const BASE_FRIENDS = [
     energyLevel: 6,
     longTermState: "ACTIVE",
     skinTone: SKIN_TONE_PRESETS[2]?.color ?? "#efbda8",
+    groupIds: ["all", "workout", "school"],
   },
   {
     id: "friend-jun",
@@ -24,6 +33,7 @@ const BASE_FRIENDS = [
     energyLevel: 5,
     longTermState: "HEALTHY",
     skinTone: SKIN_TONE_PRESETS[4]?.color ?? "#f29d6d",
+    groupIds: ["all", "workout", "company"],
   },
   {
     id: "friend-soo",
@@ -36,6 +46,7 @@ const BASE_FRIENDS = [
     energyLevel: 5,
     longTermState: "ACTIVE",
     skinTone: SKIN_TONE_PRESETS[0]?.color ?? "#f7d9cf",
+    groupIds: ["all", "school", "family"],
   },
   {
     id: "friend-hana",
@@ -48,6 +59,7 @@ const BASE_FRIENDS = [
     energyLevel: 4,
     longTermState: "HEALTHY",
     skinTone: SKIN_TONE_PRESETS[1]?.color ?? "#f4cbbb",
+    groupIds: ["all", "workout", "family"],
   },
   {
     id: "friend-minho",
@@ -60,10 +72,19 @@ const BASE_FRIENDS = [
     energyLevel: 4,
     longTermState: "HEALTHY",
     skinTone: SKIN_TONE_PRESETS[5]?.color ?? "#d77c54",
+    groupIds: ["all", "company"],
   },
 ];
 
-export function buildFriendRankingData({ currentUser, todayRecord, weeklySteps = 0, streak = 0, energyLevel = 3, longTermState = "HEALTHY", skinTone = null } = {}) {
+export function buildFriendRankingData({
+  currentUser,
+  todayRecord,
+  weeklySteps = 0,
+  streak = 0,
+  energyLevel = 3,
+  longTermState = "HEALTHY",
+  skinTone = null,
+} = {}) {
   const friends = [...BASE_FRIENDS];
   const currentHandle = String(currentUser?.handle ?? "walk").trim().toLowerCase();
   const currentNickname = String(currentUser?.nickname ?? "내 산책 파트너").trim() || "내 산책 파트너";
@@ -80,6 +101,7 @@ export function buildFriendRankingData({ currentUser, todayRecord, weeklySteps =
     energyLevel,
     longTermState,
     skinTone: meSkinTone,
+    groupIds: ["all"],
     isMe: true,
   };
 
@@ -89,6 +111,7 @@ export function buildFriendRankingData({ currentUser, todayRecord, weeklySteps =
       ...friends[existingIndex],
       ...me,
       id: friends[existingIndex].id,
+      groupIds: normalizeGroupIds(friends[existingIndex].groupIds),
       isMe: true,
     };
     return friends;
@@ -96,6 +119,54 @@ export function buildFriendRankingData({ currentUser, todayRecord, weeklySteps =
 
   friends.push(me);
   return friends;
+}
+
+export function createFriendGroupState(friends = []) {
+  return friends.reduce((acc, friend) => {
+    acc[friend.id] = normalizeGroupIds(friend.groupIds);
+    return acc;
+  }, {});
+}
+
+export function getFriendGroupIds(friend, groupState = {}) {
+  return normalizeGroupIds(groupState?.[friend.id] ?? friend?.groupIds ?? ["all"]);
+}
+
+export function getFriendGroupNames(friend, groupState = {}) {
+  const groupIds = getFriendGroupIds(friend, groupState);
+  return FRIEND_GROUPS.filter((group) => groupIds.includes(group.id) && !group.system)
+    .map((group) => group.name)
+    .join(", ") || "없음";
+}
+
+export function filterFriendsByGroup(friends, groupId) {
+  if (groupId === "all") {
+    return [...friends];
+  }
+
+  return friends.filter((friend) => getFriendGroupIds(friend).includes(groupId));
+}
+
+export function toggleFriendGroupMembership(groupState, friendId, groupId) {
+  if (!friendId || !groupId || groupId === "all") {
+    return groupState;
+  }
+
+  const currentIds = normalizeGroupIds(groupState?.[friendId] ?? ["all"]);
+  const nextIds = new Set(currentIds);
+
+  if (nextIds.has(groupId)) {
+    nextIds.delete(groupId);
+  } else {
+    nextIds.add(groupId);
+  }
+
+  nextIds.add("all");
+
+  return {
+    ...groupState,
+    [friendId]: Array.from(nextIds),
+  };
 }
 
 export function sortFriendCards(friends, mode) {
@@ -121,6 +192,12 @@ export function getFriendSortLabel(mode) {
     default:
       return "일간 순위";
   }
+}
+
+function normalizeGroupIds(groupIds) {
+  const normalized = new Set(Array.isArray(groupIds) ? groupIds.filter(Boolean) : []);
+  normalized.add("all");
+  return Array.from(normalized);
 }
 
 function getSortKey(mode) {
