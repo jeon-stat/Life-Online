@@ -193,19 +193,6 @@ export function FriendsScreen() {
   const selectedFriendGroupIds = selectedFriend ? getFriendGroupIds(selectedFriend, friendGroupState) : [];
   const selectableGroups = groups.filter((group) => !group.system);
 
-  if (viewMode === "ranking" && rankedFriends.length === 0) {
-    return (
-      <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.heroCard}>
-          <Text style={styles.kicker}>친구</Text>
-          <Text style={styles.heroTitle}>이 그룹에는 아직 친구가 없어요.</Text>
-          <Text style={styles.heroText}>친구 목록에서 이 그룹에 친구를 추가해보세요.</Text>
-        </View>
-        <EmptyState />
-      </ScrollView>
-    );
-  }
-
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.heroCard}>
@@ -308,19 +295,23 @@ export function FriendsScreen() {
             <Text style={styles.listSubtitle}>{getRankingDetails(rankMode)}</Text>
           </View>
 
-          <View style={styles.gridWrap}>
-            {rankedFriends.map((friend, index) => (
-              <FriendRankCard
-                key={friend.id}
-                friend={friend}
-                rank={index + 1}
-                isMe={Boolean(friend.isMe)}
-                rankMode={rankMode}
-                cardWidth={cardWidth}
-                previewSize={previewSize}
-              />
-            ))}
-          </View>
+          {rankedFriends.length ? (
+            <View style={styles.gridWrap}>
+              {rankedFriends.map((friend, index) => (
+                <FriendRankCard
+                  key={friend.id}
+                  friend={friend}
+                  rank={index + 1}
+                  isMe={Boolean(friend.isMe)}
+                  rankMode={rankMode}
+                  cardWidth={cardWidth}
+                  previewSize={previewSize}
+                />
+              ))}
+            </View>
+          ) : (
+            <EmptyState />
+          )}
         </>
       ) : (
         <>
