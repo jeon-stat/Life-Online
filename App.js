@@ -9,15 +9,17 @@ import { AuthScreen } from "./src/screens/AuthScreen.js";
 import { HomeScreen } from "./src/screens/HomeScreen.js";
 import { HistoryScreen } from "./src/screens/HistoryScreen.js";
 import { CharacterScreen } from "./src/screens/CharacterScreen.js";
+import { FriendsScreen } from "./src/screens/FriendsScreen.js";
 import { AdminPanel } from "./src/components/AdminPanel.js";
 import { BottomTabs } from "./src/components/BottomTabs.js";
 import { theme } from "./src/constants/theme.js";
 import { buildCharacterViewModel } from "./src/game/characterState.js";
 
 const TABS = [
-  { id: "home", label: "\uC0B0\uCC45" },
-  { id: "history", label: "\uBC1C\uC790\uAD6D" },
-  { id: "character", label: "\uCE90\uB9AD\uD130" },
+  { id: "home", label: "\uC0B0\uCC45", icon: "🌤️" },
+  { id: "history", label: "\uBC1C\uC790\uAD6D", icon: "📖" },
+  { id: "character", label: "\uCE90\uB9AD\uD130", icon: "🐾" },
+  { id: "friends", label: "\uCE5C\uAD6C", icon: "👥" },
 ];
 
 const STEP_DATA_MODE = Platform.OS === "web" ? "mock" : "auto";
@@ -81,6 +83,7 @@ function AppShell({ activeTab, onChangeTab }) {
           {activeTab === "home" ? <HomeScreen /> : null}
           {activeTab === "history" ? <HistoryScreen /> : null}
           {activeTab === "character" ? <CharacterScreen /> : null}
+          {activeTab === "friends" ? <FriendsScreen /> : null}
         </View>
 
         {admin?.visible && admin?.canOverride ? (
