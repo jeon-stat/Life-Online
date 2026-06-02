@@ -9,7 +9,7 @@ const StepDataContext = createContext(null);
 export function StepDataProvider({ children, mode = "mock", adminEnabled = false }) {
   const [mockState, setMockState] = useState(() => createMockStepSnapshot());
   const [skinToneId, setSkinToneId] = useState(SKIN_TONE_PRESETS[0]?.id ?? null);
-  const [adminVisible, setAdminVisible] = useState(() => Boolean(adminEnabled));
+  const [adminVisible, setAdminVisible] = useState(false);
   const [behaviorAdmin, setBehaviorAdmin] = useState(() => ({
     forcedEnergyLevel: null,
     forcedLongTermState: null,
