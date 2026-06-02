@@ -716,6 +716,7 @@ const styles = StyleSheet.create({
   },
   groupChipScroller: {
     marginHorizontal: -theme.spacing.md,
+    marginTop: 8,
   },
   groupChip: {
     minHeight: 36,

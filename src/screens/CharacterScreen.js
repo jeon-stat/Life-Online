@@ -118,14 +118,10 @@ export function CharacterScreen() {
                 onPress={() => admin.setSkinTone?.(tone.id)}
                 style={[styles.skinToneChip, selected && styles.skinToneChipSelected]}
               >
-                  <View style={[styles.skinToneSwatch, { backgroundColor: tone.color }]} />
-                  <View style={styles.skinToneTextBlock}>
-                    <Text style={styles.skinToneLabel}>{tone.label}</Text>
-                    <Text style={styles.skinToneNote}>{selected ? "선택됨" : "탭해서 적용"}</Text>
-                  </View>
-                </Pressable>
-              );
-            })}
+                <View style={[styles.skinToneSwatch, { backgroundColor: tone.color }]} />
+              </Pressable>
+            );
+          })}
         </View>
       </View>
 
@@ -377,14 +373,16 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   skinToneGrid: {
-    gap: 8,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
   },
   skinToneChip: {
-    flexDirection: "row",
+    width: 44,
+    height: 44,
     alignItems: "center",
-    gap: 10,
-    padding: 12,
-    borderRadius: theme.radius.lg,
+    justifyContent: "center",
+    borderRadius: 999,
     backgroundColor: theme.colors.surfaceMuted,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -394,25 +392,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff7ef",
   },
   skinToneSwatch: {
-    width: 26,
-    height: 26,
+    width: 28,
+    height: 28,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.08)",
-  },
-  skinToneTextBlock: {
-    flex: 1,
-  },
-  skinToneLabel: {
-    color: theme.colors.ink,
-    fontSize: 13,
-    fontWeight: "900",
-  },
-  skinToneNote: {
-    marginTop: 2,
-    color: theme.colors.inkSoft,
-    fontSize: 11,
-    fontWeight: "700",
   },
   customizationGrid: {
     flexDirection: "row",
