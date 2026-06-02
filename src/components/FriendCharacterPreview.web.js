@@ -31,9 +31,8 @@ export function FriendCharacterPreview({ friend, size = 88 }) {
       <View style={styles.sparkTwo} />
       <View style={styles.sparkThree} />
       <View style={styles.sparkFour} />
-      <View style={styles.hillLeft} />
-      <View style={styles.hillRight} />
-      <View style={styles.path} />
+      <View style={styles.grassBand} />
+      <View style={styles.pathBand} />
 
       <StageCanvas>
         <PreviewCharacter character={character} actionKey={actionKey} />
@@ -130,37 +129,21 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "#f6cf75",
   },
-  hillLeft: {
+  grassBand: {
     position: "absolute",
-    left: "-18%",
-    right: "38%",
-    bottom: "-7%",
-    height: "34%",
-    borderTopLeftRadius: 999,
-    borderTopRightRadius: 999,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: "28%",
     backgroundColor: "#9ab868",
-    transform: [{ rotate: "-8deg" }],
   },
-  hillRight: {
+  pathBand: {
     position: "absolute",
-    left: "36%",
-    right: "-18%",
-    bottom: "-7%",
-    height: "34%",
-    borderTopLeftRadius: 999,
-    borderTopRightRadius: 999,
-    backgroundColor: "#9ab868",
-    transform: [{ rotate: "8deg" }],
-  },
-  path: {
-    position: "absolute",
-    left: "16%",
-    right: "16%",
-    bottom: "-2%",
-    height: "52%",
-    borderTopLeftRadius: 999,
-    borderTopRightRadius: 999,
+    left: "42%",
+    bottom: 0,
+    width: "16%",
+    height: "54%",
     backgroundColor: "#d69a43",
-    transform: [{ rotate: "0deg" }],
+    transform: [{ skewX: "-10deg" }],
   },
 });
