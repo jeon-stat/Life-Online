@@ -72,7 +72,6 @@ export function CharacterScreen() {
         </View>
 
         <View style={styles.profileFooter}>
-          <Text style={styles.profileFooterText}>캐릭터의 생활 기록을 한눈에 볼 수 있어요.</Text>
           <Pressable onPress={signOut} style={styles.signOutButton}>
             <Text style={styles.signOutLabel}>로그아웃</Text>
           </Pressable>
@@ -86,7 +85,6 @@ export function CharacterScreen() {
           <Text style={styles.longTermIcon}>{longTermMeta.icon}</Text>
           <View style={styles.longTermCopy}>
             <Text style={[styles.longTermBannerLabel, { color: longTermMeta.color }]}>{longTermMeta.label}</Text>
-            <Text style={styles.longTermBannerDescription}>{longTermMeta.description}</Text>
           </View>
         </View>
       </View>
@@ -142,11 +140,10 @@ export function CharacterScreen() {
   );
 }
 
-function SectionHeader({ title, subtitle }) {
+function SectionHeader({ title }) {
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
     </View>
   );
 }

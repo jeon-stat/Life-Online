@@ -66,9 +66,6 @@ export function HomeScreen() {
             <Text style={styles.cardTitle}>오늘 상태</Text>
             <Text style={styles.cardPrimary}>{viewState.statusLabel}</Text>
           </View>
-
-          <Text style={styles.cardSecondary}>{viewState.statusDescription}</Text>
-
           <View style={styles.metaGrid}>
             <MetaChip icon="⚡" value={`E${viewState.energyLevel} · ${ENERGY_STAGE_LABELS[viewState.energyLevel] ?? "?"}`} />
             <MetaChip icon="🎯" value={`${Math.round(viewState.progressPercent)}%`} />
@@ -164,12 +161,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 34,
     fontWeight: "900",
-  },
-  cardSecondary: {
-    color: theme.colors.inkSoft,
-    fontSize: 13,
-    lineHeight: 20,
-    fontWeight: "700",
   },
   metaGrid: {
     flexDirection: "row",

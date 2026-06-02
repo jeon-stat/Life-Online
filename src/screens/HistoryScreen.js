@@ -26,12 +26,6 @@ export function HistoryScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <View style={styles.heroCard}>
-        <Text style={styles.kicker}>발자국</Text>
-        <Text style={styles.heroTitle}>이번 주 핵심 발자국</Text>
-        <Text style={styles.heroText}>핵심 성과를 먼저 보고, 아래에서 짧게 흐름을 확인해요.</Text>
-      </View>
-
       <View style={styles.summaryGrid}>
         <SummaryStat icon="🔥" label="연속" value={`${streak}일`} />
         <SummaryStat icon="👣" label="합계" value={`${formatNumber(weekSummary.totalSteps)}보`} />
@@ -39,11 +33,6 @@ export function HistoryScreen() {
         <SummaryStat icon="📊" label="평균" value={`${formatNumber(weekSummary.averageSteps)}보`} />
       </View>
 
-      <Section title="요약">
-        <View style={styles.summarySentenceCard}>
-          <Text style={styles.summarySentence}>{weekSummary.narrative}</Text>
-        </View>
-      </Section>
 
       <Section title="최근 7일">
         <View style={styles.trailGrid}>
@@ -86,7 +75,7 @@ export function HistoryScreen() {
             memories.map((memory) => (
               <View key={memory.id} style={styles.memoryItem}>
                 <Text style={styles.memoryTitle}>{memory.title}</Text>
-                <Text style={styles.memoryText}>{memory.summary}</Text>
+                
               </View>
             ))
           ) : (
@@ -181,18 +170,18 @@ function buildTrailLogs(history, goal) {
   return [
     {
       key: "today",
-      icon: ENERGY_META[todayEnergy]?.icon ?? "👣",
-      text: latest ? `오늘은 ${ENERGY_META[todayEnergy]?.label ?? "평온"}까지 도달했어요.` : "오늘 기록이 아직 없어요.",
+      icon: ENERGY_META[todayEnergy]?.icon ?? "??",
+      text: latest ? `?? ? E${todayEnergy} ? ${formatNumber(latest.steps)}?` : "?? ?? ??",
     },
     {
       key: "best",
-      icon: ENERGY_META[bestEnergy]?.icon ?? "🏆",
-      text: bestRecord ? `이번 주 최고는 ${formatTrailDateLabel(bestRecord.date, bestRecord.id === latest?.id)}예요.` : "아직 최고 기록이 없어요.",
+      icon: ENERGY_META[bestEnergy]?.icon ?? "??",
+      text: bestRecord ? `?? ? ${formatTrailDateLabel(bestRecord.date, bestRecord.id === latest?.id)} ? E${bestEnergy}` : "?? ?? ??",
     },
     {
       key: "goal",
-      icon: "🎯",
-      text: goalDays > 0 ? `목표는 ${goalDays}일 달성했어요.` : "이번 주 목표 달성 기록이 아직 없어요.",
+      icon: "??",
+      text: goalDays > 0 ? `?? ? ${goalDays}?` : "?? ?? ??",
     },
   ];
 }

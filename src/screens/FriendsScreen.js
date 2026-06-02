@@ -157,6 +157,7 @@ export function FriendsScreen() {
   }, [width]);
 
   const previewSize = useMemo(() => Math.max(62, Math.min(126, Math.round(cardWidth * 0.68))), [cardWidth]);
+  const cardPreviewSize = useMemo(() => Math.max(48, Math.min(72, Math.round(width / 8))), [width]);
 
   const createGroup = () => {
     const name = newGroupName.trim();
@@ -195,10 +196,8 @@ export function FriendsScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <View style={styles.heroCard}>
-        <Text style={styles.kicker}>친구</Text>
-        <Text style={styles.heroTitle}>그룹 안의 친구를 비교해요</Text>
-        <Text style={styles.heroText}>선택한 그룹 안에서만 순위를 봐요.</Text>
+      <View style={styles.pageTitleWrap}>
+        <Text style={styles.pageTitle}>??</Text>
       </View>
 
       <View style={styles.tabCard}>
@@ -254,6 +253,68 @@ export function FriendsScreen() {
             );
           })}
         </ScrollView>
+        {viewMode === "list" ? (
+          <>
+            <View style={styles.groupActionCard}>
+              <View style={styles.groupActionHeader}>
+                <Text style={styles.groupActionTitle}>?? ??</Text>
+                {selectedGroup.system ? <Text style={styles.groupActionHint}>??? ??</Text> : null}
+              </View>
+              {selectedGroup.system ? (
+                <Text style={styles.groupActionNote}>?? ??? ?? ??? ??? ? ? ???.</Text>
+              ) : (
+                <>
+                  <View style={styles.inlineInputRow}>
+                    <TextInput
+                      value={renameGroupName}
+                      onChangeText={setRenameGroupName}
+                      placeholder="?? ??"
+                      placeholderTextColor={theme.colors.inkSoft}
+                      style={styles.textInput}
+                    />
+                    <Pressable onPress={renameGroup} style={styles.secondaryButton}>
+                      <Text style={styles.secondaryButtonLabel}>?? ??</Text>
+                    </Pressable>
+                  </View>
+                  <Pressable onPress={deleteGroup} style={styles.dangerButton}>
+                    <Text style={styles.dangerButtonLabel}>?? ??</Text>
+                  </Pressable>
+                </>
+              )}
+            </View>
+
+            <View style={styles.groupActionCard}>
+              <View style={styles.groupActionHeader}>
+                <Text style={styles.groupActionTitle}>??</Text>
+                <Pressable
+                  onPress={() => {
+                    setShowCreateGroup((current) => !current);
+                  }}
+                  style={[styles.groupActionToggle, showCreateGroup && styles.groupActionToggleActive]}
+                >
+                  <Text style={[styles.groupActionToggleLabel, showCreateGroup && styles.groupActionToggleLabelActive]}>
+                    ? ? ?? ???
+                  </Text>
+                </Pressable>
+              </View>
+
+              {showCreateGroup ? (
+                <View style={styles.inlineInputRow}>
+                  <TextInput
+                    value={newGroupName}
+                    onChangeText={setNewGroupName}
+                    placeholder="???"
+                    placeholderTextColor={theme.colors.inkSoft}
+                    style={styles.textInput}
+                  />
+                  <Pressable onPress={createGroup} style={styles.primaryButton}>
+                    <Text style={styles.primaryButtonLabel}>??</Text>
+                  </Pressable>
+                </View>
+              ) : null}
+            </View>
+          </>
+        ) : null}
       </View>
 
       {viewMode === "ranking" ? (
@@ -277,7 +338,6 @@ export function FriendsScreen() {
 
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>{getRankingTitle(rankMode, selectedGroup.name)}</Text>
-            <Text style={styles.listSubtitle}>{getRankingDetails(rankMode)}</Text>
           </View>
 
           {rankedFriends.length ? (
@@ -301,84 +361,23 @@ export function FriendsScreen() {
       ) : (
         <>
           <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>친구 목록</Text>
-            <Text style={styles.listSubtitle}>이름과 아이디만 빠르게 봐요.</Text>
+            <Text style={styles.listTitle}>?? ??</Text>
           </View>
 
-          <View style={styles.groupActionCard}>
-            <View style={styles.groupActionHeader}>
-              <Text style={styles.groupActionTitle}>그룹 설정</Text>
-              {selectedGroup.system ? <Text style={styles.groupActionHint}>시스템 그룹</Text> : null}
-            </View>
-            {selectedGroup.system ? (
-              <Text style={styles.groupActionNote}>전체 그룹은 이름 변경과 삭제를 할 수 없어요.</Text>
-            ) : (
-              <>
-                <View style={styles.inlineInputRow}>
-                  <TextInput
-                    value={renameGroupName}
-                    onChangeText={setRenameGroupName}
-                    placeholder="이름 변경"
-                    placeholderTextColor={theme.colors.inkSoft}
-                    style={styles.textInput}
-                  />
-                  <Pressable onPress={renameGroup} style={styles.secondaryButton}>
-                    <Text style={styles.secondaryButtonLabel}>이름 변경</Text>
-                  </Pressable>
-                </View>
-                <Pressable onPress={deleteGroup} style={styles.dangerButton}>
-                  <Text style={styles.dangerButtonLabel}>그룹 삭제</Text>
-                </Pressable>
-              </>
-            )}
-          </View>
-
-          <View style={styles.groupActionCard}>
-            <View style={styles.groupActionHeader}>
-              <Text style={styles.groupActionTitle}>그룹</Text>
-              <Pressable
-                onPress={() => {
-                  setShowCreateGroup((current) => !current);
-                }}
-                style={[styles.groupActionToggle, showCreateGroup && styles.groupActionToggleActive]}
-              >
-                <Text style={[styles.groupActionToggleLabel, showCreateGroup && styles.groupActionToggleLabelActive]}>
-                  ＋ 새 그룹 만들기
-                </Text>
-              </Pressable>
-            </View>
-
-            {showCreateGroup ? (
-              <View style={styles.inlineInputRow}>
-                <TextInput
-                  value={newGroupName}
-                  onChangeText={setNewGroupName}
-                  placeholder="그룹명"
-                  placeholderTextColor={theme.colors.inkSoft}
-                  style={styles.textInput}
-                />
-                <Pressable onPress={createGroup} style={styles.primaryButton}>
-                  <Text style={styles.primaryButtonLabel}>생성</Text>
-                </Pressable>
-              </View>
-            ) : null}
-          </View>
-
-          <View style={styles.friendList}>
+          <View style={styles.friendGrid}>
             {listFriends.map((friend) => {
               const active = friend.id === selectedFriend?.id;
               return (
                 <Pressable
                   key={friend.id}
                   onPress={() => setSelectedFriendId(friend.id)}
-                  style={[styles.friendListRow, active && styles.friendListRowSelected]}
+                  style={[styles.friendGridCard, active && styles.friendGridCardSelected]}
                 >
-                  <View style={styles.friendListMain}>
-                    <Text style={styles.friendListName} numberOfLines={1}>
-                      {friend.nickname}
-                    </Text>
-                    <Text style={styles.friendListHandle}>@{friend.handle}</Text>
-                  </View>
+                  <FriendPreview friend={friend} size={cardPreviewSize} />
+                  <Text style={styles.friendGridName} numberOfLines={1}>
+                    {friend.nickname}
+                  </Text>
+                  <Text style={styles.friendGridHandle}>@{friend.handle}</Text>
                 </Pressable>
               );
             })}
@@ -386,9 +385,12 @@ export function FriendsScreen() {
 
           {selectedFriend ? (
             <View style={styles.friendDetailCard}>
-              <Text style={styles.friendDetailTitle}>{selectedFriend.nickname}</Text>
-              <Text style={styles.friendDetailHandle}>@{selectedFriend.handle}</Text>
-              <Text style={styles.friendDetailLabel}>소속 그룹</Text>
+              <View style={styles.friendDetailTop}>
+                <Text style={styles.friendDetailTitle} numberOfLines={1}>
+                  {selectedFriend.nickname}
+                </Text>
+                <Text style={styles.friendDetailHandle}>@{selectedFriend.handle}</Text>
+              </View>
 
               <View style={styles.groupChecklist}>
                 {selectableGroups.map((group) => {
@@ -400,7 +402,7 @@ export function FriendsScreen() {
                       style={[styles.checkRow, checked && styles.checkRowChecked]}
                     >
                       <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
-                        {checked ? <Text style={styles.checkboxMark}>✓</Text> : null}
+                        {checked ? <Text style={styles.checkboxMark}>?</Text> : null}
                       </View>
                       <Text style={styles.checkLabel}>{group.name}</Text>
                     </Pressable>
@@ -629,34 +631,16 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.md,
     gap: theme.spacing.md,
   },
-  heroCard: {
-    borderRadius: theme.radius.xl,
-    padding: 20,
-    backgroundColor: "#eef8f6",
-    borderWidth: 1,
-    borderColor: "#d7ebe6",
+  pageTitleWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 4,
   },
-  kicker: {
-    color: "#4c7b71",
-    fontSize: 11,
-    lineHeight: 16,
-    fontWeight: "900",
-    textTransform: "uppercase",
-    letterSpacing: 1.2,
-  },
-  heroTitle: {
-    marginTop: 8,
+  pageTitle: {
     color: theme.colors.ink,
-    fontSize: 21,
-    lineHeight: 28,
+    fontSize: 22,
     fontWeight: "900",
-  },
-  heroText: {
-    marginTop: 10,
-    color: theme.colors.inkSoft,
-    fontSize: 13,
-    lineHeight: 20,
-    fontWeight: "700",
+    letterSpacing: 0.6,
   },
   tabCard: {
     borderRadius: theme.radius.xl,
@@ -915,6 +899,39 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontWeight: "700",
   },
+  friendGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  friendGridCard: {
+    flexGrow: 1,
+    flexBasis: "31%",
+    minWidth: 94,
+    maxWidth: "49%",
+    borderRadius: theme.radius.lg,
+    padding: 10,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: "center",
+    gap: 6,
+  },
+  friendGridCardSelected: {
+    backgroundColor: "#fff7ef",
+    borderColor: "#d99d78",
+  },
+  friendGridName: {
+    color: theme.colors.ink,
+    fontSize: 12,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  friendGridHandle: {
+    color: theme.colors.inkSoft,
+    fontSize: 10,
+    fontWeight: "700",
+  },
   gridWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1071,33 +1088,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "900",
   },
-  friendList: {
-    gap: 10,
-  },
-  friendListRow: {
-    padding: 14,
-    borderRadius: theme.radius.xl,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  friendListRowSelected: {
-    borderColor: "#d99d78",
-    backgroundColor: "#fff7ef",
-  },
-  friendListMain: {
-    minWidth: 0,
-  },
-  friendListName: {
-    color: theme.colors.ink,
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  friendListHandle: {
-    marginTop: 3,
-    color: theme.colors.inkSoft,
-    fontSize: 11,
-    fontWeight: "700",
+  friendDetailTop: {
+    gap: 2,
   },
   friendDetailCard: {
     borderRadius: theme.radius.xl,
