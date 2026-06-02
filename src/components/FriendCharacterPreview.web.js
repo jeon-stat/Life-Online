@@ -1,84 +1,64 @@
-import { useMemo, useRef } from "react";
-import { StyleSheet, View } from "react-native";
-import { useFrame } from "@react-three/fiber";
-
-import { CHARACTER_CLASSES } from "../characters.js";
-import { GLBCharacterModel } from "../models/GLBCharacterModel.js";
-import { StageCanvas } from "../scene/StageCanvas.web.js";
-import { StageRig } from "../scene/StageRig.js";
-import { STAGE_LAYOUT } from "../scene/stageConfig.js";
-
-const ENERGY_LEVEL_TO_ACTION_KEY = {
-  0: "energy0",
-  1: "energy1",
-  2: "energy2",
-  3: "energy3",
-  4: "energy4",
-  5: "energy5",
-  6: "energy6",
-};
+import { StyleSheet, Text, View } from "react-native";
 
 export function FriendCharacterPreview({ friend, size = 88 }) {
   const wrapperHeight = Math.round(size * 1.18);
-  const character = useMemo(() => resolvePreviewCharacter(friend), [friend?.avatarCharacterId, friend?.skinTone]);
-  const energyLevel = Math.max(0, Math.min(6, friend?.energyLevel ?? 3));
-  const actionKey = ENERGY_LEVEL_TO_ACTION_KEY[energyLevel] ?? "energy3";
+  const initial = String(friend?.nickname ?? friend?.handle ?? "F").trim().slice(0, 1).toUpperCase();
 
   return (
     <View style={[styles.shell, { width: size, height: wrapperHeight }]}>
-      <StageCanvas>
-        <PreviewCharacter character={character} actionKey={actionKey} />
-      </StageCanvas>
+      <View style={styles.frame}>
+        <View style={styles.avatarMark}>
+          <Text style={styles.avatarInitial}>{initial}</Text>
+        </View>
+        <Text style={styles.label}>Preview</Text>
+        <Text style={styles.subLabel}>MOCK</Text>
+      </View>
     </View>
   );
-}
-
-function PreviewCharacter({ character, actionKey }) {
-  const worldRef = useRef(null);
-
-  useFrame((frameState) => {
-    if (!worldRef.current) return;
-
-    const t = frameState.clock.getElapsedTime();
-    worldRef.current.position.y = Math.sin(t * 1.1) * 0.04;
-    worldRef.current.rotation.y = Math.sin(t * 0.2) * 0.05;
-  });
-
-  return (
-    <group ref={worldRef} position={[0, 0, 0]}>
-      <StageRig rotation={STAGE_LAYOUT.defaultRotation}>
-        <group position={[0, 0.24, 0]} scale={0.82}>
-          <GLBCharacterModel
-            character={character}
-            animationState={actionKey}
-            animationSpeed={0.95}
-            loopMode="repeat"
-          />
-        </group>
-      </StageRig>
-    </group>
-  );
-}
-
-function resolvePreviewCharacter(friend) {
-  const baseCharacter = CHARACTER_CLASSES.find((item) => item.id === friend?.avatarCharacterId) ?? CHARACTER_CLASSES[0];
-  const skinTone = friend?.skinTone ?? baseCharacter.palette?.skin ?? "#f4cbbb";
-
-  return {
-    ...baseCharacter,
-    skinTone,
-    modelScale: [2.72, 2.72, 2.72],
-    modelOffset: [0, 1.74, 0],
-    modelPivotY: 0.62,
-    modelRotation: [0, 0, 0],
-  };
 }
 
 const styles = StyleSheet.create({
   shell: {
     position: "relative",
     overflow: "hidden",
+  },
+  frame: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 18,
-    backgroundColor: "#f4f7f1",
+    backgroundColor: "#f5f2ea",
+    borderWidth: 1,
+    borderColor: "#e1d9cb",
+    paddingHorizontal: 8,
+  },
+  avatarMark: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff8f0",
+    borderWidth: 1,
+    borderColor: "#d9ccb7",
+  },
+  avatarInitial: {
+    color: "#4f7a57",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  label: {
+    marginTop: 8,
+    color: "#1f2937",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  subLabel: {
+    marginTop: 2,
+    color: "#6b7280",
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
   },
 });

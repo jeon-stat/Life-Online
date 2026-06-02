@@ -1,13 +1,17 @@
 import { StyleSheet, Text, View } from "react-native";
 
-export function FriendCharacterPreview({ size = 88 }) {
-  const wrapperHeight = Math.round(size * (size > 100 ? 1 : 1.18));
+export function FriendCharacterPreview({ friend, size = 88 }) {
+  const wrapperHeight = Math.round(size * 1.18);
+  const initial = String(friend?.nickname ?? friend?.handle ?? "F").trim().slice(0, 1).toUpperCase();
 
   return (
     <View style={[styles.shell, { width: size, height: wrapperHeight }]}>
-      <View style={styles.placeholder}>
-        <Text style={styles.placeholderIcon}>🌍</Text>
-        <Text style={styles.placeholderText}>3D</Text>
+      <View style={styles.frame}>
+        <View style={styles.avatarMark}>
+          <Text style={styles.avatarInitial}>{initial}</Text>
+        </View>
+        <Text style={styles.label}>Preview</Text>
+        <Text style={styles.subLabel}>MOCK</Text>
       </View>
     </View>
   );
@@ -18,22 +22,43 @@ const styles = StyleSheet.create({
     position: "relative",
     overflow: "hidden",
   },
-  placeholder: {
+  frame: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 999,
-    backgroundColor: "#eef8ee",
+    borderRadius: 18,
+    backgroundColor: "#f5f2ea",
     borderWidth: 1,
-    borderColor: "#dce8d8",
+    borderColor: "#e1d9cb",
+    paddingHorizontal: 8,
   },
-  placeholderIcon: {
-    fontSize: 20,
+  avatarMark: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff8f0",
+    borderWidth: 1,
+    borderColor: "#d9ccb7",
   },
-  placeholderText: {
-    marginTop: 2,
+  avatarInitial: {
     color: "#4f7a57",
-    fontSize: 10,
+    fontSize: 14,
     fontWeight: "900",
+  },
+  label: {
+    marginTop: 8,
+    color: "#1f2937",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  subLabel: {
+    marginTop: 2,
+    color: "#6b7280",
+    fontSize: 9,
+    fontWeight: "700",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
   },
 });
