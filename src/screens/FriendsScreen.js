@@ -228,7 +228,13 @@ export function FriendsScreen() {
         </View>
         <Text style={styles.groupCardMeta}>{groupCounts[selectedGroup.id] ?? 0}명</Text>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.groupChipRow}>
+        <ScrollView
+          horizontal
+          nestedScrollEnabled
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.groupChipRow}
+          style={styles.groupChipScroller}
+        >
           {groups.map((group) => {
             const active = group.id === selectedGroupId;
             const count = groupCounts[group.id] ?? 0;
@@ -249,26 +255,33 @@ export function FriendsScreen() {
           })}
         </ScrollView>
 
-        {selectedGroup && !selectedGroup.system ? (
-          <View style={styles.groupActionCard}>
-            <Text style={styles.groupActionTitle}>그룹 설정</Text>
-            <View style={styles.inlineInputRow}>
-              <TextInput
-                value={renameGroupName}
-                onChangeText={setRenameGroupName}
-                placeholder="이름 변경"
-                placeholderTextColor={theme.colors.inkSoft}
-                style={styles.textInput}
-              />
-              <Pressable onPress={renameGroup} style={styles.secondaryButton}>
-                <Text style={styles.secondaryButtonLabel}>이름 변경</Text>
-              </Pressable>
-            </View>
-            <Pressable onPress={deleteGroup} style={styles.dangerButton}>
-              <Text style={styles.dangerButtonLabel}>그룹 삭제</Text>
-            </Pressable>
+        <View style={styles.groupActionCard}>
+          <View style={styles.groupActionHeader}>
+            <Text style={styles.groupActionTitle}>?? ??</Text>
+            {selectedGroup.system ? <Text style={styles.groupActionHint}>??? ??</Text> : null}
           </View>
-        ) : null}
+          {selectedGroup.system ? (
+            <Text style={styles.groupActionNote}>?? ??? ?? ??? ??? ? ? ???.</Text>
+          ) : (
+            <>
+              <View style={styles.inlineInputRow}>
+                <TextInput
+                  value={renameGroupName}
+                  onChangeText={setRenameGroupName}
+                  placeholder="?? ??"
+                  placeholderTextColor={theme.colors.inkSoft}
+                  style={styles.textInput}
+                />
+                <Pressable onPress={renameGroup} style={styles.secondaryButton}>
+                  <Text style={styles.secondaryButtonLabel}>?? ??</Text>
+                </Pressable>
+              </View>
+              <Pressable onPress={deleteGroup} style={styles.dangerButton}>
+                <Text style={styles.dangerButtonLabel}>?? ??</Text>
+              </Pressable>
+            </>
+          )}
+        </View>
       </View>
 
       {viewMode === "ranking" ? (
@@ -724,6 +737,9 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingRight: theme.spacing.md,
   },
+  groupChipScroller: {
+    marginHorizontal: -theme.spacing.md,
+  },
   groupChip: {
     minHeight: 36,
     paddingHorizontal: 12,
@@ -764,6 +780,17 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 14,
     fontWeight: "900",
+  },
+  groupActionHint: {
+    color: theme.colors.inkSoft,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  groupActionNote: {
+    color: theme.colors.inkSoft,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "600",
   },
   groupActionToggle: {
     minHeight: 34,
