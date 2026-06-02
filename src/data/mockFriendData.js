@@ -1,12 +1,14 @@
 import { SKIN_TONE_PRESETS } from "../characters.js";
 
-export const FRIEND_GROUPS = [
+export const DEFAULT_FRIEND_GROUPS = [
   { id: "all", name: "전체", system: true },
   { id: "workout", name: "운동친구", system: false },
   { id: "school", name: "학교", system: false },
   { id: "company", name: "회사", system: false },
   { id: "family", name: "가족", system: false },
 ];
+
+export const FRIEND_GROUPS = DEFAULT_FRIEND_GROUPS;
 
 const BASE_FRIENDS = [
   {
@@ -132,9 +134,10 @@ export function getFriendGroupIds(friend, groupState = {}) {
   return normalizeGroupIds(groupState?.[friend.id] ?? friend?.groupIds ?? ["all"]);
 }
 
-export function getFriendGroupNames(friend, groupState = {}) {
+export function getFriendGroupNames(friend, groupState = {}, groups = DEFAULT_FRIEND_GROUPS) {
   const groupIds = getFriendGroupIds(friend, groupState);
-  return FRIEND_GROUPS.filter((group) => groupIds.includes(group.id) && !group.system)
+  return groups
+    .filter((group) => groupIds.includes(group.id) && !group.system)
     .map((group) => group.name)
     .join(", ") || "없음";
 }

@@ -1,10 +1,18 @@
-import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from "react-native";
 
 import { useAuth } from "../auth/AuthProvider.js";
 import { useStepData } from "../data/stepDataProvider.js";
 import {
-  FRIEND_GROUPS,
+  DEFAULT_FRIEND_GROUPS,
   buildFriendRankingData,
   createFriendGroupState,
   filterFriendsByGroup,
@@ -29,13 +37,13 @@ const RANK_TABS = [
 ];
 
 const ENERGY_META = {
-  0: { label: "완전 휴식", tone: "#8a94a2" },
-  1: { label: "졸린 하루", tone: "#8aa0c5" },
-  2: { label: "숨 고르기", tone: "#5f9ea0" },
-  3: { label: "평온", tone: "#7aa37e" },
-  4: { label: "산책", tone: "#e2a24a" },
-  5: { label: "달리기", tone: "#db7c52" },
-  6: { label: "최고 컨디션", tone: "#c95f4f" },
+  0: { label: "완전 휴식", icon: "🛌", tone: "#8a94a2" },
+  1: { label: "졸린 하루", icon: "😴", tone: "#8aa0c5" },
+  2: { label: "숨 고르기", icon: "🌬️", tone: "#5f9ea0" },
+  3: { label: "평온", icon: "🙂", tone: "#7aa37e" },
+  4: { label: "산책", icon: "🚶", tone: "#e2a24a" },
+  5: { label: "달리기", icon: "🏃", tone: "#db7c52" },
+  6: { label: "최고 컨디션", icon: "⚡", tone: "#c95f4f" },
 };
 
 const LONG_TERM_META = {
@@ -56,6 +64,13 @@ export function FriendsScreen() {
   const { width } = useWindowDimensions();
   const [viewMode, setViewMode] = useState("ranking");
   const [rankMode, setRankMode] = useState("daily");
+  const [groups, setGroups] = useState(() => DEFAULT_FRIEND_GROUPS.map((group) => ({ ...group })));
+  const [friendGroupState, setFriendGroupState] = useState(() => ({}));
+  const [selectedGroupId, setSelectedGroupId] = useState("all");
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState("");
+  const [renameGroupName, setRenameGroupName] = useState("");
+  const [selectedFriendId, setSelectedFriendId] = useState(null);
 
   const characterViewState = useMemo(
     () => buildCharacterViewModel({ todayRecord: today, history, goal, admin }),
@@ -78,9 +93,17 @@ export function FriendsScreen() {
     [admin?.skinToneId, admin?.skinTones, characterViewState.energyLevel, characterViewState.longTermState, currentUser, goal, history, today, weeklySteps],
   );
 
-  const [friendGroupState, setFriendGroupState] = useState(() => createFriendGroupState(friends));
-  const [selectedGroupId, setSelectedGroupId] = useState("all");
-  const [selectedFriendId, setSelectedFriendId] = useState(friends[0]?.id ?? null);
+  useEffect(() => {
+    setFriendGroupState((current) => {
+      const next = { ...current };
+      for (const friend of friends) {
+        if (!next[friend.id]) {
+          next[friend.id] = getFriendGroupIds(friend);
+        }
+      }
+      return next;
+    });
+  }, [friends]);
 
   const mergedFriends = useMemo(
     () =>
@@ -91,10 +114,21 @@ export function FriendsScreen() {
     [friendGroupState, friends],
   );
 
+  const groupCounts = useMemo(() => buildGroupCounts(groups, mergedFriends), [groups, mergedFriends]);
   const selectedGroup = useMemo(
-    () => FRIEND_GROUPS.find((group) => group.id === selectedGroupId) ?? FRIEND_GROUPS[0],
-    [selectedGroupId],
+    () => groups.find((group) => group.id === selectedGroupId) ?? groups[0] ?? DEFAULT_FRIEND_GROUPS[0],
+    [groups, selectedGroupId],
   );
+
+  useEffect(() => {
+    setRenameGroupName(selectedGroup && !selectedGroup.system ? selectedGroup.name : "");
+  }, [selectedGroup]);
+
+  useEffect(() => {
+    if (selectedFriendId && mergedFriends.every((friend) => friend.id !== selectedFriendId)) {
+      setSelectedFriendId(mergedFriends[0]?.id ?? null);
+    }
+  }, [mergedFriends, selectedFriendId]);
 
   const selectedGroupFriends = useMemo(
     () => filterFriendsByGroup(mergedFriends, selectedGroupId),
@@ -109,7 +143,6 @@ export function FriendsScreen() {
       ),
     [mergedFriends],
   );
-
   const selectedFriend = useMemo(
     () => listFriends.find((friend) => friend.id === selectedFriendId) ?? listFriends[0] ?? null,
     [listFriends, selectedFriendId],
@@ -125,16 +158,47 @@ export function FriendsScreen() {
 
   const previewSize = useMemo(() => Math.max(62, Math.min(126, Math.round(cardWidth * 0.68))), [cardWidth]);
 
-  const onToggleFriendGroup = (friendId, groupId) => {
+  const createGroup = () => {
+    const name = newGroupName.trim();
+    if (!name) return;
+
+    const id = makeGroupId(name, groups);
+    const nextGroups = [...groups, { id, name, system: false }];
+
+    setGroups(nextGroups);
+    setSelectedGroupId(id);
+    setShowCreateGroup(false);
+    setNewGroupName("");
+  };
+
+  const renameGroup = () => {
+    const name = renameGroupName.trim();
+    if (!name || !selectedGroup || selectedGroup.system) return;
+
+    setGroups((current) => current.map((group) => (group.id === selectedGroup.id ? { ...group, name } : group)));
+  };
+
+  const deleteGroup = () => {
+    if (!selectedGroup || selectedGroup.system) return;
+
+    setGroups((current) => current.filter((group) => group.id !== selectedGroup.id));
+    setFriendGroupState((current) => removeGroupFromAllFriends(current, selectedGroup.id));
+    setSelectedGroupId("all");
+  };
+
+  const toggleMembership = (friendId, groupId) => {
     setFriendGroupState((current) => toggleFriendGroupMembership(current, friendId, groupId));
   };
+
+  const selectedFriendGroupIds = selectedFriend ? getFriendGroupIds(selectedFriend, friendGroupState) : [];
+  const selectableGroups = groups.filter((group) => !group.system);
 
   if (viewMode === "ranking" && rankedFriends.length === 0) {
     return (
       <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.heroCard}>
           <Text style={styles.kicker}>친구</Text>
-          <Text style={styles.heroTitle}>그룹 안에 아직 친구가 없어요</Text>
+          <Text style={styles.heroTitle}>이 그룹에는 아직 친구가 없어요.</Text>
           <Text style={styles.heroText}>친구 목록에서 이 그룹에 친구를 추가해보세요.</Text>
         </View>
         <EmptyState />
@@ -167,34 +231,88 @@ export function FriendsScreen() {
         </View>
       </View>
 
+      <View style={styles.groupCard}>
+        <View style={styles.groupCardTop}>
+          <View>
+            <Text style={styles.groupCardLabel}>그룹</Text>
+            <Text style={styles.groupCardTitle}>{selectedGroup.name}</Text>
+          </View>
+          {selectedGroup.system ? <Text style={styles.systemBadge}>SYS</Text> : null}
+        </View>
+        <Text style={styles.groupCardMeta}>{groupCounts[selectedGroup.id] ?? 0}명</Text>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.groupChipRow}>
+          {groups.map((group) => {
+            const active = group.id === selectedGroupId;
+            const count = groupCounts[group.id] ?? 0;
+            return (
+              <Pressable
+                key={group.id}
+                onPress={() => {
+                  setSelectedGroupId(group.id);
+                  setShowCreateGroup(false);
+                }}
+                style={[styles.groupChip, active && styles.groupChipActive]}
+              >
+                <Text style={[styles.groupChipLabel, active && styles.groupChipLabelActive]}>
+                  {group.name} ({count})
+                </Text>
+              </Pressable>
+            );
+          })}
+
+          <Pressable
+            onPress={() => {
+              setShowCreateGroup((current) => !current);
+            }}
+            style={[styles.groupChip, showCreateGroup && styles.groupChipActive]}
+          >
+            <Text style={[styles.groupChipLabel, showCreateGroup && styles.groupChipLabelActive]}>＋ 새 그룹 만들기</Text>
+          </Pressable>
+        </ScrollView>
+
+        {showCreateGroup ? (
+          <View style={styles.groupActionCard}>
+            <Text style={styles.groupActionTitle}>새 그룹 만들기</Text>
+            <View style={styles.inlineInputRow}>
+              <TextInput
+                value={newGroupName}
+                onChangeText={setNewGroupName}
+                placeholder="그룹명"
+                placeholderTextColor={theme.colors.inkSoft}
+                style={styles.textInput}
+              />
+              <Pressable onPress={createGroup} style={styles.primaryButton}>
+                <Text style={styles.primaryButtonLabel}>생성</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
+        {selectedGroup && !selectedGroup.system ? (
+          <View style={styles.groupActionCard}>
+            <Text style={styles.groupActionTitle}>그룹 설정</Text>
+            <View style={styles.inlineInputRow}>
+              <TextInput
+                value={renameGroupName}
+                onChangeText={setRenameGroupName}
+                placeholder="이름 변경"
+                placeholderTextColor={theme.colors.inkSoft}
+                style={styles.textInput}
+              />
+              <Pressable onPress={renameGroup} style={styles.secondaryButton}>
+                <Text style={styles.secondaryButtonLabel}>이름 변경</Text>
+              </Pressable>
+            </View>
+            <Pressable onPress={deleteGroup} style={styles.dangerButton}>
+              <Text style={styles.dangerButtonLabel}>그룹 삭제</Text>
+            </Pressable>
+          </View>
+        ) : null}
+      </View>
+
       {viewMode === "ranking" ? (
         <>
-          <View style={styles.groupCard}>
-            <View style={styles.groupCardTop}>
-              <View>
-                <Text style={styles.groupCardLabel}>그룹</Text>
-                <Text style={styles.groupCardTitle}>{selectedGroup.name}</Text>
-              </View>
-              {selectedGroup.system ? <Text style={styles.systemBadge}>SYS</Text> : null}
-            </View>
-            <Text style={styles.groupCardMeta}>{selectedGroupFriends.length}명</Text>
-          </View>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.groupChipRow}>
-            {FRIEND_GROUPS.map((group) => {
-              const active = group.id === selectedGroupId;
-              return (
-                <Pressable
-                  key={group.id}
-                  onPress={() => setSelectedGroupId(group.id)}
-                  style={[styles.groupChip, active && styles.groupChipActive]}
-                >
-                  <Text style={[styles.groupChipLabel, active && styles.groupChipLabelActive]}>{group.name}</Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-
           <View style={styles.rankTabCard}>
             <View style={styles.rankTabRow}>
               {RANK_TABS.map((tab) => {
@@ -214,7 +332,7 @@ export function FriendsScreen() {
 
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>{getRankingTitle(rankMode, selectedGroup.name)}</Text>
-            <Text style={styles.listSubtitle}>{getRankingDetails(rankMode, selectedGroup.name)}</Text>
+            <Text style={styles.listSubtitle}>{getRankingDetails(rankMode)}</Text>
           </View>
 
           <View style={styles.gridWrap}>
@@ -239,31 +357,38 @@ export function FriendsScreen() {
           </View>
 
           <View style={styles.friendList}>
-            {listFriends.map((friend) => (
-              <FriendListRow
-                key={friend.id}
-                friend={friend}
-                isSelected={friend.id === selectedFriend?.id}
-                onPress={() => setSelectedFriendId(friend.id)}
-                onManagePress={() => setSelectedFriendId(friend.id)}
-              />
-            ))}
+            {listFriends.map((friend) => {
+              const active = friend.id === selectedFriend?.id;
+              return (
+                <Pressable
+                  key={friend.id}
+                  onPress={() => setSelectedFriendId(friend.id)}
+                  style={[styles.friendListRow, active && styles.friendListRowSelected]}
+                >
+                  <View style={styles.friendListMain}>
+                    <Text style={styles.friendListName} numberOfLines={1}>
+                      {friend.nickname}
+                    </Text>
+                    <Text style={styles.friendListHandle}>@{friend.handle}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
 
           {selectedFriend ? (
-            <View style={styles.groupManagerCard}>
-              <Text style={styles.groupManagerTitle}>{selectedFriend.nickname}</Text>
-              <Text style={styles.groupManagerHandle}>@{selectedFriend.handle}</Text>
-              <Text style={styles.groupManagerLabel}>그룹 관리</Text>
+            <View style={styles.friendDetailCard}>
+              <Text style={styles.friendDetailTitle}>{selectedFriend.nickname}</Text>
+              <Text style={styles.friendDetailHandle}>@{selectedFriend.handle}</Text>
+              <Text style={styles.friendDetailLabel}>소속 그룹</Text>
 
               <View style={styles.groupChecklist}>
-                {FRIEND_GROUPS.filter((group) => !group.system).map((group) => {
-                  const groupIds = getFriendGroupIds(selectedFriend, friendGroupState);
-                  const checked = groupIds.includes(group.id);
+                {selectableGroups.map((group) => {
+                  const checked = selectedFriendGroupIds.includes(group.id);
                   return (
                     <Pressable
                       key={group.id}
-                      onPress={() => onToggleFriendGroup(selectedFriend.id, group.id)}
+                      onPress={() => toggleMembership(selectedFriend.id, group.id)}
                       style={[styles.checkRow, checked && styles.checkRowChecked]}
                     >
                       <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
@@ -274,9 +399,6 @@ export function FriendsScreen() {
                   );
                 })}
               </View>
-
-              <Text style={styles.groupSummaryLabel}>포함 그룹</Text>
-              <Text style={styles.groupSummaryValue}>{getFriendGroupNames(selectedFriend, friendGroupState)}</Text>
             </View>
           ) : null}
         </>
@@ -336,22 +458,6 @@ function FriendPreview({ friend, size }) {
   );
 }
 
-function FriendListRow({ friend, isSelected, onPress, onManagePress }) {
-  return (
-    <View style={[styles.friendListRow, isSelected && styles.friendListRowSelected]}>
-      <Pressable onPress={onPress} style={styles.friendListMain}>
-        <Text style={styles.friendListName} numberOfLines={1}>
-          {friend.nickname}
-        </Text>
-        <Text style={styles.friendListHandle}>@{friend.handle}</Text>
-      </Pressable>
-      <Pressable onPress={onManagePress} style={styles.manageButton}>
-        <Text style={styles.manageButtonLabel}>그룹 관리</Text>
-      </Pressable>
-    </View>
-  );
-}
-
 function FooterStat({ label, value }) {
   return (
     <View style={styles.footerStat}>
@@ -370,6 +476,51 @@ function EmptyState() {
       <Text style={styles.emptyText}>친구 목록에서 이 그룹에 친구를 추가해보세요.</Text>
     </View>
   );
+}
+
+function buildGroupCounts(groups, friends) {
+  const counts = {};
+  for (const group of groups) {
+    counts[group.id] = 0;
+  }
+
+  for (const friend of friends) {
+    for (const groupId of friend.groupIds ?? []) {
+      if (counts[groupId] != null) {
+        counts[groupId] += 1;
+      }
+    }
+  }
+
+  return counts;
+}
+
+function removeGroupFromAllFriends(groupState, groupId) {
+  const next = {};
+
+  for (const [friendId, groupIds] of Object.entries(groupState)) {
+    next[friendId] = Array.from(new Set((groupIds ?? []).filter((id) => id !== groupId).concat("all")));
+  }
+
+  return next;
+}
+
+function makeGroupId(name, groups) {
+  const seed = name
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w가-힣-]/g, "")
+    .slice(0, 18) || "group";
+  let candidate = `custom-${seed}`;
+  let counter = 2;
+
+  while (groups.some((group) => group.id === candidate)) {
+    candidate = `custom-${seed}-${counter}`;
+    counter += 1;
+  }
+
+  return candidate;
 }
 
 function getModeInfo(friend, rankMode) {
@@ -405,7 +556,7 @@ function getModeInfo(friend, rankMode) {
 }
 
 function getRankingTitle(rankMode, groupName) {
-  const prefix = groupName ? `${groupName} 안에서 보는 ` : "";
+  const prefix = groupName ? `${groupName} 안의 ` : "";
   switch (rankMode) {
     case "weekly":
       return `${prefix}주간 순위`;
@@ -416,7 +567,7 @@ function getRankingTitle(rankMode, groupName) {
   }
 }
 
-function getRankingDetails(rankMode, groupName) {
+function getRankingDetails(rankMode) {
   switch (rankMode) {
     case "weekly":
       return "이번 주 누적 걸음으로 비교해요.";
@@ -538,7 +689,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    gap: 6,
+    gap: 10,
   },
   groupCardTop: {
     flexDirection: "row",
@@ -600,6 +751,77 @@ const styles = StyleSheet.create({
   groupChipLabelActive: {
     color: "#ffffff",
   },
+  groupActionCard: {
+    borderRadius: theme.radius.lg,
+    padding: 14,
+    backgroundColor: "#fffdf8",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 10,
+  },
+  groupActionTitle: {
+    color: theme.colors.ink,
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  inlineInputRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  textInput: {
+    flex: 1,
+    minHeight: 42,
+    paddingHorizontal: 12,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    color: theme.colors.ink,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  primaryButton: {
+    minWidth: 72,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: theme.radius.lg,
+    backgroundColor: "#16302b",
+    paddingHorizontal: 12,
+  },
+  primaryButtonLabel: {
+    color: "#ffffff",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  secondaryButton: {
+    minHeight: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.surfaceMuted,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  secondaryButtonLabel: {
+    color: theme.colors.ink,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  dangerButton: {
+    minHeight: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: theme.radius.lg,
+    backgroundColor: "#fff1ee",
+    borderWidth: 1,
+    borderColor: "#f0c7bf",
+  },
+  dangerButtonLabel: {
+    color: "#9f4e33",
+    fontSize: 12,
+    fontWeight: "900",
+  },
   rankTabCard: {
     borderRadius: theme.radius.xl,
     padding: 12,
@@ -620,10 +842,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surfaceMuted,
     borderWidth: 1,
     borderColor: theme.colors.border,
-  },
-  rankTabActive: {
-    backgroundColor: theme.colors.ink,
-    borderColor: theme.colors.ink,
   },
   rankTabLabel: {
     color: theme.colors.inkSoft,
@@ -807,10 +1025,6 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   friendListRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
     padding: 14,
     borderRadius: theme.radius.xl,
     backgroundColor: theme.colors.surface,
@@ -822,7 +1036,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff7ef",
   },
   friendListMain: {
-    flex: 1,
     minWidth: 0,
   },
   friendListName: {
@@ -836,18 +1049,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
   },
-  manageButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.ink,
-  },
-  manageButtonLabel: {
-    color: "#ffffff",
-    fontSize: 11,
-    fontWeight: "900",
-  },
-  groupManagerCard: {
+  friendDetailCard: {
     borderRadius: theme.radius.xl,
     padding: 16,
     backgroundColor: theme.colors.surface,
@@ -855,17 +1057,17 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     gap: 8,
   },
-  groupManagerTitle: {
+  friendDetailTitle: {
     color: theme.colors.ink,
     fontSize: 18,
     fontWeight: "900",
   },
-  groupManagerHandle: {
+  friendDetailHandle: {
     color: theme.colors.inkSoft,
     fontSize: 12,
     fontWeight: "700",
   },
-  groupManagerLabel: {
+  friendDetailLabel: {
     marginTop: 4,
     color: theme.colors.inkSoft,
     fontSize: 11,
@@ -915,18 +1117,6 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 13,
     fontWeight: "800",
-  },
-  groupSummaryLabel: {
-    marginTop: 4,
-    color: theme.colors.inkSoft,
-    fontSize: 11,
-    fontWeight: "800",
-  },
-  groupSummaryValue: {
-    color: theme.colors.ink,
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: "700",
   },
   emptyCard: {
     borderRadius: theme.radius.xl,
