@@ -19,7 +19,7 @@ import { theme } from "../constants/theme.js";
 
 const VIEW_TABS = [
   { id: "ranking", label: "랭킹" },
-  { id: "list", label: "친구 목록" },
+  { id: "list", label: "목록" },
 ];
 
 const RANK_TABS = [
@@ -146,10 +146,8 @@ export function FriendsScreen() {
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.heroCard}>
         <Text style={styles.kicker}>친구</Text>
-        <Text style={styles.heroTitle}>친구 그룹 안에서 캐릭터를 비교해요</Text>
-        <Text style={styles.heroText}>
-          친구를 폴더처럼 묶어두고, 선택한 그룹 안에서만 일간·주간·연속 순위를 볼 수 있어요.
-        </Text>
+        <Text style={styles.heroTitle}>그룹 안의 친구를 비교해요</Text>
+        <Text style={styles.heroText}>선택한 그룹 안에서만 순위를 봐요.</Text>
       </View>
 
       <View style={styles.tabCard}>
@@ -174,12 +172,12 @@ export function FriendsScreen() {
           <View style={styles.groupCard}>
             <View style={styles.groupCardTop}>
               <View>
-                <Text style={styles.groupCardLabel}>현재 그룹</Text>
+                <Text style={styles.groupCardLabel}>그룹</Text>
                 <Text style={styles.groupCardTitle}>{selectedGroup.name}</Text>
               </View>
-              {selectedGroup.system ? <Text style={styles.systemBadge}>시스템</Text> : null}
+              {selectedGroup.system ? <Text style={styles.systemBadge}>SYS</Text> : null}
             </View>
-            <Text style={styles.groupCardMeta}>{selectedGroupFriends.length}명의 친구가 포함돼 있어요.</Text>
+            <Text style={styles.groupCardMeta}>{selectedGroupFriends.length}명</Text>
           </View>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.groupChipRow}>
@@ -237,7 +235,7 @@ export function FriendsScreen() {
         <>
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>친구 목록</Text>
-            <Text style={styles.listSubtitle}>이름과 아이디를 빠르게 보고, 그룹만 간단히 관리할 수 있어요.</Text>
+            <Text style={styles.listSubtitle}>이름과 아이디만 빠르게 봐요.</Text>
           </View>
 
           <View style={styles.friendList}>
@@ -277,7 +275,7 @@ export function FriendsScreen() {
                 })}
               </View>
 
-              <Text style={styles.groupSummaryLabel}>현재 포함 그룹</Text>
+              <Text style={styles.groupSummaryLabel}>포함 그룹</Text>
               <Text style={styles.groupSummaryValue}>{getFriendGroupNames(selectedFriend, friendGroupState)}</Text>
             </View>
           ) : null}
@@ -378,29 +376,29 @@ function getModeInfo(friend, rankMode) {
   switch (rankMode) {
     case "weekly":
       return {
-        primaryLabel: "이번 주",
+        primaryLabel: "👣 이번 주",
         primaryValue: `${formatNumber(friend.weeklySteps)}보`,
-        secondaryLeftLabel: "평균",
+        secondaryLeftLabel: "📊 평균",
         secondaryLeftValue: `${formatNumber(Math.round((friend.weeklySteps ?? 0) / 7))}보`,
-        secondaryRightLabel: "최고",
-        secondaryRightValue: `E${friend.energyLevel}`,
+        secondaryRightLabel: "⚡ E",
+        secondaryRightValue: `${friend.energyLevel}`,
       };
     case "streak":
       return {
-        primaryLabel: "연속",
+        primaryLabel: "🔥 연속",
         primaryValue: `${friend.streak}일`,
-        secondaryLeftLabel: "이번 주",
+        secondaryLeftLabel: "👣 누적",
         secondaryLeftValue: `${formatNumber(friend.weeklySteps)}보`,
-        secondaryRightLabel: "장기",
+        secondaryRightLabel: "❤️ 장기",
         secondaryRightValue: getLongTermLabel(friend.longTermState),
       };
     default:
       return {
-        primaryLabel: "오늘",
+        primaryLabel: "👣 오늘",
         primaryValue: `${formatNumber(friend.todaySteps)}보`,
-        secondaryLeftLabel: "에너지",
-        secondaryLeftValue: `E${friend.energyLevel}`,
-        secondaryRightLabel: "장기",
+        secondaryLeftLabel: "⚡ E",
+        secondaryLeftValue: `${friend.energyLevel}`,
+        secondaryRightLabel: "❤️ 장기",
         secondaryRightValue: getLongTermLabel(friend.longTermState),
       };
   }
@@ -419,14 +417,13 @@ function getRankingTitle(rankMode, groupName) {
 }
 
 function getRankingDetails(rankMode, groupName) {
-  const subject = groupName ? `${groupName} 그룹 안의 친구들` : "선택된 그룹의 친구들";
   switch (rankMode) {
     case "weekly":
-      return `${subject}의 이번 주 누적 걸음 수를 기준으로 비교해요.`;
+      return "이번 주 누적 걸음으로 비교해요.";
     case "streak":
-      return `${subject}의 연속 달성일을 기준으로 살펴봐요.`;
+      return "연속 달성일로 살펴봐요.";
     default:
-      return `${subject}의 오늘 걸음 수를 기준으로 비교해요.`;
+      return "오늘 걸음 수로 비교해요.";
   }
 }
 

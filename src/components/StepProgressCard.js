@@ -8,20 +8,20 @@ export function StepProgressCard({ steps, goal, progressPercent, statusLabel }) 
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.title}>{"\uC624\uB298 \uC0B0\uCC45"}</Text>
+        <Text style={styles.title}>👣 오늘</Text>
         <Text style={styles.status}>{statusLabel}</Text>
       </View>
 
       <View style={styles.valueRow}>
         <Text style={styles.steps}>{steps.toLocaleString()}</Text>
-        <Text style={styles.goal}>/ {goal.toLocaleString()}\uBCF4</Text>
+        <Text style={styles.goal}>/ {goal.toLocaleString()}보</Text>
       </View>
 
       <View style={styles.track}>
         <View style={[styles.fill, { width: progressWidth }]} />
       </View>
 
-      <Text style={styles.caption}>{`\uBAA9\uD45C \uB2EC\uC131\uB960 ${progressPercent}%`}</Text>
+      <Text style={styles.caption}>🎯 {Math.round(progressPercent)}%</Text>
     </View>
   );
 }

@@ -11,18 +11,18 @@ import { buildCharacterViewModel } from "../game/characterState.js";
 
 const ENERGY_STAGE_LABELS = {
   0: "완전 휴식",
-  1: "졸린 하루",
+  1: "졸림",
   2: "숨 고르기",
   3: "평온",
   4: "산책",
   5: "달리기",
-  6: "최고 컨디션",
+  6: "최고",
 };
 
 const BACKGROUND_META = {
-  LOW_ENERGY: { label: "차분한 배경", tone: "#f2f0ea" },
-  NORMAL_ENERGY: { label: "평온한 배경", tone: "#eef3f7" },
-  HIGH_ENERGY: { label: "활기찬 배경", tone: "#edf8f0" },
+  LOW_ENERGY: { label: "조용한 배경", tone: "#f2f0ea" },
+  NORMAL_ENERGY: { label: "편안한 배경", tone: "#eef3f7" },
+  HIGH_ENERGY: { label: "활발한 배경", tone: "#edf8f0" },
 };
 
 export function HomeScreen() {
@@ -45,12 +45,7 @@ export function HomeScreen() {
     };
   }, [admin?.skinToneId, admin?.skinTones]);
 
-  const viewState = buildCharacterViewModel({
-    todayRecord: today,
-    history,
-    goal,
-    admin,
-  });
+  const viewState = buildCharacterViewModel({ todayRecord: today, history, goal, admin });
   const currentActionLabel = viewState.currentAction?.label ?? viewState.animationClip ?? "Unknown";
   const backgroundLabel = BACKGROUND_META[viewState.backgroundState]?.label ?? "현재 배경";
 
@@ -67,25 +62,22 @@ export function HomeScreen() {
         </View>
 
         <View style={styles.todayCard}>
-          <Text style={styles.cardKicker}>오늘</Text>
-          <Text style={styles.cardTitle}>캐릭터 상태</Text>
-          <Text style={styles.cardPrimary}>{viewState.statusLabel}</Text>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>오늘 상태</Text>
+            <Text style={styles.cardPrimary}>{viewState.statusLabel}</Text>
+          </View>
+
           <Text style={styles.cardSecondary}>{viewState.statusDescription}</Text>
 
           <View style={styles.metaGrid}>
-            <MetaChip
-              label="에너지 단계"
-              value={`E${viewState.energyLevel} · ${ENERGY_STAGE_LABELS[viewState.energyLevel] ?? "알 수 없음"}`}
-            />
-            <MetaChip
-              label="현재 배경"
-              value={backgroundLabel}
-              swatch={viewState.sceneBackground}
-            />
-            <MetaChip
-              label="현재 애니메이션"
-              value={currentActionLabel}
-            />
+            <MetaChip icon="⚡" value={`E${viewState.energyLevel} · ${ENERGY_STAGE_LABELS[viewState.energyLevel] ?? "?"}`} />
+            <MetaChip icon="🎯" value={`${Math.round(viewState.progressPercent)}%`} />
+            <MetaChip icon="👣" value={`${formatNumber(viewState.steps)}보`} />
+          </View>
+
+          <View style={styles.metaGridBottom}>
+            <MetaLine label="배경" value={backgroundLabel} swatch={viewState.sceneBackground} />
+            <MetaLine label="모션" value={currentActionLabel} />
           </View>
         </View>
 
@@ -100,18 +92,31 @@ export function HomeScreen() {
   );
 }
 
-function MetaChip({ label, value, swatch = null }) {
+function MetaChip({ icon, value }) {
   return (
     <View style={styles.metaChip}>
-      <Text style={styles.metaLabel}>{label}</Text>
-      <View style={styles.metaValueRow}>
+      <Text style={styles.metaIcon}>{icon}</Text>
+      <Text style={styles.metaValue}>{value}</Text>
+    </View>
+  );
+}
+
+function MetaLine({ label, value, swatch = null }) {
+  return (
+    <View style={styles.metaLine}>
+      <Text style={styles.metaLineLabel}>{label}</Text>
+      <View style={styles.metaLineValueRow}>
         {swatch ? <View style={[styles.metaSwatch, { backgroundColor: swatch }]} /> : null}
-        <Text style={styles.metaValue} numberOfLines={2}>
+        <Text style={styles.metaLineValue} numberOfLines={1}>
           {value}
         </Text>
       </View>
     </View>
   );
+}
+
+function formatNumber(value) {
+  return Number(value ?? 0).toLocaleString("ko-KR");
 }
 
 const styles = StyleSheet.create({
@@ -142,19 +147,17 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.88)",
     borderWidth: 1,
     borderColor: "rgba(215, 198, 176, 0.9)",
-    gap: 8,
+    gap: 12,
   },
-  cardKicker: {
-    color: "#c57c3a",
-    fontSize: 12,
-    fontWeight: "900",
-    letterSpacing: 1.1,
-    textTransform: "uppercase",
+  cardHeader: {
+    gap: 4,
   },
   cardTitle: {
-    color: theme.colors.ink,
-    fontSize: 17,
-    fontWeight: "900",
+    color: theme.colors.inkSoft,
+    fontSize: 12,
+    fontWeight: "800",
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
   },
   cardPrimary: {
     color: theme.colors.ink,
@@ -172,38 +175,59 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-    marginTop: 4,
   },
   metaChip: {
-    width: "31.8%",
+    flex: 1,
+    minWidth: "30%",
     borderRadius: theme.radius.lg,
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     backgroundColor: "#fffdf9",
     borderWidth: 1,
     borderColor: theme.colors.border,
-    gap: 6,
+    gap: 4,
   },
-  metaLabel: {
-    color: theme.colors.inkSoft,
-    fontSize: 10,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  metaValueRow: {
-    gap: 6,
-  },
-  metaSwatch: {
-    width: 18,
-    height: 18,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.08)",
+  metaIcon: {
+    fontSize: 14,
+    fontWeight: "900",
   },
   metaValue: {
     color: theme.colors.ink,
     fontSize: 12,
     lineHeight: 17,
     fontWeight: "900",
+  },
+  metaGridBottom: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  metaLine: {
+    flex: 1,
+    minWidth: 0,
+    paddingVertical: 4,
+  },
+  metaLineLabel: {
+    color: theme.colors.inkSoft,
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  metaLineValueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+  },
+  metaLineValue: {
+    color: theme.colors.ink,
+    fontSize: 12,
+    fontWeight: "900",
+    flex: 1,
+  },
+  metaSwatch: {
+    width: 16,
+    height: 16,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.08)",
   },
 });

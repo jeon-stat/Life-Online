@@ -7,9 +7,7 @@ export function CharacterStage({ character }) {
     <View style={styles.shell}>
       <View style={styles.placeholder}>
         <Text style={styles.name}>{character.label}</Text>
-        <Text style={styles.copy}>
-          {"3D \uCE90\uB9AD\uD130 \uBCF4\uAE30\uB294 \uC6F9 \uBBF8\uB9AC\uBCF4\uAE30\uC5D0\uC11C \uD655\uC778\uD560 \uC218 \uC788\uC5B4\uC694."}
-        </Text>
+        <Text style={styles.copy}>3D 미리보기는 웹에서 확인할 수 있어요.</Text>
       </View>
     </View>
   );

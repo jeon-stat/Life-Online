@@ -12,6 +12,7 @@ const LONG_TERM_META = {
     color: "#b06d57",
     softBg: "#fff3ee",
     border: "#f0d1c5",
+    icon: "💤",
   },
   HEALTHY: {
     label: "건강",
@@ -19,6 +20,7 @@ const LONG_TERM_META = {
     color: "#4f7a57",
     softBg: "#eef8ee",
     border: "#cfe8cf",
+    icon: "❤️",
   },
   ACTIVE: {
     label: "활발",
@@ -26,51 +28,51 @@ const LONG_TERM_META = {
     color: "#c06b3e",
     softBg: "#fff2e4",
     border: "#f3d0b0",
+    icon: "⚡",
   },
 };
 
 const CUSTOMIZATION_SLOTS = [
-  { key: "hair", label: "헤어", blurb: "준비 중" },
-  { key: "clothes", label: "의상", blurb: "준비 중" },
-  { key: "expression", label: "표정", blurb: "준비 중" },
-  { key: "background", label: "배경", blurb: "준비 중" },
+  { key: "hair", label: "헤어", note: "준비 중" },
+  { key: "clothes", label: "의상", note: "준비 중" },
+  { key: "expression", label: "표정", note: "준비 중" },
+  { key: "background", label: "배경", note: "준비 중" },
 ];
 
 export function CharacterScreen() {
   const { currentUser, signOut } = useAuth();
   const { today, history, goal, admin } = useStepData();
   const viewState = buildCharacterViewModel({ todayRecord: today, history, goal, admin });
+
   const profileName = currentUser?.nickname?.trim() || "내 산책 파트너";
   const profileHandle = currentUser?.handle ? `@${currentUser.handle}` : "@walk";
   const longTermMeta = LONG_TERM_META[viewState.longTermState] ?? LONG_TERM_META.HEALTHY;
-  const growthLabel = viewState.growthLabel ?? "장기 성장";
-  const growthDescription = viewState.growthDescription ?? "누적 기록을 바탕으로 캐릭터의 생활감이 자라나요.";
+  const growth = viewState.growth ?? {};
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.profileCard}>
         <View style={styles.profileHeader}>
           <View style={styles.profileCopy}>
-            <Text style={styles.profileKicker}>내 산책 파트너</Text>
+            <Text style={styles.profileKicker}>내 캐릭터</Text>
             <Text style={styles.profileName}>{profileName}</Text>
             <Text style={styles.profileHandle}>{profileHandle}</Text>
           </View>
 
           <View style={[styles.stateBadge, { backgroundColor: longTermMeta.softBg, borderColor: longTermMeta.border }]}>
-            <Text style={styles.stateBadgeLabel}>장기 상태</Text>
+            <Text style={styles.stateBadgeLabel}>{longTermMeta.icon}</Text>
             <Text style={[styles.stateBadgeValue, { color: longTermMeta.color }]}>{longTermMeta.label}</Text>
           </View>
         </View>
 
         <View style={styles.profileGrid}>
-          <InfoTile label="누적 걸음 수" value={`${formatNumber(viewState.growth.lifetimeSteps)}보`} />
-          <InfoTile label="목표 달성일" value={`${viewState.growth.achievedDays}일`} />
-          <InfoTile label="연속 산책일" value={`${viewState.growth.streak}일`} />
-          <InfoTile label="장기 성장" value={growthLabel} />
+          <MiniStat icon="👣" label="누적" value={`${formatNumber(growth.lifetimeSteps ?? 0)}보`} />
+          <MiniStat icon="🎯" label="목표" value={`${growth.achievedDays ?? 0}일`} />
+          <MiniStat icon="🔥" label="연속" value={`${growth.streak ?? 0}일`} />
         </View>
 
         <View style={styles.profileFooter}>
-          <Text style={styles.profileFooterText}>RPG 성장표 대신, 캐릭터의 생활 기록을 차곡차곡 보여줘요.</Text>
+          <Text style={styles.profileFooterText}>캐릭터의 생활 기록을 한눈에 볼 수 있어요.</Text>
           <Pressable onPress={signOut} style={styles.signOutButton}>
             <Text style={styles.signOutLabel}>로그아웃</Text>
           </Pressable>
@@ -78,48 +80,30 @@ export function CharacterScreen() {
       </View>
 
       <View style={styles.card}>
-        <SectionHeader title="장기 상태" subtitle="누적 걸음 기반으로 허약, 건강, 활발의 느낌을 보여줘요." />
+        <SectionHeader title="장기 상태" subtitle="누적 걸음 기반으로 허약, 건강, 활발 느낌을 보여줘요." />
 
         <View style={[styles.longTermBanner, { backgroundColor: longTermMeta.softBg, borderColor: longTermMeta.border }]}>
-          <Text style={[styles.longTermBannerLabel, { color: longTermMeta.color }]}>{longTermMeta.label}</Text>
-          <Text style={styles.longTermBannerDescription}>{longTermMeta.description}</Text>
-        </View>
-
-        <View style={styles.stateLegendRow}>
-          {Object.entries(LONG_TERM_META).map(([key, meta]) => {
-            const active = key === viewState.longTermState;
-            return (
-              <View key={key} style={[styles.stateLegendChip, active && styles.stateLegendChipActive]}>
-                <Text style={[styles.stateLegendChipLabel, active && styles.stateLegendChipLabelActive]}>{meta.label}</Text>
-              </View>
-            );
-          })}
+          <Text style={styles.longTermIcon}>{longTermMeta.icon}</Text>
+          <View style={styles.longTermCopy}>
+            <Text style={[styles.longTermBannerLabel, { color: longTermMeta.color }]}>{longTermMeta.label}</Text>
+            <Text style={styles.longTermBannerDescription}>{longTermMeta.description}</Text>
+          </View>
         </View>
       </View>
 
       <View style={styles.card}>
-        <SectionHeader
-          title="장기 성장 정보"
-          subtitle="현재는 누적 생활 기록 중심으로만 보여주고, 앞으로 확장될 기반을 남겨둬요."
-        />
+        <SectionHeader title="누적 기록" subtitle="기록은 숫자로, 설명은 짧게만 보여줘요." />
 
         <View style={styles.metricGrid}>
-          <MetricCard label="누적 걸음 수" value={`${formatNumber(viewState.growth.lifetimeSteps)}보`} />
-          <MetricCard label="목표 달성일" value={`${viewState.growth.achievedDays}일`} />
-          <MetricCard label="연속 산책일" value={`${viewState.growth.streak}일`} />
-          <MetricCard label="성장 단계" value={growthLabel} />
-        </View>
-
-        <View style={styles.summarySentenceCard}>
-          <Text style={styles.summarySentence}>{growthDescription}</Text>
+          <MetricCard icon="👣" label="누적" value={`${formatNumber(growth.lifetimeSteps ?? 0)}보`} />
+          <MetricCard icon="🎯" label="목표" value={`${growth.achievedDays ?? 0}일`} />
+          <MetricCard icon="🔥" label="연속" value={`${growth.streak ?? 0}일`} />
+          <MetricCard icon="⚡" label="단계" value={growth.growthLabel ?? "초기"} />
         </View>
       </View>
 
       <View style={styles.card}>
-        <SectionHeader
-          title="피부색"
-          subtitle="관리자 상태를 재사용해서 캐릭터 바디 전체에 반영해요."
-        />
+        <SectionHeader title="피부색" subtitle="바디 전체에 바로 적용돼요." />
 
         <View style={styles.skinToneGrid}>
           {(admin.skinTones ?? []).map((tone) => {
@@ -143,22 +127,17 @@ export function CharacterScreen() {
       </View>
 
       <View style={styles.card}>
-        <SectionHeader
-          title="커스터마이징"
-          subtitle="헤어, 의상, 표정, 배경은 나중에 파츠형으로 확장할 수 있게 자리만 마련해뒀어요."
-        />
+        <SectionHeader title="커스터마이징" subtitle="나중에 확장될 자리만 미리 잡아둬요." />
 
         <View style={styles.customizationGrid}>
           {CUSTOMIZATION_SLOTS.map((slot) => (
             <View key={slot.key} style={styles.placeholderCard}>
               <Text style={styles.placeholderLabel}>{slot.label}</Text>
-              <Text style={styles.placeholderTitle}>{slot.blurb}</Text>
-              <Text style={styles.placeholderText}>추후 해금/컬렉션/유료화 구조로 이어질 수 있는 자리예요.</Text>
+              <Text style={styles.placeholderNote}>{slot.note}</Text>
             </View>
           ))}
         </View>
       </View>
-
     </ScrollView>
   );
 }
@@ -172,19 +151,23 @@ function SectionHeader({ title, subtitle }) {
   );
 }
 
-function InfoTile({ label, value }) {
+function MiniStat({ icon, label, value }) {
   return (
     <View style={styles.infoTile}>
-      <Text style={styles.infoTileLabel}>{label}</Text>
+      <Text style={styles.infoTileLabel}>
+        {icon} {label}
+      </Text>
       <Text style={styles.infoTileValue}>{value}</Text>
     </View>
   );
 }
 
-function MetricCard({ label, value }) {
+function MetricCard({ icon, label, value }) {
   return (
     <View style={styles.metricCard}>
-      <Text style={styles.metricLabel}>{label}</Text>
+      <Text style={styles.metricLabel}>
+        {icon} {label}
+      </Text>
       <Text style={styles.metricValue}>{value}</Text>
     </View>
   );
@@ -206,7 +189,7 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     borderRadius: theme.radius.xl,
-    padding: 20,
+    padding: 18,
     backgroundColor: "#fffaf2",
     borderWidth: 1,
     borderColor: "#f0dcc3",
@@ -215,7 +198,7 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 8 },
     elevation: 3,
-    gap: 16,
+    gap: 14,
   },
   profileHeader: {
     flexDirection: "row",
@@ -228,7 +211,7 @@ const styles = StyleSheet.create({
   },
   profileKicker: {
     color: "#c57c3a",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "900",
     letterSpacing: 1.1,
     textTransform: "uppercase",
@@ -245,85 +228,80 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   stateBadge: {
-    minWidth: 102,
+    minWidth: 96,
     borderRadius: theme.radius.lg,
     paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderWidth: 1,
     gap: 2,
     alignItems: "flex-start",
   },
   stateBadgeLabel: {
-    color: theme.colors.inkSoft,
-    fontSize: 10,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
+    fontSize: 14,
+    fontWeight: "900",
   },
   stateBadgeValue: {
-    fontSize: 18,
+    fontSize: 13,
     fontWeight: "900",
   },
   profileGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
   },
   infoTile: {
-    width: "48.5%",
+    width: "31.8%",
     borderRadius: theme.radius.lg,
-    padding: 14,
-    backgroundColor: theme.colors.surface,
+    padding: 12,
+    backgroundColor: "#fffdf9",
     borderWidth: 1,
     borderColor: theme.colors.border,
+    gap: 4,
   },
   infoTileLabel: {
     color: theme.colors.inkSoft,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 10,
     fontWeight: "800",
   },
   infoTileValue: {
-    marginTop: 8,
     color: theme.colors.ink,
-    fontSize: 18,
+    fontSize: 13,
     fontWeight: "900",
   },
   profileFooter: {
-    gap: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
   },
   profileFooterText: {
+    flex: 1,
     color: theme.colors.inkSoft,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: "700",
   },
   signOutButton: {
-    alignSelf: "flex-start",
-    minHeight: 40,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
     borderRadius: theme.radius.pill,
-    paddingHorizontal: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#fff2e8",
-    borderWidth: 1,
-    borderColor: "#f1d6bf",
+    backgroundColor: "#162d28",
   },
   signOutLabel: {
-    color: "#9f4e33",
-    fontSize: 12,
+    color: "#ffffff",
+    fontSize: 11,
     fontWeight: "900",
   },
   card: {
     borderRadius: theme.radius.xl,
-    padding: 18,
+    padding: 16,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    gap: 12,
   },
   sectionHeader: {
-    gap: 6,
-    marginBottom: 12,
+    gap: 4,
   },
   sectionTitle: {
     color: theme.colors.ink,
@@ -337,116 +315,80 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   longTermBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
     borderRadius: theme.radius.lg,
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
-    gap: 8,
+  },
+  longTermIcon: {
+    fontSize: 22,
+  },
+  longTermCopy: {
+    flex: 1,
+    gap: 2,
   },
   longTermBannerLabel: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "900",
   },
   longTermBannerDescription: {
     color: theme.colors.inkSoft,
-    fontSize: 13,
-    lineHeight: 20,
-    fontWeight: "700",
-  },
-  stateLegendRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginTop: 10,
-  },
-  stateLegendChip: {
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: theme.colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  stateLegendChipActive: {
-    backgroundColor: "#fff2e8",
-    borderColor: "#e2b79e",
-  },
-  stateLegendChipLabel: {
-    color: theme.colors.inkSoft,
     fontSize: 12,
-    fontWeight: "800",
-  },
-  stateLegendChipLabelActive: {
-    color: theme.colors.ink,
+    lineHeight: 18,
+    fontWeight: "700",
   },
   metricGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
   },
   metricCard: {
     width: "48.5%",
     borderRadius: theme.radius.lg,
     padding: 14,
-    backgroundColor: "#fffdf8",
+    backgroundColor: theme.colors.surfaceMuted,
     borderWidth: 1,
-    borderColor: "#ecdac5",
+    borderColor: theme.colors.border,
+    gap: 4,
   },
   metricLabel: {
     color: theme.colors.inkSoft,
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 10,
     fontWeight: "800",
   },
   metricValue: {
-    marginTop: 8,
     color: theme.colors.ink,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "900",
   },
-  summarySentenceCard: {
-    borderRadius: theme.radius.lg,
-    padding: 16,
-    backgroundColor: "#fffefc",
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginTop: 10,
-  },
-  summarySentence: {
-    color: theme.colors.ink,
-    fontSize: 14,
-    lineHeight: 22,
-    fontWeight: "800",
-  },
   skinToneGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
   },
   skinToneChip: {
-    width: "48.5%",
-    borderRadius: theme.radius.lg,
-    padding: 12,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
+    padding: 12,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   skinToneChipSelected: {
-    backgroundColor: "#fff2e8",
     borderColor: "#d99d78",
+    backgroundColor: "#fff7ef",
   },
   skinToneSwatch: {
-    width: 24,
-    height: 24,
+    width: 26,
+    height: 26,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.08)",
   },
   skinToneTextBlock: {
     flex: 1,
-    gap: 2,
   },
   skinToneLabel: {
     color: theme.colors.ink,
@@ -454,6 +396,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   skinToneNote: {
+    marginTop: 2,
     color: theme.colors.inkSoft,
     fontSize: 11,
     fontWeight: "700",
@@ -461,34 +404,26 @@ const styles = StyleSheet.create({
   customizationGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
   },
   placeholderCard: {
     width: "48.5%",
-    minHeight: 118,
+    minHeight: 92,
     borderRadius: theme.radius.lg,
     padding: 14,
     backgroundColor: theme.colors.surfaceMuted,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    gap: 8,
+    justifyContent: "space-between",
   },
   placeholderLabel: {
-    color: theme.colors.inkSoft,
-    fontSize: 11,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 0.4,
-  },
-  placeholderTitle: {
     color: theme.colors.ink,
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "900",
   },
-  placeholderText: {
+  placeholderNote: {
     color: theme.colors.inkSoft,
     fontSize: 12,
-    lineHeight: 18,
     fontWeight: "700",
   },
 });
