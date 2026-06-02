@@ -254,34 +254,6 @@ export function FriendsScreen() {
             );
           })}
         </ScrollView>
-
-        <View style={styles.groupActionCard}>
-          <View style={styles.groupActionHeader}>
-            <Text style={styles.groupActionTitle}>그룹 설정</Text>
-            {selectedGroup.system ? <Text style={styles.groupActionHint}>시스템 그룹</Text> : null}
-          </View>
-          {selectedGroup.system ? (
-            <Text style={styles.groupActionNote}>전체 그룹은 이름 변경과 삭제를 할 수 없어요.</Text>
-          ) : (
-            <>
-              <View style={styles.inlineInputRow}>
-                <TextInput
-                  value={renameGroupName}
-                  onChangeText={setRenameGroupName}
-                  placeholder="이름 변경"
-                  placeholderTextColor={theme.colors.inkSoft}
-                  style={styles.textInput}
-                />
-                <Pressable onPress={renameGroup} style={styles.secondaryButton}>
-                  <Text style={styles.secondaryButtonLabel}>이름 변경</Text>
-                </Pressable>
-              </View>
-              <Pressable onPress={deleteGroup} style={styles.dangerButton}>
-                <Text style={styles.dangerButtonLabel}>그룹 삭제</Text>
-              </Pressable>
-            </>
-          )}
-        </View>
       </View>
 
       {viewMode === "ranking" ? (
@@ -331,6 +303,34 @@ export function FriendsScreen() {
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>친구 목록</Text>
             <Text style={styles.listSubtitle}>이름과 아이디만 빠르게 봐요.</Text>
+          </View>
+
+          <View style={styles.groupActionCard}>
+            <View style={styles.groupActionHeader}>
+              <Text style={styles.groupActionTitle}>그룹 설정</Text>
+              {selectedGroup.system ? <Text style={styles.groupActionHint}>시스템 그룹</Text> : null}
+            </View>
+            {selectedGroup.system ? (
+              <Text style={styles.groupActionNote}>전체 그룹은 이름 변경과 삭제를 할 수 없어요.</Text>
+            ) : (
+              <>
+                <View style={styles.inlineInputRow}>
+                  <TextInput
+                    value={renameGroupName}
+                    onChangeText={setRenameGroupName}
+                    placeholder="이름 변경"
+                    placeholderTextColor={theme.colors.inkSoft}
+                    style={styles.textInput}
+                  />
+                  <Pressable onPress={renameGroup} style={styles.secondaryButton}>
+                    <Text style={styles.secondaryButtonLabel}>이름 변경</Text>
+                  </Pressable>
+                </View>
+                <Pressable onPress={deleteGroup} style={styles.dangerButton}>
+                  <Text style={styles.dangerButtonLabel}>그룹 삭제</Text>
+                </Pressable>
+              </>
+            )}
           </View>
 
           <View style={styles.groupActionCard}>
