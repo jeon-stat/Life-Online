@@ -24,6 +24,7 @@ import {
 import { buildCharacterViewModel } from "../game/characterState.js";
 import { getStreak } from "../game/progression.js";
 import { theme } from "../constants/theme.js";
+import { FriendCharacterPreview } from "../components/FriendCharacterPreview.js";
 
 const VIEW_TABS = [
   { id: "ranking", label: "랭킹" },
@@ -457,15 +458,7 @@ function FriendRankCard({ friend, rank, isMe, rankMode, cardWidth, previewSize }
 }
 
 function FriendPreview({ friend, size }) {
-  const skinTone = friend.skinTone ?? "#f4cbbb";
-
-  return (
-    <View style={[styles.previewFigure, { width: size, height: Math.round(size * 1.16) }]}>
-      <View style={[styles.previewShadow, { backgroundColor: softenColor(skinTone) }]} />
-      <View style={[styles.previewHead, { backgroundColor: skinTone }]} />
-      <View style={[styles.previewBody, { backgroundColor: skinTone }]} />
-    </View>
-  );
+  return <FriendCharacterPreview friend={friend} size={size} />;
 }
 
 function FooterStat({ label, value }) {
