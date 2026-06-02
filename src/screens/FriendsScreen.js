@@ -260,34 +260,7 @@ export function FriendsScreen() {
               </Pressable>
             );
           })}
-
-          <Pressable
-            onPress={() => {
-              setShowCreateGroup((current) => !current);
-            }}
-            style={[styles.groupChip, showCreateGroup && styles.groupChipActive]}
-          >
-            <Text style={[styles.groupChipLabel, showCreateGroup && styles.groupChipLabelActive]}>＋ 새 그룹 만들기</Text>
-          </Pressable>
         </ScrollView>
-
-        {showCreateGroup ? (
-          <View style={styles.groupActionCard}>
-            <Text style={styles.groupActionTitle}>새 그룹 만들기</Text>
-            <View style={styles.inlineInputRow}>
-              <TextInput
-                value={newGroupName}
-                onChangeText={setNewGroupName}
-                placeholder="그룹명"
-                placeholderTextColor={theme.colors.inkSoft}
-                style={styles.textInput}
-              />
-              <Pressable onPress={createGroup} style={styles.primaryButton}>
-                <Text style={styles.primaryButtonLabel}>생성</Text>
-              </Pressable>
-            </View>
-          </View>
-        ) : null}
 
         {selectedGroup && !selectedGroup.system ? (
           <View style={styles.groupActionCard}>
@@ -354,6 +327,37 @@ export function FriendsScreen() {
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>친구 목록</Text>
             <Text style={styles.listSubtitle}>이름과 아이디만 빠르게 봐요.</Text>
+          </View>
+
+          <View style={styles.groupActionCard}>
+            <View style={styles.groupActionHeader}>
+              <Text style={styles.groupActionTitle}>그룹</Text>
+              <Pressable
+                onPress={() => {
+                  setShowCreateGroup((current) => !current);
+                }}
+                style={[styles.groupActionToggle, showCreateGroup && styles.groupActionToggleActive]}
+              >
+                <Text style={[styles.groupActionToggleLabel, showCreateGroup && styles.groupActionToggleLabelActive]}>
+                  ＋ 새 그룹 만들기
+                </Text>
+              </Pressable>
+            </View>
+
+            {showCreateGroup ? (
+              <View style={styles.inlineInputRow}>
+                <TextInput
+                  value={newGroupName}
+                  onChangeText={setNewGroupName}
+                  placeholder="그룹명"
+                  placeholderTextColor={theme.colors.inkSoft}
+                  style={styles.textInput}
+                />
+                <Pressable onPress={createGroup} style={styles.primaryButton}>
+                  <Text style={styles.primaryButtonLabel}>생성</Text>
+                </Pressable>
+              </View>
+            ) : null}
           </View>
 
           <View style={styles.friendList}>
@@ -759,10 +763,38 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     gap: 10,
   },
+  groupActionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
   groupActionTitle: {
     color: theme.colors.ink,
     fontSize: 14,
     fontWeight: "900",
+  },
+  groupActionToggle: {
+    minHeight: 34,
+    paddingHorizontal: 12,
+    borderRadius: theme.radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  groupActionToggleActive: {
+    backgroundColor: "#16302b",
+    borderColor: "#16302b",
+  },
+  groupActionToggleLabel: {
+    color: theme.colors.inkSoft,
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  groupActionToggleLabelActive: {
+    color: "#ffffff",
   },
   inlineInputRow: {
     flexDirection: "row",
