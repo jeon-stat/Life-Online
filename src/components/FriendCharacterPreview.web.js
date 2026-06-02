@@ -13,10 +13,8 @@ export function FriendCharacterPreview({ friend, size = 88 }) {
 
   return (
     <View style={[styles.shell, { width: size, height: wrapperHeight }]}>
-      <View style={styles.backdrop} />
-
       <Canvas
-        camera={{ position: [0, 1.28, 6.4], fov: 36 }}
+        camera={{ position: [0, 1.22, 5.9], fov: 34 }}
         dpr={[1, 1.5]}
         gl={{ alpha: true, antialias: true }}
         style={styles.canvas}
@@ -41,7 +39,7 @@ function PreviewCharacter({ character, animationState }) {
 
   return (
     <group ref={rootRef} position={[0, 0.05, 0]}>
-      <group position={[0, 0.1, 0]} scale={0.5}>
+      <group position={[0, 0.08, 0]} scale={0.68}>
         <GLBCharacterModel
           character={character}
           animationState={animationState}
@@ -71,10 +69,6 @@ const styles = StyleSheet.create({
   shell: {
     position: "relative",
     overflow: "hidden",
-  },
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#f3fbf2",
   },
   canvas: {
     ...StyleSheet.absoluteFillObject,
