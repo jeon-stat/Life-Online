@@ -368,6 +368,7 @@ export function FriendsScreen() {
                   rankMode={rankMode}
                   cardWidth={cardWidth}
                   previewSize={previewSize}
+                  onPress={() => setSelectedFriendId(friend.id)}
                 />
               ))}
             </View>
@@ -411,76 +412,80 @@ export function FriendsScreen() {
             })}
           </View>
 
-          <Modal
-            visible={Boolean(selectedFriend)}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setSelectedFriendId(null)}
-          >
-            <Pressable style={styles.modalBackdrop} onPress={() => setSelectedFriendId(null)}>
-              <Pressable style={styles.modalCard} onPress={() => null}>
-                {selectedFriend ? (
-                  <>
-                    <View style={styles.modalHeader}>
-                      <View style={styles.modalHeaderText}>
-                        <Text style={styles.modalTitle}>{selectedFriend.nickname}</Text>
-                        <Text style={styles.modalHandle}>@{selectedFriend.handle}</Text>
-                      </View>
-                      <Pressable onPress={() => setSelectedFriendId(null)} style={styles.modalCloseButton}>
-                        <Text style={styles.modalCloseButtonLabel}>×</Text>
-                      </Pressable>
-                    </View>
-
-                    <View style={styles.modalSceneWrap}>
-                      <FriendPreview friend={selectedFriend} size={expandedPreviewSize} />
-                    </View>
-
-                    <View style={styles.modalStatsRow}>
-                      <StatBlock label="최근 7일" value={`${formatNumber(selectedFriend.weeklySteps)}보`} />
-                      <StatBlock label="연속" value={`${selectedFriend.streak}일`} />
-                      <StatBlock label="상태" value={getLongTermLabel(selectedFriend.longTermState)} />
-                    </View>
-
-                    <View style={styles.modalGroupCard}>
-                      <View style={styles.modalSectionHeader}>
-                        <Text style={styles.modalSectionTitle}>그룹</Text>
-                        <Text style={styles.modalSectionMeta}>{Math.max(0, selectedFriendGroupIds.length - 1)}개</Text>
-                      </View>
-                      <View style={styles.groupChecklist}>
-                        {selectableGroups.map((group) => {
-                          const checked = selectedFriendGroupIds.includes(group.id);
-                          return (
-                            <Pressable
-                              key={group.id}
-                              onPress={() => toggleMembership(selectedFriend.id, group.id)}
-                              style={[styles.checkRow, checked && styles.checkRowChecked]}
-                            >
-                              <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
-                                {checked ? <Text style={styles.checkboxMark}>✓</Text> : null}
-                              </View>
-                              <Text style={styles.checkLabel}>{group.name}</Text>
-                            </Pressable>
-                          );
-                        })}
-                      </View>
-                    </View>
-                  </>
-                ) : null}
-              </Pressable>
-            </Pressable>
-          </Modal>
         </>
       )}
+
+      <Modal
+        visible={Boolean(selectedFriend)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedFriendId(null)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setSelectedFriendId(null)}>
+          <Pressable style={styles.modalCard} onPress={() => null}>
+            {selectedFriend ? (
+              <>
+                <View style={styles.modalHeader}>
+                  <View style={styles.modalHeaderText}>
+                    <Text style={styles.modalTitle}>{selectedFriend.nickname}</Text>
+                    <Text style={styles.modalHandle}>@{selectedFriend.handle}</Text>
+                  </View>
+                  <Pressable onPress={() => setSelectedFriendId(null)} style={styles.modalCloseButton}>
+                    <Text style={styles.modalCloseButtonLabel}>×</Text>
+                  </Pressable>
+                </View>
+
+                <View style={styles.modalSceneWrap}>
+                  <FriendPreview friend={selectedFriend} size={expandedPreviewSize} />
+                </View>
+
+                <View style={styles.modalStatsRow}>
+                  <StatBlock label="최근 7일" value={`${formatNumber(selectedFriend.weeklySteps)}보`} />
+                  <StatBlock label="연속" value={`${selectedFriend.streak}일`} />
+                  <StatBlock label="상태" value={getLongTermLabel(selectedFriend.longTermState)} />
+                </View>
+
+                <View style={styles.modalGroupCard}>
+                  <View style={styles.modalSectionHeader}>
+                    <Text style={styles.modalSectionTitle}>그룹</Text>
+                    <Text style={styles.modalSectionMeta}>{Math.max(0, selectedFriendGroupIds.length - 1)}개</Text>
+                  </View>
+                  <View style={styles.groupChecklist}>
+                    {selectableGroups.map((group) => {
+                      const checked = selectedFriendGroupIds.includes(group.id);
+                      return (
+                        <Pressable
+                          key={group.id}
+                          onPress={() => toggleMembership(selectedFriend.id, group.id)}
+                          style={[styles.checkRow, checked && styles.checkRowChecked]}
+                        >
+                          <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+                            {checked ? <Text style={styles.checkboxMark}>✓</Text> : null}
+                          </View>
+                          <Text style={styles.checkLabel}>{group.name}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              </>
+            ) : null}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }
 
-function FriendRankCard({ friend, rank, isMe, rankMode, cardWidth, previewSize }) {
+function FriendRankCard({ friend, rank, isMe, rankMode, cardWidth, previewSize, onPress }) {
   const rankBadge = getRankBadgeStyle(rank);
   const info = getModeInfo(friend, rankMode);
 
   return (
-    <View style={[styles.friendCard, isMe && styles.friendCardMe, { width: cardWidth, maxWidth: 210 }]}>
+    <Pressable
+      onPress={onPress}
+      style={[styles.friendCard, isMe && styles.friendCardMe, { width: cardWidth, maxWidth: 210 }]}
+    >
       <View style={styles.friendCardContent}>
         <View style={styles.friendHeader}>
           <View style={styles.rankNameRow}>
@@ -510,7 +515,7 @@ function FriendRankCard({ friend, rank, isMe, rankMode, cardWidth, previewSize }
           <FooterStat label={info.secondaryRightLabel} value={info.secondaryRightValue} />
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 

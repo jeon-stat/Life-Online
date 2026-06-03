@@ -11,11 +11,12 @@ import {
 import { CHARACTER_CLASSES } from "../characters.js";
 import { GLBCharacterModel } from "../models/GLBCharacterModel.js";
 import { StageLights } from "../scene/StageLights.js";
+import { STAGE_LAYOUT } from "../scene/stageConfig.js";
 
 const PREVIEW_LAYOUT = {
-  radius: 6.7,
-  centerOffsetY: -5.85,
-  characterScale: 0.68,
+  radius: 8.8,
+  centerOffsetY: -8.65,
+  characterScale: 0.5,
   sphereThetaLength: Math.PI,
 };
 
@@ -67,14 +68,8 @@ export function FriendCharacterPreview({ friend, size = 112 }) {
 
   return (
     <View style={[styles.shell, { width, height }]} pointerEvents="none">
-      <View style={styles.sky} />
-      <View style={styles.sun} />
-      <View style={[styles.cloud, styles.cloudOne]} />
-      <View style={[styles.cloud, styles.cloudTwo]} />
-      <View style={[styles.flower, styles.flowerOne]} />
-      <View style={[styles.flower, styles.flowerTwo]} />
       <Canvas
-        camera={{ position: [0, 1.48, 6.15], fov: 25 }}
+        camera={{ position: STAGE_LAYOUT.cameraPosition, fov: STAGE_LAYOUT.fov }}
         dpr={[1, 1.5]}
         gl={{ alpha: true, antialias: true }}
         style={styles.canvas}
@@ -91,21 +86,20 @@ export function FriendCharacterPreview({ friend, size = 112 }) {
 }
 
 function FriendScene({ character, animationState, motionState }) {
-  const sceneRef = useRef(null);
-  const characterWrapRef = useRef(null);
+  const rootRef = useRef(null);
+  const worldRef = useRef(null);
 
   useFrame((frameState) => {
-    if (!sceneRef.current || !characterWrapRef.current) return;
+    if (!rootRef.current) return;
 
     const t = frameState.clock.getElapsedTime();
-    const bob = motionState === "run" ? 0.11 : motionState === "walk" ? 0.08 : 0.05;
-    const rotationSpeed = motionState === "run" ? 0.22 : motionState === "walk" ? 0.14 : 0.02;
+    const bobAmount = motionState === "walk" || motionState === "run" ? 0.12 : 0.08;
+    const scalePulse = 1 + Math.sin(t * 0.7) * 0.015;
 
-    sceneRef.current.rotation.y = Math.sin(t * 0.22) * 0.12;
-    sceneRef.current.rotation.x = 0.04;
-    sceneRef.current.position.y = PREVIEW_LAYOUT.centerOffsetY + Math.sin(t * 1.35) * 0.03;
-    characterWrapRef.current.position.y = 0.18 + Math.sin(t * 1.2) * bob;
-    characterWrapRef.current.rotation.y = Math.sin(t * 0.6) * rotationSpeed;
+    rootRef.current.rotation.x = STAGE_LAYOUT.defaultRotation.x;
+    rootRef.current.rotation.y = STAGE_LAYOUT.defaultRotation.y;
+    rootRef.current.position.y = STAGE_LAYOUT.modelBaseY + Math.sin(t * 1.2) * bobAmount;
+    rootRef.current.scale.set(scalePulse, scalePulse, scalePulse);
   });
 
   const pathGeometry = useMemo(
@@ -122,10 +116,10 @@ function FriendScene({ character, animationState, motionState }) {
   );
 
   return (
-    <group ref={sceneRef}>
-      <MiniWorld pathGeometry={pathGeometry} />
+    <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY, 0]}>
+      <MiniWorld pathGeometry={pathGeometry} motionState={motionState} />
 
-      <group ref={characterWrapRef} position={[0, 0.18, 0]} scale={PREVIEW_LAYOUT.characterScale}>
+      <group position={[0, 0.16, 0]} scale={PREVIEW_LAYOUT.characterScale}>
         <GLBCharacterModel
           character={character}
           animationState={animationState}
@@ -137,15 +131,14 @@ function FriendScene({ character, animationState, motionState }) {
   );
 }
 
-function MiniWorld({ pathGeometry }) {
+function MiniWorld({ pathGeometry, motionState }) {
   const worldRef = useRef(null);
 
   useFrame((frameState) => {
     if (!worldRef.current) return;
 
-    const t = frameState.clock.getElapsedTime();
-    worldRef.current.rotation.x = Math.sin(t * 0.03) * 0.02;
-    worldRef.current.rotation.y += 0.004;
+    const delta = frameState.clock.getDelta();
+    worldRef.current.rotation.x -= getWorldRotationSpeed(motionState) * delta;
   });
 
   return (
@@ -155,8 +148,8 @@ function MiniWorld({ pathGeometry }) {
           <sphereGeometry
             args={[
               PREVIEW_LAYOUT.radius,
-              60,
-              38,
+              64,
+              42,
               0,
               Math.PI * 2,
               0,
@@ -230,65 +223,28 @@ function projectMeridianBandPoint(radius, x, angle) {
   );
 }
 
+function getWorldRotationSpeed(motionState) {
+  switch (motionState) {
+    case "run":
+      return 0.26;
+    case "walk":
+      return 0.14;
+    case "tired":
+      return 0.004;
+    case "neutral":
+    default:
+      return 0.02;
+  }
+}
+
 const styles = StyleSheet.create({
   shell: {
     position: "relative",
     overflow: "hidden",
     backgroundColor: "#ffffff",
   },
-  sky: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#fbfbf8",
-  },
   canvas: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "transparent",
-  },
-  sun: {
-    position: "absolute",
-    top: 10,
-    right: 12,
-    width: 10,
-    height: 10,
-    borderRadius: 999,
-    backgroundColor: "#f7d27c",
-    opacity: 0.72,
-  },
-  cloud: {
-    position: "absolute",
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.82)",
-    borderWidth: 1,
-    borderColor: "rgba(17,17,17,0.05)",
-    opacity: 0.88,
-  },
-  cloudOne: {
-    top: 16,
-    left: 12,
-    width: 26,
-    height: 12,
-  },
-  cloudTwo: {
-    top: 30,
-    right: 18,
-    width: 30,
-    height: 13,
-  },
-  flower: {
-    position: "absolute",
-    width: 8,
-    height: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(17,17,17,0.35)",
-    opacity: 0.55,
-  },
-  flowerOne: {
-    bottom: 12,
-    left: 12,
-  },
-  flowerTwo: {
-    bottom: 10,
-    right: 15,
   },
 });
