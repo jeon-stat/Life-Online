@@ -28,6 +28,7 @@ const styles = StyleSheet.create({
     color: theme.colors.muted,
     fontSize: 12,
     fontWeight: "800",
+    fontFamily: theme.fonts.body,
   },
   titleAccent: {
     color: "#dadada",
@@ -38,6 +39,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: "900",
     letterSpacing: -0.6,
+    fontFamily: theme.fonts.display,
   },
   primaryAccent: {
     color: "#ffffff",
@@ -48,6 +50,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   secondaryAccent: {
     color: "#e4e4e4",

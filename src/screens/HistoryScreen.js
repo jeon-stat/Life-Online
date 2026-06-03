@@ -53,10 +53,10 @@ export function HistoryScreen() {
       {storyTab === "footprints" ? (
         <>
           <View style={styles.summaryGrid}>
-            <SummaryStat icon="🔥" label="연속" value={`${streak}일`} />
-            <SummaryStat icon="👣" label="이번 주" value={`${formatNumber(weekSummary.totalSteps)}보`} />
-            <SummaryStat icon="🏆" label="최고" value={`${formatNumber(weekSummary.bestSteps)}보`} />
-            <SummaryStat icon="📊" label="평균" value={`${formatNumber(weekSummary.averageSteps)}보`} />
+            <SummaryStat icon="✦" label="연속" value={`${streak}일`} />
+            <SummaryStat icon="•" label="이번 주" value={`${formatNumber(weekSummary.totalSteps)}보`} />
+            <SummaryStat icon="◌" label="최고" value={`${formatNumber(weekSummary.bestSteps)}보`} />
+            <SummaryStat icon="▤" label="평균" value={`${formatNumber(weekSummary.averageSteps)}보`} />
           </View>
 
           <View style={styles.summarySentenceCard}>
@@ -351,6 +351,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "900",
     letterSpacing: 0.6,
+    fontFamily: theme.fonts.display,
   },
   modeCard: {
     borderRadius: theme.radius.xl,
@@ -403,11 +404,13 @@ const styles = StyleSheet.create({
     color: theme.colors.inkSoft,
     fontSize: 11,
     fontWeight: "800",
+    fontFamily: theme.fonts.body,
   },
   summaryStatValue: {
     color: theme.colors.ink,
     fontSize: 18,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   summarySentenceCard: {
     borderRadius: theme.radius.xl,
@@ -421,6 +424,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   section: {
     gap: 10,
@@ -429,6 +433,7 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 17,
     fontWeight: "900",
+    fontFamily: theme.fonts.display,
   },
   trailGrid: {
     flexDirection: "row",
@@ -455,6 +460,7 @@ const styles = StyleSheet.create({
     color: theme.colors.inkSoft,
     fontSize: 11,
     fontWeight: "800",
+    fontFamily: theme.fonts.body,
   },
   energyBadge: {
     borderRadius: theme.radius.pill,
@@ -465,16 +471,19 @@ const styles = StyleSheet.create({
   energyBadgeText: {
     fontSize: 10,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   trailSteps: {
     color: theme.colors.ink,
     fontSize: 18,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   trailLabel: {
     color: theme.colors.inkSoft,
     fontSize: 12,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   logList: {
     gap: 8,
@@ -502,6 +511,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   memoryList: {
     gap: 8,
@@ -518,6 +528,7 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 13,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   missionGrid: {
     flexDirection: "row",
@@ -541,16 +552,19 @@ const styles = StyleSheet.create({
     color: theme.colors.inkSoft,
     fontSize: 11,
     fontWeight: "800",
+    fontFamily: theme.fonts.body,
   },
   missionValue: {
     color: theme.colors.ink,
     fontSize: 18,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   missionNote: {
     color: theme.colors.inkSoft,
     fontSize: 11,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   badgeList: {
     gap: 8,
@@ -567,12 +581,14 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 13,
     fontWeight: "800",
+    fontFamily: theme.fonts.body,
   },
   badgeSummary: {
     color: theme.colors.inkSoft,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   emptyText: {
     color: theme.colors.inkSoft,

@@ -44,11 +44,13 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 16,
     fontWeight: "900",
+    fontFamily: theme.fonts.display,
   },
   status: {
     color: theme.colors.inkSoft,
     fontSize: 12,
     fontWeight: "800",
+    fontFamily: theme.fonts.body,
   },
   valueRow: {
     flexDirection: "row",
@@ -60,6 +62,7 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "900",
     letterSpacing: -1,
+    fontFamily: theme.fonts.display,
   },
   goal: {
     marginLeft: 6,
@@ -67,6 +70,7 @@ const styles = StyleSheet.create({
     color: theme.colors.muted,
     fontSize: 14,
     fontWeight: "800",
+    fontFamily: theme.fonts.body,
   },
   track: {
     marginTop: 14,
@@ -85,5 +89,6 @@ const styles = StyleSheet.create({
     color: theme.colors.inkSoft,
     fontSize: 12,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
 });

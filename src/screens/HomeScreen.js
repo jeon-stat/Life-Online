@@ -133,6 +133,7 @@ const styles = StyleSheet.create({
     color: theme.colors.muted,
     fontSize: 11,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   stageWrap: {
     marginTop: 0,
@@ -155,12 +156,14 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     letterSpacing: 0.8,
     textTransform: "uppercase",
+    fontFamily: theme.fonts.body,
   },
   cardPrimary: {
     color: theme.colors.ink,
     fontSize: 28,
     lineHeight: 34,
     fontWeight: "900",
+    fontFamily: theme.fonts.display,
   },
   metaGrid: {
     flexDirection: "row",
@@ -181,12 +184,14 @@ const styles = StyleSheet.create({
   metaIcon: {
     fontSize: 14,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   metaValue: {
     color: theme.colors.ink,
     fontSize: 12,
     lineHeight: 17,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   metaGridBottom: {
     flexDirection: "row",
@@ -201,6 +206,7 @@ const styles = StyleSheet.create({
     color: theme.colors.inkSoft,
     fontSize: 10,
     fontWeight: "800",
+    fontFamily: theme.fonts.body,
   },
   metaLineValueRow: {
     flexDirection: "row",
@@ -213,6 +219,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "900",
     flex: 1,
+    fontFamily: theme.fonts.body,
   },
   metaSwatch: {
     width: 16,

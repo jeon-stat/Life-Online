@@ -54,6 +54,7 @@ const styles = StyleSheet.create({
   emoji: {
     fontSize: 16,
     color: "#686868",
+    fontFamily: theme.fonts.body,
   },
   emojiActive: {
     transform: [{ translateY: -1 }],
@@ -63,6 +64,7 @@ const styles = StyleSheet.create({
     color: "#545454",
     fontSize: 11,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   labelActive: {
     color: "#ffffff",

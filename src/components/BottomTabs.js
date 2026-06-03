@@ -57,6 +57,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "900",
     color: theme.colors.muted,
+    fontFamily: theme.fonts.body,
   },
   iconActive: {
     color: "#ffffff",
@@ -65,6 +66,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "900",
     color: theme.colors.inkSoft,
+    fontFamily: theme.fonts.body,
   },
   labelActive: {
     color: "#ffffff",

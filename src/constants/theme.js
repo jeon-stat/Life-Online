@@ -1,4 +1,9 @@
 export const theme = {
+  fonts: {
+    body: "Avenir Next",
+    display: "Georgia",
+    mono: "Menlo",
+  },
   colors: {
     appBackground: "#fbfbfa",
     surface: "#ffffff",

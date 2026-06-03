@@ -530,29 +530,29 @@ function getModeInfo(friend, rankMode) {
   switch (rankMode) {
     case "weekly":
       return {
-        primaryLabel: "👣 이번 주",
+        primaryLabel: "• 이번 주",
         primaryValue: `${formatNumber(friend.weeklySteps)}보`,
-        secondaryLeftLabel: "📊 평균",
+        secondaryLeftLabel: "▤ 평균",
         secondaryLeftValue: `${formatNumber(Math.round((friend.weeklySteps ?? 0) / 7))}보`,
-        secondaryRightLabel: "⚡ E",
+        secondaryRightLabel: "E",
         secondaryRightValue: `${friend.energyLevel}`,
       };
     case "streak":
       return {
-        primaryLabel: "🔥 연속",
+        primaryLabel: "✦ 연속",
         primaryValue: `${friend.streak}일`,
-        secondaryLeftLabel: "👣 누적",
+        secondaryLeftLabel: "• 누적",
         secondaryLeftValue: `${formatNumber(friend.weeklySteps)}보`,
-        secondaryRightLabel: "❤️ 장기",
+        secondaryRightLabel: "◌ 장기",
         secondaryRightValue: getLongTermLabel(friend.longTermState),
       };
     default:
       return {
-        primaryLabel: "👣 오늘",
+        primaryLabel: "• 오늘",
         primaryValue: `${formatNumber(friend.todaySteps)}보`,
-        secondaryLeftLabel: "⚡ E",
+        secondaryLeftLabel: "E",
         secondaryLeftValue: `${friend.energyLevel}`,
-        secondaryRightLabel: "❤️ 장기",
+        secondaryRightLabel: "◌ 장기",
         secondaryRightValue: getLongTermLabel(friend.longTermState),
       };
   }
@@ -634,6 +634,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "900",
     letterSpacing: 0.6,
+    fontFamily: theme.fonts.display,
   },
   tabCard: {
     borderRadius: theme.radius.xl,
@@ -694,12 +695,14 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 18,
     fontWeight: "900",
+    fontFamily: theme.fonts.display,
   },
   groupCardMeta: {
     color: theme.colors.inkSoft,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   systemBadge: {
     paddingHorizontal: 10,
@@ -735,6 +738,7 @@ const styles = StyleSheet.create({
     color: theme.colors.inkSoft,
     fontSize: 12,
     fontWeight: "800",
+    fontFamily: theme.fonts.body,
   },
   groupChipLabelActive: {
     color: "#ffffff",
@@ -757,17 +761,20 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 14,
     fontWeight: "900",
+    fontFamily: theme.fonts.display,
   },
   groupActionHint: {
     color: theme.colors.inkSoft,
     fontSize: 11,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   groupActionNote: {
     color: theme.colors.inkSoft,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: "600",
+    fontFamily: theme.fonts.body,
   },
   groupActionToggle: {
     minHeight: 34,
@@ -787,6 +794,7 @@ const styles = StyleSheet.create({
     color: theme.colors.inkSoft,
     fontSize: 11,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   groupActionToggleLabelActive: {
     color: "#ffffff",
@@ -834,6 +842,7 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 12,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   dangerButton: {
     minHeight: 42,
@@ -848,6 +857,7 @@ const styles = StyleSheet.create({
     color: "#111111",
     fontSize: 12,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   rankTabCard: {
     borderRadius: theme.radius.xl,
@@ -874,6 +884,7 @@ const styles = StyleSheet.create({
     color: theme.colors.inkSoft,
     fontSize: 12,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   rankTabLabelActive: {
     color: "#ffffff",
@@ -885,6 +896,7 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 18,
     fontWeight: "900",
+    fontFamily: theme.fonts.display,
   },
   listSubtitle: {
     color: theme.colors.inkSoft,
@@ -919,11 +931,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "900",
     textAlign: "center",
+    fontFamily: theme.fonts.body,
   },
   friendGridHandle: {
     color: theme.colors.inkSoft,
     fontSize: 10,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   gridWrap: {
     flexDirection: "row",
@@ -989,6 +1003,7 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 11,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   meLabel: {
     color: "#111111",
@@ -1047,12 +1062,14 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     textTransform: "uppercase",
     letterSpacing: 0.5,
+    fontFamily: theme.fonts.body,
   },
   primaryStatValue: {
     color: theme.colors.ink,
     fontSize: 18,
     lineHeight: 22,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   footerInfoRow: {
     position: "absolute",
@@ -1075,11 +1092,13 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: "800",
     marginBottom: 2,
+    fontFamily: theme.fonts.body,
   },
   footerStatValue: {
     color: theme.colors.ink,
     fontSize: 11,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   friendDetailTop: {
     gap: 2,
@@ -1096,11 +1115,13 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 18,
     fontWeight: "900",
+    fontFamily: theme.fonts.display,
   },
   friendDetailHandle: {
     color: theme.colors.inkSoft,
     fontSize: 12,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   friendDetailLabel: {
     marginTop: 4,
@@ -1152,6 +1173,7 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 13,
     fontWeight: "800",
+    fontFamily: theme.fonts.body,
   },
   emptyCard: {
     borderRadius: theme.radius.xl,
@@ -1164,6 +1186,7 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 18,
     fontWeight: "900",
+    fontFamily: theme.fonts.display,
   },
   emptyText: {
     marginTop: 8,
@@ -1171,5 +1194,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
 });

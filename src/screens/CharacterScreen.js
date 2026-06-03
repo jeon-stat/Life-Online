@@ -70,9 +70,9 @@ export function CharacterScreen() {
         </View>
 
         <View style={styles.profileGrid}>
-          <MiniStat icon="👣" label="누적" value={`${formatNumber(growth.lifetimeSteps ?? 0)}보`} />
-          <MiniStat icon="🏁" label="달성" value={`${growth.achievedDays ?? 0}일`} />
-          <MiniStat icon="🔥" label="연속" value={`${growth.streak ?? 0}일`} />
+          <MiniStat icon="•" label="누적" value={`${formatNumber(growth.lifetimeSteps ?? 0)}보`} />
+          <MiniStat icon="↗" label="달성" value={`${growth.achievedDays ?? 0}일`} />
+          <MiniStat icon="✦" label="연속" value={`${growth.streak ?? 0}일`} />
         </View>
 
         <View style={styles.profileFooter}>
@@ -98,10 +98,10 @@ export function CharacterScreen() {
         <SectionHeader title="성장 기록" />
 
         <View style={styles.metricGrid}>
-          <MetricCard icon="👣" label="누적" value={`${formatNumber(growth.lifetimeSteps ?? 0)}보`} />
-          <MetricCard icon="🏁" label="달성" value={`${growth.achievedDays ?? 0}일`} />
-          <MetricCard icon="🔥" label="연속" value={`${growth.streak ?? 0}일`} />
-          <MetricCard icon="✨" label="기록" value={growth.growthLabel ?? "성장 중"} />
+          <MetricCard icon="•" label="누적" value={`${formatNumber(growth.lifetimeSteps ?? 0)}보`} />
+          <MetricCard icon="↗" label="달성" value={`${growth.achievedDays ?? 0}일`} />
+          <MetricCard icon="✦" label="연속" value={`${growth.streak ?? 0}일`} />
+          <MetricCard icon="◌" label="기록" value={growth.growthLabel ?? "성장 중"} />
         </View>
       </View>
 
@@ -195,6 +195,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "900",
     letterSpacing: 0.6,
+    fontFamily: theme.fonts.display,
   },
   profileCard: {
     borderRadius: theme.radius.xl,
@@ -230,6 +231,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
     lineHeight: 32,
     fontWeight: "900",
+    fontFamily: theme.fonts.display,
   },
   profileHandle: {
     color: theme.colors.inkSoft,
@@ -252,6 +254,7 @@ const styles = StyleSheet.create({
   stateBadgeValue: {
     fontSize: 13,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   profileGrid: {
     flexDirection: "row",
@@ -271,11 +274,13 @@ const styles = StyleSheet.create({
     color: theme.colors.inkSoft,
     fontSize: 10,
     fontWeight: "800",
+    fontFamily: theme.fonts.body,
   },
   infoTileValue: {
     color: theme.colors.ink,
     fontSize: 13,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   profileFooter: {
     flexDirection: "row",
@@ -316,6 +321,7 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 17,
     fontWeight: "900",
+    fontFamily: theme.fonts.display,
   },
   sectionSubtitle: {
     color: theme.colors.inkSoft,
@@ -341,6 +347,7 @@ const styles = StyleSheet.create({
   longTermBannerLabel: {
     fontSize: 18,
     fontWeight: "900",
+    fontFamily: theme.fonts.display,
   },
   longTermBannerDescription: {
     color: theme.colors.inkSoft,
@@ -366,11 +373,13 @@ const styles = StyleSheet.create({
     color: theme.colors.inkSoft,
     fontSize: 10,
     fontWeight: "800",
+    fontFamily: theme.fonts.body,
   },
   metricValue: {
     color: theme.colors.ink,
     fontSize: 16,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   skinToneGrid: {
     flexDirection: "row",
@@ -417,10 +426,12 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 14,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   placeholderNote: {
     color: theme.colors.inkSoft,
     fontSize: 12,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
 });

@@ -1,7 +1,7 @@
 import { Platform, SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
-import { Pressable, Text } from "react-native";
+import { Pressable, Text, TextInput } from "react-native";
 
 import { AuthProvider, useAuth } from "./src/auth/AuthProvider.js";
 import { StepDataProvider, useStepData } from "./src/data/stepDataProvider.js";
@@ -14,6 +14,11 @@ import { AdminPanel } from "./src/components/AdminPanel.js";
 import { BottomTabs } from "./src/components/BottomTabs.js";
 import { theme } from "./src/constants/theme.js";
 import { buildCharacterViewModel } from "./src/game/characterState.js";
+
+Text.defaultProps = Text.defaultProps ?? {};
+Text.defaultProps.style = [Text.defaultProps.style, { fontFamily: theme.fonts.body }];
+TextInput.defaultProps = TextInput.defaultProps ?? {};
+TextInput.defaultProps.style = [TextInput.defaultProps.style, { fontFamily: theme.fonts.body }];
 
 const TABS = [
   { id: "home", label: "\uC0B0\uCC45", icon: "⌂" },
