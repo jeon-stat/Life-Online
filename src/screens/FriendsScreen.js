@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,10 +15,8 @@ import { useStepData } from "../data/stepDataProvider.js";
 import {
   DEFAULT_FRIEND_GROUPS,
   buildFriendRankingData,
-  createFriendGroupState,
   filterFriendsByGroup,
   getFriendGroupIds,
-  getFriendGroupNames,
   sortFriendCards,
   toggleFriendGroupMembership,
 } from "../data/mockFriendData.js";
@@ -37,32 +36,23 @@ const RANK_TABS = [
   { id: "streak", label: "연속" },
 ];
 
-const ENERGY_META = {
-  0: { label: "완전 휴식", icon: "○", tone: "#787878" },
-  1: { label: "졸린 하루", icon: "◔", tone: "#787878" },
-  2: { label: "숨 고르기", icon: "◑", tone: "#787878" },
-  3: { label: "평온", icon: "◐", tone: "#111111" },
-  4: { label: "산책", icon: "•", tone: "#111111" },
-  5: { label: "달리기", icon: "▸", tone: "#111111" },
-  6: { label: "최고 컨디션", icon: "✦", tone: "#111111" },
+const RANK_BADGE_COLORS = {
+  1: { backgroundColor: "#111111", color: "#ffffff", borderColor: "#111111" },
+  2: { backgroundColor: "#f2f2f0", color: "#111111", borderColor: "#d9d9d6" },
+  3: { backgroundColor: "#ececea", color: "#111111", borderColor: "#d2d2cf" },
 };
 
 const LONG_TERM_META = {
-  WEAK: { label: "허약", tone: "#555555" },
-  HEALTHY: { label: "건강", tone: "#111111" },
-  ACTIVE: { label: "활발", tone: "#111111" },
-};
-
-const RANK_BADGE_COLORS = {
-  1: { backgroundColor: "#111111", color: "#ffffff", borderColor: "#111111" },
-  2: { backgroundColor: "#f3f3f1", color: "#111111", borderColor: "#d9d9d6" },
-  3: { backgroundColor: "#ececea", color: "#111111", borderColor: "#d2d2cf" },
+  WEAK: { label: "허약" },
+  HEALTHY: { label: "건강" },
+  ACTIVE: { label: "활발" },
 };
 
 export function FriendsScreen() {
   const { currentUser } = useAuth();
   const { today, history, goal, admin } = useStepData();
   const { width } = useWindowDimensions();
+
   const [viewMode, setViewMode] = useState("ranking");
   const [rankMode, setRankMode] = useState("daily");
   const [groups, setGroups] = useState(() => DEFAULT_FRIEND_GROUPS.map((group) => ({ ...group })));
@@ -78,7 +68,10 @@ export function FriendsScreen() {
     [admin, goal, history, today],
   );
 
-  const weeklySteps = useMemo(() => history.slice(0, 7).reduce((sum, record) => sum + (record?.steps ?? 0), 0), [history]);
+  const weeklySteps = useMemo(
+    () => history.slice(0, 7).reduce((sum, record) => sum + (record?.steps ?? 0), 0),
+    [history],
+  );
 
   const friends = useMemo(
     () =>
@@ -127,16 +120,26 @@ export function FriendsScreen() {
 
   useEffect(() => {
     if (selectedFriendId && mergedFriends.every((friend) => friend.id !== selectedFriendId)) {
-      setSelectedFriendId(mergedFriends[0]?.id ?? null);
+      setSelectedFriendId(null);
     }
   }, [mergedFriends, selectedFriendId]);
+
+  useEffect(() => {
+    if (viewMode !== "list") {
+      setSelectedFriendId(null);
+    }
+  }, [viewMode]);
 
   const selectedGroupFriends = useMemo(
     () => filterFriendsByGroup(mergedFriends, selectedGroupId),
     [mergedFriends, selectedGroupId],
   );
 
-  const rankedFriends = useMemo(() => sortFriendCards(selectedGroupFriends, rankMode), [rankMode, selectedGroupFriends]);
+  const rankedFriends = useMemo(
+    () => sortFriendCards(selectedGroupFriends, rankMode),
+    [rankMode, selectedGroupFriends],
+  );
+
   const listFriends = useMemo(
     () =>
       [...mergedFriends].sort((a, b) =>
@@ -144,8 +147,9 @@ export function FriendsScreen() {
       ),
     [mergedFriends],
   );
+
   const selectedFriend = useMemo(
-    () => listFriends.find((friend) => friend.id === selectedFriendId) ?? listFriends[0] ?? null,
+    () => (selectedFriendId ? listFriends.find((friend) => friend.id === selectedFriendId) ?? null : null),
     [listFriends, selectedFriendId],
   );
 
@@ -158,16 +162,28 @@ export function FriendsScreen() {
   }, [width]);
 
   const previewSize = useMemo(() => Math.max(62, Math.min(126, Math.round(cardWidth * 0.68))), [cardWidth]);
-  const cardPreviewSize = useMemo(() => Math.max(48, Math.min(72, Math.round(width / 8))), [width]);
+  const galleryCardWidth = useMemo(() => {
+    const horizontalPadding = theme.spacing.md * 2;
+    const usableWidth = Math.max(0, width - horizontalPadding);
+    const gapSpace = 20;
+    const baseWidth = Math.floor((usableWidth - gapSpace) / 3);
+    return Math.max(96, Math.min(140, baseWidth));
+  }, [width]);
+  const galleryPreviewSize = useMemo(
+    () => Math.max(88, Math.min(132, Math.round(galleryCardWidth * 0.96))),
+    [galleryCardWidth],
+  );
+  const expandedPreviewSize = useMemo(
+    () => Math.max(220, Math.min(360, Math.round(width - theme.spacing.md * 4))),
+    [width],
+  );
 
   const createGroup = () => {
     const name = newGroupName.trim();
     if (!name) return;
 
     const id = makeGroupId(name, groups);
-    const nextGroups = [...groups, { id, name, system: false }];
-
-    setGroups(nextGroups);
+    setGroups((current) => [...current, { id, name, system: false }]);
     setSelectedGroupId(id);
     setShowCreateGroup(false);
     setNewGroupName("");
@@ -254,6 +270,7 @@ export function FriendsScreen() {
             );
           })}
         </ScrollView>
+
         {viewMode === "list" ? (
           <>
             <View style={styles.groupActionCard}>
@@ -269,8 +286,8 @@ export function FriendsScreen() {
                     <TextInput
                       value={renameGroupName}
                       onChangeText={setRenameGroupName}
-                      placeholder="그룹명"
-                    placeholderTextColor={theme.colors.inkSoft}
+                      placeholder="그룹 이름"
+                      placeholderTextColor={theme.colors.inkSoft}
                       style={styles.textInput}
                     />
                     <Pressable onPress={renameGroup} style={styles.secondaryButton}>
@@ -286,15 +303,13 @@ export function FriendsScreen() {
 
             <View style={styles.groupActionCard}>
               <View style={styles.groupActionHeader}>
-                <Text style={styles.groupActionTitle}>그룹</Text>
+                <Text style={styles.groupActionTitle}>새 그룹 만들기</Text>
                 <Pressable
-                  onPress={() => {
-                    setShowCreateGroup((current) => !current);
-                  }}
+                  onPress={() => setShowCreateGroup((current) => !current)}
                   style={[styles.groupActionToggle, showCreateGroup && styles.groupActionToggleActive]}
                 >
                   <Text style={[styles.groupActionToggleLabel, showCreateGroup && styles.groupActionToggleLabelActive]}>
-                    ＋ 새 그룹 만들기
+                    {showCreateGroup ? "닫기" : "생성"}
                   </Text>
                 </Pressable>
               </View>
@@ -304,7 +319,7 @@ export function FriendsScreen() {
                   <TextInput
                     value={newGroupName}
                     onChangeText={setNewGroupName}
-                    placeholder="그룹명"
+                    placeholder="그룹 이름"
                     placeholderTextColor={theme.colors.inkSoft}
                     style={styles.textInput}
                   />
@@ -338,7 +353,8 @@ export function FriendsScreen() {
           </View>
 
           <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>친구 목록</Text>
+            <Text style={styles.listTitle}>{getRankingTitle(rankMode, selectedGroup.name)}</Text>
+            <Text style={styles.listSubtitle}>{getRankingDetails(rankMode)}</Text>
           </View>
 
           {rankedFriends.length ? (
@@ -363,55 +379,96 @@ export function FriendsScreen() {
         <>
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>친구 목록</Text>
+            <Text style={styles.listSubtitle}>캐릭터를 눌러 크게 볼 수 있어요.</Text>
           </View>
 
-          <View style={styles.friendGrid}>
+          <View style={styles.friendGallery}>
             {listFriends.map((friend) => {
               const active = friend.id === selectedFriend?.id;
               return (
                 <Pressable
                   key={friend.id}
                   onPress={() => setSelectedFriendId(friend.id)}
-                  style={[styles.friendGridCard, active && styles.friendGridCardSelected]}
+                  style={[
+                    styles.friendGalleryCard,
+                    active && styles.friendGalleryCardSelected,
+                    { width: galleryCardWidth },
+                  ]}
                 >
-                  <FriendPreview friend={friend} size={cardPreviewSize} />
-                  <Text style={styles.friendGridName} numberOfLines={1}>
-                    {friend.nickname}
-                  </Text>
-                  <Text style={styles.friendGridHandle}>@{friend.handle}</Text>
+                  <View style={styles.friendGalleryScene}>
+                    <FriendPreview friend={friend} size={galleryPreviewSize} />
+                  </View>
+                  <View style={styles.friendGalleryCaption}>
+                    <Text style={styles.friendGridName} numberOfLines={1}>
+                      {friend.nickname}
+                    </Text>
+                    <Text style={styles.friendGridSteps} numberOfLines={1}>
+                      👣 {formatNumber(friend.todaySteps)}
+                    </Text>
+                  </View>
                 </Pressable>
               );
             })}
           </View>
 
-          {selectedFriend ? (
-            <View style={styles.friendDetailCard}>
-              <View style={styles.friendDetailTop}>
-                <Text style={styles.friendDetailTitle} numberOfLines={1}>
-                  {selectedFriend.nickname}
-                </Text>
-                <Text style={styles.friendDetailHandle}>@{selectedFriend.handle}</Text>
-              </View>
-
-              <View style={styles.groupChecklist}>
-                {selectableGroups.map((group) => {
-                  const checked = selectedFriendGroupIds.includes(group.id);
-                  return (
-                    <Pressable
-                      key={group.id}
-                      onPress={() => toggleMembership(selectedFriend.id, group.id)}
-                      style={[styles.checkRow, checked && styles.checkRowChecked]}
-                    >
-                      <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
-                        {checked ? <Text style={styles.checkboxMark}>?</Text> : null}
+          <Modal
+            visible={Boolean(selectedFriend)}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setSelectedFriendId(null)}
+          >
+            <Pressable style={styles.modalBackdrop} onPress={() => setSelectedFriendId(null)}>
+              <Pressable style={styles.modalCard} onPress={() => null}>
+                {selectedFriend ? (
+                  <>
+                    <View style={styles.modalHeader}>
+                      <View style={styles.modalHeaderText}>
+                        <Text style={styles.modalTitle}>{selectedFriend.nickname}</Text>
+                        <Text style={styles.modalHandle}>@{selectedFriend.handle}</Text>
                       </View>
-                      <Text style={styles.checkLabel}>{group.name}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-          ) : null}
+                      <Pressable onPress={() => setSelectedFriendId(null)} style={styles.modalCloseButton}>
+                        <Text style={styles.modalCloseButtonLabel}>×</Text>
+                      </Pressable>
+                    </View>
+
+                    <View style={styles.modalSceneWrap}>
+                      <FriendPreview friend={selectedFriend} size={expandedPreviewSize} />
+                    </View>
+
+                    <View style={styles.modalStatsRow}>
+                      <StatBlock label="최근 7일" value={`${formatNumber(selectedFriend.weeklySteps)}보`} />
+                      <StatBlock label="연속" value={`${selectedFriend.streak}일`} />
+                      <StatBlock label="상태" value={getLongTermLabel(selectedFriend.longTermState)} />
+                    </View>
+
+                    <View style={styles.modalGroupCard}>
+                      <View style={styles.modalSectionHeader}>
+                        <Text style={styles.modalSectionTitle}>그룹</Text>
+                        <Text style={styles.modalSectionMeta}>{Math.max(0, selectedFriendGroupIds.length - 1)}개</Text>
+                      </View>
+                      <View style={styles.groupChecklist}>
+                        {selectableGroups.map((group) => {
+                          const checked = selectedFriendGroupIds.includes(group.id);
+                          return (
+                            <Pressable
+                              key={group.id}
+                              onPress={() => toggleMembership(selectedFriend.id, group.id)}
+                              style={[styles.checkRow, checked && styles.checkRowChecked]}
+                            >
+                              <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+                                {checked ? <Text style={styles.checkboxMark}>✓</Text> : null}
+                              </View>
+                              <Text style={styles.checkLabel}>{group.name}</Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  </>
+                ) : null}
+              </Pressable>
+            </Pressable>
+          </Modal>
         </>
       )}
     </ScrollView>
@@ -466,6 +523,17 @@ function FooterStat({ label, value }) {
     <View style={styles.footerStat}>
       <Text style={styles.footerStatLabel}>{label}</Text>
       <Text style={styles.footerStatValue} numberOfLines={1}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function StatBlock({ label, value }) {
+  return (
+    <View style={styles.statBlock}>
+      <Text style={styles.statBlockLabel}>{label}</Text>
+      <Text style={styles.statBlockValue} numberOfLines={1}>
         {value}
       </Text>
     </View>
@@ -530,29 +598,29 @@ function getModeInfo(friend, rankMode) {
   switch (rankMode) {
     case "weekly":
       return {
-        primaryLabel: "• 이번 주",
+        primaryLabel: "이번 주",
         primaryValue: `${formatNumber(friend.weeklySteps)}보`,
-        secondaryLeftLabel: "▤ 평균",
+        secondaryLeftLabel: "평균",
         secondaryLeftValue: `${formatNumber(Math.round((friend.weeklySteps ?? 0) / 7))}보`,
         secondaryRightLabel: "E",
         secondaryRightValue: `${friend.energyLevel}`,
       };
     case "streak":
       return {
-        primaryLabel: "✦ 연속",
+        primaryLabel: "연속",
         primaryValue: `${friend.streak}일`,
-        secondaryLeftLabel: "• 누적",
+        secondaryLeftLabel: "주간",
         secondaryLeftValue: `${formatNumber(friend.weeklySteps)}보`,
-        secondaryRightLabel: "◌ 장기",
+        secondaryRightLabel: "상태",
         secondaryRightValue: getLongTermLabel(friend.longTermState),
       };
     default:
       return {
-        primaryLabel: "• 오늘",
+        primaryLabel: "오늘",
         primaryValue: `${formatNumber(friend.todaySteps)}보`,
         secondaryLeftLabel: "E",
         secondaryLeftValue: `${friend.energyLevel}`,
-        secondaryRightLabel: "◌ 장기",
+        secondaryRightLabel: "상태",
         secondaryRightValue: getLongTermLabel(friend.longTermState),
       };
   }
@@ -573,11 +641,11 @@ function getRankingTitle(rankMode, groupName) {
 function getRankingDetails(rankMode) {
   switch (rankMode) {
     case "weekly":
-      return "이번 주 누적 걸음으로 비교해요.";
+      return "선택한 그룹 안의 이번 주 걸음 수를 봅니다.";
     case "streak":
-      return "연속 달성일로 살펴봐요.";
+      return "선택한 그룹 안의 연속 달성일을 봅니다.";
     default:
-      return "오늘 걸음 수로 비교해요.";
+      return "선택한 그룹 안의 오늘 걸음 수를 봅니다.";
   }
 }
 
@@ -604,10 +672,6 @@ function getRankBadgeStyle(rank) {
     },
     textColor: theme.colors.ink,
   };
-}
-
-function softenColor(color) {
-  return `${color}22`;
 }
 
 function formatNumber(value) {
@@ -665,6 +729,7 @@ const styles = StyleSheet.create({
     color: theme.colors.inkSoft,
     fontSize: 12,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   modeTabLabelActive: {
     color: "#ffffff",
@@ -814,6 +879,7 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 13,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   primaryButton: {
     minWidth: 72,
@@ -827,6 +893,7 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 12,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   secondaryButton: {
     minHeight: 42,
@@ -880,6 +947,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
+  rankTabActive: {
+    backgroundColor: "#111111",
+    borderColor: "#111111",
+  },
   rankTabLabel: {
     color: theme.colors.inkSoft,
     fontSize: 12,
@@ -902,40 +973,6 @@ const styles = StyleSheet.create({
     color: theme.colors.inkSoft,
     fontSize: 12,
     lineHeight: 18,
-    fontWeight: "700",
-  },
-  friendGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  friendGridCard: {
-    flexGrow: 1,
-    flexBasis: "31%",
-    minWidth: 94,
-    maxWidth: "49%",
-    borderRadius: theme.radius.lg,
-    padding: 10,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    alignItems: "center",
-    gap: 6,
-  },
-  friendGridCardSelected: {
-    backgroundColor: "#f7f7f5",
-    borderColor: "#111111",
-  },
-  friendGridName: {
-    color: theme.colors.ink,
-    fontSize: 12,
-    fontWeight: "900",
-    textAlign: "center",
-    fontFamily: theme.fonts.body,
-  },
-  friendGridHandle: {
-    color: theme.colors.inkSoft,
-    fontSize: 10,
     fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
@@ -997,6 +1034,7 @@ const styles = StyleSheet.create({
   rankBadgeLabel: {
     fontSize: 11,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   friendName: {
     flex: 1,
@@ -1009,6 +1047,7 @@ const styles = StyleSheet.create({
     color: "#111111",
     fontSize: 10,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   characterStage: {
     position: "absolute",
@@ -1019,35 +1058,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     pointerEvents: "none",
-  },
-  previewFigure: {
-    position: "relative",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  previewShadow: {
-    position: "absolute",
-    bottom: "7%",
-    width: "72%",
-    height: "9%",
-    borderRadius: 999,
-    opacity: 0.55,
-  },
-  previewHead: {
-    position: "absolute",
-    top: "11%",
-    width: "42%",
-    aspectRatio: 1,
-    borderRadius: 999,
-    opacity: 0.98,
-  },
-  previewBody: {
-    position: "absolute",
-    bottom: "7%",
-    width: "66%",
-    height: "48%",
-    borderRadius: 999,
-    opacity: 0.98,
   },
   primaryStatBlock: {
     position: "absolute",
@@ -1100,36 +1110,161 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
-  friendDetailTop: {
-    gap: 2,
+  friendGallery: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
   },
-  friendDetailCard: {
+  friendGalleryCard: {
     borderRadius: theme.radius.xl,
-    padding: 16,
-    backgroundColor: theme.colors.surface,
+    padding: 8,
+    backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: theme.colors.border,
+    aspectRatio: 0.66,
+    overflow: "hidden",
     gap: 8,
   },
-  friendDetailTitle: {
+  friendGalleryCardSelected: {
+    borderColor: "#111111",
+    backgroundColor: "#f8f8f7",
+  },
+  friendGalleryScene: {
+    flex: 1,
+    borderRadius: theme.radius.lg,
+    overflow: "hidden",
+  },
+  friendGalleryCaption: {
+    minHeight: 42,
+    justifyContent: "center",
+    gap: 2,
+    paddingHorizontal: 4,
+    paddingBottom: 2,
+  },
+  friendGridName: {
     color: theme.colors.ink,
-    fontSize: 18,
+    fontSize: 13,
+    fontWeight: "900",
+    textAlign: "center",
+    fontFamily: theme.fonts.body,
+  },
+  friendGridSteps: {
+    color: theme.colors.inkSoft,
+    fontSize: 11,
+    fontWeight: "800",
+    textAlign: "center",
+    fontFamily: theme.fonts.body,
+  },
+  modalBackdrop: {
+    flex: 1,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.lg,
+    backgroundColor: "rgba(17,17,17,0.28)",
+    justifyContent: "center",
+  },
+  modalCard: {
+    borderRadius: 28,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 16,
+    gap: 14,
+    maxHeight: "92%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  modalHeaderText: {
+    flex: 1,
+    gap: 2,
+  },
+  modalTitle: {
+    color: theme.colors.ink,
+    fontSize: 22,
     fontWeight: "900",
     fontFamily: theme.fonts.display,
   },
-  friendDetailHandle: {
+  modalHandle: {
     color: theme.colors.inkSoft,
     fontSize: 12,
     fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
-  friendDetailLabel: {
-    marginTop: 4,
+  modalCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  modalCloseButtonLabel: {
+    color: theme.colors.ink,
+    fontSize: 20,
+    fontWeight: "900",
+    lineHeight: 20,
+    fontFamily: theme.fonts.body,
+  },
+  modalSceneWrap: {
+    width: "100%",
+    alignItems: "center",
+  },
+  modalStatsRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  statBlock: {
+    flex: 1,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    gap: 2,
+  },
+  statBlockLabel: {
+    color: theme.colors.inkSoft,
+    fontSize: 10,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
+  },
+  statBlockValue: {
+    color: theme.colors.ink,
+    fontSize: 13,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  modalGroupCard: {
+    borderRadius: theme.radius.xl,
+    padding: 14,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 10,
+  },
+  modalSectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  modalSectionTitle: {
+    color: theme.colors.ink,
+    fontSize: 14,
+    fontWeight: "900",
+    fontFamily: theme.fonts.display,
+  },
+  modalSectionMeta: {
     color: theme.colors.inkSoft,
     fontSize: 11,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   groupChecklist: {
     gap: 8,
@@ -1168,6 +1303,7 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 11,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   checkLabel: {
     color: theme.colors.ink,
