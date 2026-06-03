@@ -387,6 +387,8 @@ export function FriendsScreen() {
                   rankMode={rankMode}
                   cardWidth={cardWidth}
                   previewSize={previewSize}
+                  previewCharacter={previewCharacter}
+                  characterViewState={characterViewState}
                   onPress={() => setSelectedFriendId(friend.id)}
                 />
               ))}
@@ -496,7 +498,17 @@ export function FriendsScreen() {
   );
 }
 
-function FriendRankCard({ friend, rank, isMe, rankMode, cardWidth, previewSize, onPress }) {
+function FriendRankCard({
+  friend,
+  rank,
+  isMe,
+  rankMode,
+  cardWidth,
+  previewSize,
+  previewCharacter,
+  characterViewState,
+  onPress,
+}) {
   const rankBadge = getRankBadgeStyle(rank);
   const info = getModeInfo(friend, rankMode);
 
@@ -519,8 +531,8 @@ function FriendRankCard({ friend, rank, isMe, rankMode, cardWidth, previewSize, 
         </View>
 
         <View style={styles.characterStage}>
-        <FriendPreview character={previewCharacter} state={characterViewState} size={previewSize} />
-      </View>
+          <FriendPreview character={previewCharacter} state={characterViewState} size={previewSize} />
+        </View>
 
         <View style={styles.primaryStatBlock}>
           <Text style={styles.primaryStatLabel}>{info.primaryLabel}</Text>
