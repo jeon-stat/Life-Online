@@ -30,7 +30,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   titleAccent: {
-    color: "#d6deeb",
+    color: "#dadada",
   },
   primary: {
     marginTop: 8,
@@ -50,6 +50,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   secondaryAccent: {
-    color: "#dbe3ef",
+    color: "#e4e4e4",
   },
 });

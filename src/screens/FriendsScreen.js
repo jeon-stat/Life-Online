@@ -38,25 +38,25 @@ const RANK_TABS = [
 ];
 
 const ENERGY_META = {
-  0: { label: "완전 휴식", icon: "🛌", tone: "#8a94a2" },
-  1: { label: "졸린 하루", icon: "😴", tone: "#8aa0c5" },
-  2: { label: "숨 고르기", icon: "🌬️", tone: "#5f9ea0" },
-  3: { label: "평온", icon: "🙂", tone: "#7aa37e" },
-  4: { label: "산책", icon: "🚶", tone: "#e2a24a" },
-  5: { label: "달리기", icon: "🏃", tone: "#db7c52" },
-  6: { label: "최고 컨디션", icon: "⚡", tone: "#c95f4f" },
+  0: { label: "완전 휴식", icon: "○", tone: "#787878" },
+  1: { label: "졸린 하루", icon: "◔", tone: "#787878" },
+  2: { label: "숨 고르기", icon: "◑", tone: "#787878" },
+  3: { label: "평온", icon: "◐", tone: "#111111" },
+  4: { label: "산책", icon: "•", tone: "#111111" },
+  5: { label: "달리기", icon: "▸", tone: "#111111" },
+  6: { label: "최고 컨디션", icon: "✦", tone: "#111111" },
 };
 
 const LONG_TERM_META = {
-  WEAK: { label: "허약", tone: "#b06d57" },
-  HEALTHY: { label: "건강", tone: "#4f7a57" },
-  ACTIVE: { label: "활발", tone: "#c06b3e" },
+  WEAK: { label: "허약", tone: "#555555" },
+  HEALTHY: { label: "건강", tone: "#111111" },
+  ACTIVE: { label: "활발", tone: "#111111" },
 };
 
 const RANK_BADGE_COLORS = {
-  1: { backgroundColor: "#f6d86a", color: "#8d5b00", borderColor: "#e7b93c" },
-  2: { backgroundColor: "#e7edf3", color: "#66707a", borderColor: "#c7d0da" },
-  3: { backgroundColor: "#e8c29e", color: "#8a4f1f", borderColor: "#d59d6f" },
+  1: { backgroundColor: "#111111", color: "#ffffff", borderColor: "#111111" },
+  2: { backgroundColor: "#f3f3f1", color: "#111111", borderColor: "#d9d9d6" },
+  3: { backgroundColor: "#ececea", color: "#111111", borderColor: "#d2d2cf" },
 };
 
 export function FriendsScreen() {
@@ -599,8 +599,8 @@ function getRankBadgeStyle(rank) {
 
   return {
     badgeStyle: {
-      backgroundColor: "#f2f4f7",
-      borderColor: "#d6dee8",
+      backgroundColor: "#f5f5f3",
+      borderColor: "#dededb",
     },
     textColor: theme.colors.ink,
   };
@@ -705,8 +705,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: theme.radius.pill,
-    backgroundColor: "#edf6f0",
-    color: "#4f7a57",
+    backgroundColor: "#f5f5f3",
+    color: "#111111",
     fontSize: 10,
     fontWeight: "900",
   },
@@ -728,8 +728,8 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
   },
   groupChipActive: {
-    backgroundColor: "#16302b",
-    borderColor: "#16302b",
+    backgroundColor: "#111111",
+    borderColor: "#111111",
   },
   groupChipLabel: {
     color: theme.colors.inkSoft,
@@ -742,7 +742,7 @@ const styles = StyleSheet.create({
   groupActionCard: {
     borderRadius: theme.radius.lg,
     padding: 14,
-    backgroundColor: "#fffdf8",
+    backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: theme.colors.border,
     gap: 10,
@@ -780,8 +780,8 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
   },
   groupActionToggleActive: {
-    backgroundColor: "#16302b",
-    borderColor: "#16302b",
+    backgroundColor: "#111111",
+    borderColor: "#111111",
   },
   groupActionToggleLabel: {
     color: theme.colors.inkSoft,
@@ -812,7 +812,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: theme.radius.lg,
-    backgroundColor: "#16302b",
+    backgroundColor: "#111111",
     paddingHorizontal: 12,
   },
   primaryButtonLabel: {
@@ -840,12 +840,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: theme.radius.lg,
-    backgroundColor: "#fff1ee",
+    backgroundColor: "#ffffff",
     borderWidth: 1,
-    borderColor: "#f0c7bf",
+    borderColor: theme.colors.border,
   },
   dangerButtonLabel: {
-    color: "#9f4e33",
+    color: "#111111",
     fontSize: 12,
     fontWeight: "900",
   },
@@ -911,8 +911,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   friendGridCardSelected: {
-    backgroundColor: "#fff7ef",
-    borderColor: "#d99d78",
+    backgroundColor: "#f7f7f5",
+    borderColor: "#111111",
   },
   friendGridName: {
     color: theme.colors.ink,
@@ -935,7 +935,7 @@ const styles = StyleSheet.create({
     position: "relative",
     borderRadius: theme.radius.xl,
     padding: 12,
-    backgroundColor: "#fffdf8",
+    backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: theme.colors.border,
     aspectRatio: 0.68,
@@ -946,13 +946,13 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   friendCardMe: {
-    backgroundColor: "#fff7ef",
-    borderColor: "#d99d78",
-    shadowColor: theme.colors.shadow,
-    shadowOpacity: 1,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 2,
+    backgroundColor: "#f9f9f8",
+    borderColor: "#111111",
+    shadowColor: "transparent",
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 0,
   },
   friendHeader: {
     position: "absolute",
@@ -991,7 +991,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   meLabel: {
-    color: "#9f4e33",
+    color: "#111111",
     fontSize: 10,
     fontWeight: "900",
   },
@@ -1126,22 +1126,22 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
   },
   checkRowChecked: {
-    backgroundColor: "#eef8f2",
-    borderColor: "#b7d8c0",
+    backgroundColor: "#f7f7f5",
+    borderColor: "#111111",
   },
   checkbox: {
     width: 22,
     height: 22,
     borderRadius: 7,
     borderWidth: 1,
-    borderColor: "#c7d0da",
+    borderColor: "#d8d8d6",
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#ffffff",
   },
   checkboxChecked: {
-    backgroundColor: "#4f7a57",
-    borderColor: "#4f7a57",
+    backgroundColor: "#111111",
+    borderColor: "#111111",
   },
   checkboxMark: {
     color: "#ffffff",

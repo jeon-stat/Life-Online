@@ -16,10 +16,10 @@ import { theme } from "./src/constants/theme.js";
 import { buildCharacterViewModel } from "./src/game/characterState.js";
 
 const TABS = [
-  { id: "home", label: "\uC0B0\uCC45", icon: "🌤️" },
-  { id: "history", label: "\uCD94\uC5B5", icon: "📖" },
-  { id: "character", label: "\uCE90\uB9AD\uD130", icon: "🐾" },
-  { id: "friends", label: "\uCE5C\uAD6C", icon: "👥" },
+  { id: "home", label: "\uC0B0\uCC45", icon: "⌂" },
+  { id: "history", label: "\uCD94\uC5B5", icon: "▤" },
+  { id: "character", label: "\uCE90\uB9AD\uD130", icon: "◌" },
+  { id: "friends", label: "\uCE5C\uAD6C", icon: "◔" },
 ];
 
 const STEP_DATA_MODE = Platform.OS === "web" ? "mock" : "auto";

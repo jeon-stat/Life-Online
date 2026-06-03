@@ -8,7 +8,7 @@ export function StepProgressCard({ steps, goal, progressPercent, statusLabel }) 
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.title}>👣 오늘</Text>
+        <Text style={styles.title}>오늘</Text>
         <Text style={styles.status}>{statusLabel}</Text>
       </View>
 
@@ -21,7 +21,7 @@ export function StepProgressCard({ steps, goal, progressPercent, statusLabel }) 
         <View style={[styles.fill, { width: progressWidth }]} />
       </View>
 
-      <Text style={styles.caption}>🎯 {Math.round(progressPercent)}%</Text>
+      <Text style={styles.caption}>{Math.round(progressPercent)}%</Text>
     </View>
   );
 }
@@ -73,12 +73,12 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: theme.radius.pill,
     overflow: "hidden",
-    backgroundColor: "#ebe6de",
+    backgroundColor: "#efefed",
   },
   fill: {
     height: "100%",
     borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.accent,
+    backgroundColor: theme.colors.ink,
   },
   caption: {
     marginTop: 8,

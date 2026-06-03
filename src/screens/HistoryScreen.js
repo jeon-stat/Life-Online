@@ -18,13 +18,13 @@ const ACHIEVEMENT_TABS = [
 ];
 
 const ENERGY_META = {
-  0: { label: "완전 휴식", icon: "🛏️", tone: "#8a94a2" },
-  1: { label: "졸린 하루", icon: "😴", tone: "#8aa0c5" },
-  2: { label: "숨 고르기", icon: "🌬️", tone: "#5f9ea0" },
-  3: { label: "평온", icon: "🍃", tone: "#7aa37e" },
-  4: { label: "산책", icon: "👣", tone: "#e2a24a" },
-  5: { label: "달리기", icon: "🏃", tone: "#db7c52" },
-  6: { label: "최고 컨디션", icon: "✨", tone: "#c95f4f" },
+  0: { label: "완전 휴식", icon: "○", tone: "#787878" },
+  1: { label: "졸린 하루", icon: "◔", tone: "#787878" },
+  2: { label: "숨 고르기", icon: "◑", tone: "#787878" },
+  3: { label: "평온", icon: "◐", tone: "#111111" },
+  4: { label: "산책", icon: "•", tone: "#111111" },
+  5: { label: "달리기", icon: "▸", tone: "#111111" },
+  6: { label: "최고 컨디션", icon: "✦", tone: "#111111" },
 };
 
 export function HistoryScreen() {
@@ -247,17 +247,17 @@ function buildTrailLogs(history, goal) {
   return [
     {
       key: "today",
-      icon: ENERGY_META[latestEnergy]?.icon ?? "👣",
+      icon: ENERGY_META[latestEnergy]?.icon ?? "•",
       text: latest ? `오늘 ${formatNumber(latest.steps)}보 · E${latestEnergy}` : "오늘 기록이 없어요.",
     },
     {
       key: "best",
-      icon: ENERGY_META[bestEnergy]?.icon ?? "🏆",
+      icon: ENERGY_META[bestEnergy]?.icon ?? "✦",
       text: bestRecord ? `최고 ${formatNumber(bestRecord.steps)}보 · ${formatTrailDateLabel(bestRecord.date, bestRecord.id === latest?.id)}` : "최고 기록이 없어요.",
     },
     {
       key: "goal",
-      icon: "🎯",
+      icon: "◌",
       text: goalDays > 0 ? `목표 ${goalDays}일` : "목표 달성이 아직 없어요.",
     },
   ];
@@ -278,28 +278,28 @@ function buildMissionCards({ history, goal, streak }) {
   return [
     {
       key: "today",
-      icon: "🎯",
+      icon: "◌",
       title: "오늘",
       value: latest ? `${formatNumber(latestSteps)}보` : "0보",
       note: latestSteps >= goal ? `E${latestEnergy} 달성` : `${Math.max(goal - latestSteps, 0)}보 남음`,
     },
     {
       key: "week",
-      icon: "👣",
+      icon: "•",
       title: "주간",
       value: `${goalDays}/7`,
       note: "목표일",
     },
     {
       key: "streak",
-      icon: "🔥",
+      icon: "✦",
       title: "연속",
       value: `${streak}일`,
       note: "이어가기",
     },
     {
       key: "best",
-      icon: "🏆",
+      icon: "◌",
       title: "최고",
       value: `${formatNumber(bestRecord?.steps ?? 0)}보`,
       note: bestRecord ? formatTrailDateLabel(bestRecord.date, bestRecord.id === latest?.id) : "기록 없음",

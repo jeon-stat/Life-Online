@@ -29,7 +29,7 @@ const styles = StyleSheet.create({
   shell: {
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
-    backgroundColor: "rgba(248,247,244,0.96)",
+    backgroundColor: "rgba(255,255,255,0.98)",
     paddingHorizontal: 12,
     paddingTop: 8,
     paddingBottom: 12,
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   item: {
     flex: 1,
     minHeight: 50,
-    borderRadius: theme.radius.md,
+    borderRadius: theme.radius.pill,
     borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.surface,

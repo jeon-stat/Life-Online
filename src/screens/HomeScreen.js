@@ -20,9 +20,9 @@ const ENERGY_STAGE_LABELS = {
 };
 
 const BACKGROUND_META = {
-  LOW_ENERGY: { label: "조용한 배경", tone: "#f2f0ea" },
-  NORMAL_ENERGY: { label: "편안한 배경", tone: "#eef3f7" },
-  HIGH_ENERGY: { label: "활발한 배경", tone: "#edf8f0" },
+  LOW_ENERGY: { label: "조용한 배경", tone: "#f3f3f1" },
+  NORMAL_ENERGY: { label: "편안한 배경", tone: "#f0f0ee" },
+  HIGH_ENERGY: { label: "활발한 배경", tone: "#ededeb" },
 };
 
 export function HomeScreen() {
@@ -67,9 +67,9 @@ export function HomeScreen() {
             <Text style={styles.cardPrimary}>{viewState.statusLabel}</Text>
           </View>
           <View style={styles.metaGrid}>
-            <MetaChip icon="⚡" value={`E${viewState.energyLevel} · ${ENERGY_STAGE_LABELS[viewState.energyLevel] ?? "?"}`} />
-            <MetaChip icon="🎯" value={`${Math.round(viewState.progressPercent)}%`} />
-            <MetaChip icon="👣" value={`${formatNumber(viewState.steps)}보`} />
+            <MetaChip icon="E" value={`E${viewState.energyLevel} · ${ENERGY_STAGE_LABELS[viewState.energyLevel] ?? "?"}`} />
+            <MetaChip icon="◌" value={`${Math.round(viewState.progressPercent)}%`} />
+            <MetaChip icon="•" value={`${formatNumber(viewState.steps)}보`} />
           </View>
 
           <View style={styles.metaGridBottom}>
@@ -119,14 +119,14 @@ function formatNumber(value) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: theme.colors.appBackground,
   },
   content: {
     paddingHorizontal: theme.spacing.md,
     paddingTop: theme.spacing.xs,
     paddingBottom: theme.spacing.lg,
     gap: 12,
-    backgroundColor: "#ffffff",
+    backgroundColor: theme.colors.appBackground,
   },
   updatedAt: {
     alignSelf: "flex-end",
@@ -141,9 +141,9 @@ const styles = StyleSheet.create({
   todayCard: {
     borderRadius: theme.radius.xl,
     padding: 18,
-    backgroundColor: "rgba(255,255,255,0.88)",
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: "rgba(215, 198, 176, 0.9)",
+    borderColor: theme.colors.border,
     gap: 12,
   },
   cardHeader: {
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.lg,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    backgroundColor: "#fffdf9",
+    backgroundColor: theme.colors.surfaceSoft,
     borderWidth: 1,
     borderColor: theme.colors.border,
     gap: 4,
