@@ -1,7 +1,7 @@
 export const theme = {
   fonts: {
-    body: "Avenir Next",
-    display: "Georgia",
+    body: "Gowun Dodum",
+    display: "Jua",
     mono: "Menlo",
   },
   colors: {

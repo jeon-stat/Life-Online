@@ -1,6 +1,6 @@
 import { Platform, SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, TextInput } from "react-native";
 
 import { AuthProvider, useAuth } from "./src/auth/AuthProvider.js";
@@ -30,11 +30,52 @@ const TABS = [
 const STEP_DATA_MODE = Platform.OS === "web" ? "mock" : "auto";
 
 export default function App() {
+  useWebFonts();
+
   return (
     <AuthProvider>
       <AppContent />
     </AuthProvider>
   );
+}
+
+function useWebFonts() {
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") {
+      return undefined;
+    }
+
+    const id = "life-online-web-fonts";
+    if (document.getElementById(id)) {
+      return undefined;
+    }
+
+    const preconnectGoogle = document.createElement("link");
+    preconnectGoogle.id = `${id}-preconnect-google`;
+    preconnectGoogle.rel = "preconnect";
+    preconnectGoogle.href = "https://fonts.googleapis.com";
+
+    const preconnectFonts = document.createElement("link");
+    preconnectFonts.id = `${id}-preconnect-fonts`;
+    preconnectFonts.rel = "preconnect";
+    preconnectFonts.href = "https://fonts.gstatic.com";
+    preconnectFonts.crossOrigin = "anonymous";
+
+    const stylesheet = document.createElement("link");
+    stylesheet.id = id;
+    stylesheet.rel = "stylesheet";
+    stylesheet.href = "https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&display=swap";
+
+    document.head.appendChild(preconnectGoogle);
+    document.head.appendChild(preconnectFonts);
+    document.head.appendChild(stylesheet);
+
+    return () => {
+      document.getElementById(id)?.remove();
+      document.getElementById(`${id}-preconnect-google`)?.remove();
+      document.getElementById(`${id}-preconnect-fonts`)?.remove();
+    };
+  }, []);
 }
 
 function AppContent() {
