@@ -11,6 +11,7 @@ import {
 } from "react-native";
 
 import { useAuth } from "../auth/AuthProvider.js";
+import { CHARACTER_CLASSES } from "../characters.js";
 import { useStepData } from "../data/stepDataProvider.js";
 import {
   DEFAULT_FRIEND_GROUPS,
@@ -67,6 +68,24 @@ export function FriendsScreen() {
     () => buildCharacterViewModel({ todayRecord: today, history, goal, admin }),
     [admin, goal, history, today],
   );
+
+  const previewCharacter = useMemo(() => {
+    const baseCharacter = CHARACTER_CLASSES[0];
+    const selectedSkinTone = admin?.skinTones?.find((tone) => tone.id === admin?.skinToneId);
+
+    if (!selectedSkinTone) {
+      return baseCharacter;
+    }
+
+    return {
+      ...baseCharacter,
+      palette: {
+        ...baseCharacter.palette,
+        skin: selectedSkinTone.color,
+      },
+      skinTone: selectedSkinTone.color,
+    };
+  }, [admin?.skinToneId, admin?.skinTones]);
 
   const weeklySteps = useMemo(
     () => history.slice(0, 7).reduce((sum, record) => sum + (record?.steps ?? 0), 0),
@@ -397,7 +416,7 @@ export function FriendsScreen() {
                   ]}
                 >
                   <View style={styles.friendGalleryScene}>
-                    <FriendPreview friend={friend} size={galleryPreviewSize} />
+                    <FriendPreview character={previewCharacter} state={characterViewState} size={galleryPreviewSize} />
                   </View>
                   <View style={styles.friendGalleryCaption}>
                     <Text style={styles.friendGridName} numberOfLines={1}>
@@ -436,7 +455,7 @@ export function FriendsScreen() {
                 </View>
 
                 <View style={styles.modalSceneWrap}>
-                  <FriendPreview friend={selectedFriend} size={expandedPreviewSize} />
+                  <FriendPreview character={previewCharacter} state={characterViewState} size={expandedPreviewSize} />
                 </View>
 
                 <View style={styles.modalStatsRow}>
@@ -500,8 +519,8 @@ function FriendRankCard({ friend, rank, isMe, rankMode, cardWidth, previewSize, 
         </View>
 
         <View style={styles.characterStage}>
-          <FriendPreview friend={friend} size={previewSize} />
-        </View>
+        <FriendPreview character={previewCharacter} state={characterViewState} size={previewSize} />
+      </View>
 
         <View style={styles.primaryStatBlock}>
           <Text style={styles.primaryStatLabel}>{info.primaryLabel}</Text>
@@ -519,8 +538,8 @@ function FriendRankCard({ friend, rank, isMe, rankMode, cardWidth, previewSize, 
   );
 }
 
-function FriendPreview({ friend, size }) {
-  return <FriendCharacterPreview friend={friend} size={size} />;
+function FriendPreview({ character, state, size }) {
+  return <FriendCharacterPreview character={character} state={state} size={size} />;
 }
 
 function FooterStat({ label, value }) {

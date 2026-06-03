@@ -1,1 +1,1 @@
-export const LAST_UPDATED_LABEL = "수정 2026-06-04 04:19";
+export const LAST_UPDATED_LABEL = "수정 2026-06-04 04:26";
