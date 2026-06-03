@@ -74,7 +74,15 @@ function useEnergy6SpecialAction(energyLevel, actionPool = [], forcedSpecialActi
   return actionPool.find((action) => action.key === selectedActionKey) ?? null;
 }
 
-export function CharacterStage({ character, state, onInteractionChange }) {
+export function CharacterStage({ character, state, onInteractionChange, scale = 1 }) {
+  const stageHeight = Math.round(STAGE_LAYOUT.heroHeight * scale);
+  const glowBackTop = Math.round(32 * scale);
+  const glowBackSize = Math.round(276 * scale);
+  const glowBackHalf = Math.round(glowBackSize / 2);
+  const gestureTop = Math.round(6 * scale);
+  const gestureWidth = Math.round(292 * scale);
+  const gestureLeft = Math.round(-gestureWidth / 2);
+  const gestureHeight = Math.max(0, stageHeight - Math.round(16 * scale));
   const [rotation, setRotation] = useState(STAGE_LAYOUT.defaultRotation);
   const rotationRef = useRef(STAGE_LAYOUT.defaultRotation);
   const dragStartRef = useRef(STAGE_LAYOUT.defaultRotation);
@@ -121,8 +129,19 @@ export function CharacterStage({ character, state, onInteractionChange }) {
   );
 
   return (
-    <View style={styles.shell}>
-      <View style={[styles.glowBack, { backgroundColor: state.background?.[0] ?? "rgba(255,255,255,0.48)" }]} />
+    <View style={[styles.shell, { height: stageHeight }]}>
+      <View
+        style={[
+          styles.glowBack,
+          {
+            top: glowBackTop,
+            width: glowBackSize,
+            height: glowBackSize,
+            marginLeft: -glowBackHalf,
+            backgroundColor: state.background?.[0] ?? "rgba(255,255,255,0.48)",
+          },
+        ]}
+      />
       <View style={styles.effectWrap} pointerEvents="none">
         <StageEffect effect={state.effect} mood={state.sceneMood} />
       </View>
@@ -135,7 +154,18 @@ export function CharacterStage({ character, state, onInteractionChange }) {
         />
       </StageCanvas>
       {state.debugVisible ? <BehaviorDebugOverlay state={state} specialAction={specialAction} actionKey={actionKey} /> : null}
-      <View style={styles.gestureHotspot} {...panResponder.panHandlers} />
+      <View
+        style={[
+          styles.gestureHotspot,
+          {
+            top: gestureTop,
+            width: gestureWidth,
+            height: gestureHeight,
+            marginLeft: gestureLeft,
+          },
+        ]}
+        {...panResponder.panHandlers}
+      />
     </View>
   );
 }
