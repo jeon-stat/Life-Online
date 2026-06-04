@@ -24,7 +24,7 @@ import {
 import { buildCharacterViewModel } from "../game/characterState.js";
 import { getStreak } from "../game/progression.js";
 import { theme } from "../constants/theme.js";
-import { FriendCharacterPreview } from "../components/FriendCharacterPreview.js";
+import { FriendCharacterPreview } from "../components/FriendCharacterPreview";
 
 const VIEW_TABS = [
   { id: "ranking", label: "랭킹" },
