@@ -5,8 +5,8 @@ import { CharacterStage } from "./CharacterStage";
 const BASE_STAGE_WIDTH = 360;
 const BASE_STAGE_HEIGHT = 500;
 const DETAIL_MINI_WORLD = {
-  radius: 12.2,
-  centerOffsetY: -11.95,
+  radius: 14.2,
+  centerOffsetY: -13.9,
   characterScale: 0.5,
   sphereThetaLength: Math.PI,
 };
