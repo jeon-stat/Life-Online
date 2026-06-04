@@ -31,7 +31,7 @@ export function HomeScreen() {
 
   const viewState = buildCharacterViewModel({ todayRecord: today, history, goal, admin });
   const stageHeight = Math.max(600, Math.min(860, Math.round(windowHeight * 0.94)));
-  const cameraPosition = [0, 1.56, 8.5];
+  const cameraPosition = [0, 1.56, 10.6];
   const progressWidth = `${Math.max(0, Math.min(viewState.progressPercent, 100))}%`;
 
   return (
