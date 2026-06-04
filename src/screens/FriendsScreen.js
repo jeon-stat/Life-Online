@@ -180,7 +180,7 @@ export function FriendsScreen() {
     return Math.max(104, Math.min(210, baseWidth));
   }, [width]);
 
-  const previewSize = useMemo(() => Math.max(72, Math.min(140, Math.round(cardWidth * 0.78))), [cardWidth]);
+  const previewSize = useMemo(() => Math.max(84, Math.min(118, Math.round(cardWidth * 0.86))), [cardWidth]);
   const galleryCardWidth = useMemo(() => {
     const horizontalPadding = theme.spacing.md * 2;
     const usableWidth = Math.max(0, width - horizontalPadding);
@@ -189,7 +189,7 @@ export function FriendsScreen() {
     return Math.max(96, Math.min(140, baseWidth));
   }, [width]);
   const galleryPreviewSize = useMemo(
-    () => Math.max(88, Math.min(132, Math.round(galleryCardWidth * 0.96))),
+    () => Math.max(72, Math.min(112, Math.round(galleryCardWidth * 0.82))),
     [galleryCardWidth],
   );
   const expandedPreviewSize = useMemo(
@@ -1025,7 +1025,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: theme.colors.border,
-    aspectRatio: 0.68,
+    aspectRatio: 0.58,
     overflow: "hidden",
   },
   friendCardContent: {
@@ -1087,10 +1087,10 @@ const styles = StyleSheet.create({
   },
   characterStage: {
     position: "absolute",
-    left: 0,
-    right: 0,
-    top: 28,
-    bottom: 72,
+    left: -12,
+    right: -12,
+    top: 4,
+    bottom: 58,
     alignItems: "center",
     justifyContent: "center",
     pointerEvents: "none",
@@ -1098,7 +1098,7 @@ const styles = StyleSheet.create({
   primaryStatBlock: {
     position: "absolute",
     left: 0,
-    bottom: 52,
+    bottom: 36,
     zIndex: 2,
     maxWidth: "64%",
   },
@@ -1125,7 +1125,7 @@ const styles = StyleSheet.create({
     zIndex: 2,
     flexDirection: "row",
     gap: 8,
-    paddingTop: 10,
+    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: "rgba(0,0,0,0.06)",
   },
@@ -1157,7 +1157,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: theme.colors.border,
-    aspectRatio: 0.66,
+    aspectRatio: 0.62,
     overflow: "hidden",
     gap: 8,
   },
@@ -1169,6 +1169,8 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: theme.radius.lg,
     overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
   },
   friendGalleryCaption: {
     minHeight: 42,
