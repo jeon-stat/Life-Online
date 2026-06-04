@@ -15,6 +15,7 @@ import { AccountMenu } from "./src/components/AccountMenu.js";
 import { ShopMenu } from "./src/components/ShopMenu.js";
 import { BottomTabs } from "./src/components/BottomTabs.js";
 import { theme } from "./src/constants/theme.js";
+import { LAST_UPDATED_LABEL } from "./src/generated/buildInfo.js";
 import { buildCharacterViewModel } from "./src/game/characterState.js";
 
 Text.defaultProps = Text.defaultProps ?? {};
@@ -130,6 +131,12 @@ function AppShell({ activeTab, onChangeTab }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.appShell}>
+        {admin?.canOverride ? (
+          <View style={styles.updatedAtBadge} pointerEvents="none">
+            <Text style={styles.updatedAtBadgeLabel}>{LAST_UPDATED_LABEL}</Text>
+          </View>
+        ) : null}
+
         <View style={styles.screenArea}>
           {activeTab === "home" ? <HomeScreen /> : null}
           {activeTab === "history" ? <HistoryScreen /> : null}
@@ -215,6 +222,27 @@ const styles = StyleSheet.create({
   },
   screenArea: {
     flex: 1,
+  },
+  updatedAtBadge: {
+    position: "absolute",
+    top: 58,
+    left: 0,
+    right: 0,
+    zIndex: 12,
+    alignItems: "center",
+  },
+  updatedAtBadgeLabel: {
+    color: theme.colors.muted,
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.3,
+    backgroundColor: "rgba(255,255,255,0.76)",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.pill,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    overflow: "hidden",
   },
   adminPanelOverlay: {
     position: "absolute",
