@@ -107,7 +107,7 @@ export function buildFriendRankingData({
     isMe: true,
   };
 
-  const existingIndex = friends.findIndex((friend) => friend?.handle === me.handle);
+  const existingIndex = friends.findIndex((friend) => friend.handle === me.handle);
   if (existingIndex >= 0) {
     friends[existingIndex] = {
       ...friends[existingIndex],
@@ -125,15 +125,13 @@ export function buildFriendRankingData({
 
 export function createFriendGroupState(friends = []) {
   return friends.reduce((acc, friend) => {
-    if (friend?.id) {
-      acc[friend.id] = normalizeGroupIds(friend?.groupIds);
-    }
+    acc[friend.id] = normalizeGroupIds(friend.groupIds);
     return acc;
   }, {});
 }
 
 export function getFriendGroupIds(friend, groupState = {}) {
-  return normalizeGroupIds(groupState?.[friend?.id] ?? friend?.groupIds ?? ["all"]);
+  return normalizeGroupIds(groupState?.[friend.id] ?? friend?.groupIds ?? ["all"]);
 }
 
 export function getFriendGroupNames(friend, groupState = {}, groups = DEFAULT_FRIEND_GROUPS) {
@@ -184,7 +182,7 @@ export function sortFriendCards(friends, mode) {
       return diff;
     }
 
-    return String(a?.nickname ?? "").localeCompare(String(b?.nickname ?? ""), "ko-KR");
+    return String(a.nickname ?? "").localeCompare(String(b.nickname ?? ""), "ko-KR");
   });
 }
 

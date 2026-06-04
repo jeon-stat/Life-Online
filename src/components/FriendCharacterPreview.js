@@ -1,9 +1,8 @@
 import { StyleSheet, View } from "react-native";
 
 export function FriendCharacterPreview({ size = 112 }) {
-  const safeSize = Number.isFinite(size) ? size : 112;
-  const width = safeSize;
-  const height = Math.round(safeSize * 1.08);
+  const width = size;
+  const height = Math.round(size * 1.08);
 
   return (
     <View style={[styles.shell, { width, height }]}>
