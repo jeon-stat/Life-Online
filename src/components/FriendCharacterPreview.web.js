@@ -3,7 +3,7 @@ import { View } from "react-native";
 import { CharacterStage } from "./CharacterStage";
 
 export function FriendCharacterPreview({ character, state, size = 112 }) {
-  const shellHeight = Math.round(size * 1.18);
+  const shellHeight = Math.round(size * 1.28);
 
   return (
     <View style={{ width: size, height: shellHeight, overflow: "hidden" }} pointerEvents="none">
