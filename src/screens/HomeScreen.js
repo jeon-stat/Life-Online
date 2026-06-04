@@ -1,32 +1,16 @@
 import { useMemo } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { CharacterStage } from "../components/CharacterStage";
-import { StepProgressCard } from "../components/StepProgressCard.js";
 import { CHARACTER_CLASSES } from "../characters.js";
 import { theme } from "../constants/theme.js";
 import { useStepData } from "../data/stepDataProvider.js";
-import { LAST_UPDATED_LABEL } from "../generated/buildInfo.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
 
-const ENERGY_STAGE_LABELS = {
-  0: "완전 휴식",
-  1: "졸림",
-  2: "숨 고르기",
-  3: "평온",
-  4: "산책",
-  5: "달리기",
-  6: "최고",
-};
-
-const BACKGROUND_META = {
-  LOW_ENERGY: { label: "조용한 배경", tone: "#f3f3f1" },
-  NORMAL_ENERGY: { label: "편안한 배경", tone: "#f0f0ee" },
-  HIGH_ENERGY: { label: "활발한 배경", tone: "#ededeb" },
-};
-
 export function HomeScreen() {
+  const { height: windowHeight } = useWindowDimensions();
   const { today, history, goal, admin } = useStepData();
+
   const character = useMemo(() => {
     const baseCharacter = CHARACTER_CLASSES[0];
     const selectedSkinTone = admin?.skinTones?.find((tone) => tone.id === admin?.skinToneId);
@@ -46,67 +30,29 @@ export function HomeScreen() {
   }, [admin?.skinToneId, admin?.skinTones]);
 
   const viewState = buildCharacterViewModel({ todayRecord: today, history, goal, admin });
-  const currentActionLabel = viewState.currentAction?.label ?? viewState.animationClip ?? "Unknown";
-  const backgroundLabel = BACKGROUND_META[viewState.backgroundState]?.label ?? "현재 배경";
+  const stageHeight = Math.max(380, Math.min(560, Math.round(windowHeight * 0.62)));
+  const progressWidth = `${Math.max(0, Math.min(viewState.progressPercent, 100))}%`;
 
   return (
     <View style={[styles.screen, { backgroundColor: viewState.sceneBackground }]}>
-      <ScrollView
-        contentContainerStyle={[styles.content, { backgroundColor: viewState.sceneBackground }]}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.updatedAt}>{LAST_UPDATED_LABEL}</Text>
+      <View style={styles.stageWrap}>
+        <CharacterStage character={character} state={viewState} height={stageHeight} />
+      </View>
 
-        <View style={styles.stageWrap}>
-          <CharacterStage character={character} state={viewState} />
+      <View style={styles.todayCard}>
+        <View style={styles.todayHeader}>
+          <Text style={styles.todayTitle}>오늘</Text>
+          <Text style={styles.todayPercent}>{Math.round(viewState.progressPercent)}%</Text>
         </View>
 
-        <View style={styles.todayCard}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>오늘 상태</Text>
-            <Text style={styles.cardPrimary}>{viewState.statusLabel}</Text>
-          </View>
-          <View style={styles.metaGrid}>
-            <MetaChip icon="E" value={`E${viewState.energyLevel} · ${ENERGY_STAGE_LABELS[viewState.energyLevel] ?? "?"}`} />
-            <MetaChip icon="◌" value={`${Math.round(viewState.progressPercent)}%`} />
-            <MetaChip icon="•" value={`${formatNumber(viewState.steps)}보`} />
-          </View>
-
-          <View style={styles.metaGridBottom}>
-            <MetaLine label="배경" value={backgroundLabel} swatch={viewState.sceneBackground} />
-            <MetaLine label="모션" value={currentActionLabel} />
-          </View>
+        <View style={styles.todayRow}>
+          <Text style={styles.todaySteps}>{formatNumber(viewState.steps)}</Text>
+          <Text style={styles.todayGoal}>/ {formatNumber(viewState.goal)}보</Text>
         </View>
 
-        <StepProgressCard
-          steps={viewState.steps}
-          goal={viewState.goal}
-          progressPercent={viewState.progressPercent}
-          statusLabel={viewState.statusLabel}
-        />
-      </ScrollView>
-    </View>
-  );
-}
-
-function MetaChip({ icon, value }) {
-  return (
-    <View style={styles.metaChip}>
-      <Text style={styles.metaIcon}>{icon}</Text>
-      <Text style={styles.metaValue}>{value}</Text>
-    </View>
-  );
-}
-
-function MetaLine({ label, value, swatch = null }) {
-  return (
-    <View style={styles.metaLine}>
-      <Text style={styles.metaLineLabel}>{label}</Text>
-      <View style={styles.metaLineValueRow}>
-        {swatch ? <View style={[styles.metaSwatch, { backgroundColor: swatch }]} /> : null}
-        <Text style={styles.metaLineValue} numberOfLines={1}>
-          {value}
-        </Text>
+        <View style={styles.track}>
+          <View style={[styles.fill, { width: progressWidth }]} />
+        </View>
       </View>
     </View>
   );
@@ -119,113 +65,80 @@ function formatNumber(value) {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    position: "relative",
+    overflow: "hidden",
     backgroundColor: theme.colors.appBackground,
-  },
-  content: {
-    paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.xs,
-    paddingBottom: theme.spacing.lg,
-    gap: 12,
-    backgroundColor: theme.colors.appBackground,
-  },
-  updatedAt: {
-    alignSelf: "flex-end",
-    color: theme.colors.muted,
-    fontSize: 11,
-    fontWeight: "700",
-    fontFamily: theme.fonts.body,
   },
   stageWrap: {
-    marginTop: 0,
+    flex: 1,
     marginHorizontal: -theme.spacing.sm,
+    justifyContent: "flex-start",
   },
   todayCard: {
+    position: "absolute",
+    left: theme.spacing.md,
+    right: theme.spacing.md,
+    bottom: 14,
     borderRadius: theme.radius.xl,
-    padding: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    gap: 12,
-  },
-  cardHeader: {
-    gap: 4,
-  },
-  cardTitle: {
-    color: theme.colors.inkSoft,
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    fontFamily: theme.fonts.body,
-  },
-  cardPrimary: {
-    color: theme.colors.ink,
-    fontSize: 28,
-    lineHeight: 34,
-    fontWeight: "900",
-    fontFamily: theme.fonts.display,
-  },
-  metaGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  metaChip: {
-    flex: 1,
-    minWidth: "30%",
-    borderRadius: theme.radius.lg,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: theme.colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    gap: 4,
-  },
-  metaIcon: {
-    fontSize: 14,
-    fontWeight: "900",
-    fontFamily: theme.fonts.body,
-  },
-  metaValue: {
-    color: theme.colors.ink,
-    fontSize: 12,
-    lineHeight: 17,
-    fontWeight: "900",
-    fontFamily: theme.fonts.body,
-  },
-  metaGridBottom: {
-    flexDirection: "row",
+    shadowColor: "#000000",
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 1,
     gap: 10,
   },
-  metaLine: {
-    flex: 1,
-    minWidth: 0,
-    paddingVertical: 4,
+  todayHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
-  metaLineLabel: {
+  todayTitle: {
+    color: theme.colors.ink,
+    fontSize: 13,
+    fontWeight: "900",
+    letterSpacing: 0.5,
+    fontFamily: theme.fonts.body,
+  },
+  todayPercent: {
     color: theme.colors.inkSoft,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
   },
-  metaLineValueRow: {
+  todayRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-end",
     gap: 6,
-    marginTop: 4,
   },
-  metaLineValue: {
+  todaySteps: {
     color: theme.colors.ink,
-    fontSize: 12,
+    fontSize: 30,
+    lineHeight: 34,
     fontWeight: "900",
-    flex: 1,
+    letterSpacing: -0.8,
+    fontFamily: theme.fonts.display,
+  },
+  todayGoal: {
+    color: theme.colors.muted,
+    fontSize: 13,
+    fontWeight: "800",
+    paddingBottom: 4,
     fontFamily: theme.fonts.body,
   },
-  metaSwatch: {
-    width: 16,
-    height: 16,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.08)",
+  track: {
+    height: 10,
+    borderRadius: theme.radius.pill,
+    overflow: "hidden",
+    backgroundColor: "#efefed",
+  },
+  fill: {
+    height: "100%",
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.colors.ink,
   },
 });
