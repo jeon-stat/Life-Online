@@ -193,7 +193,7 @@ export function FriendsScreen() {
     [galleryCardWidth],
   );
   const expandedPreviewSize = useMemo(
-    () => Math.max(220, Math.min(360, Math.round(width - theme.spacing.md * 4))),
+    () => Math.max(240, Math.min(420, Math.round(width - theme.spacing.md * 2))),
     [width],
   );
 
@@ -1272,6 +1272,7 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     flexShrink: 0,
+    marginHorizontal: -theme.spacing.md,
   },
   modalStatsRow: {
     flexDirection: "row",
