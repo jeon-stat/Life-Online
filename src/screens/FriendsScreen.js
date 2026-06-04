@@ -180,7 +180,7 @@ export function FriendsScreen() {
     return Math.max(104, Math.min(210, baseWidth));
   }, [width]);
 
-  const previewSize = useMemo(() => Math.max(62, Math.min(126, Math.round(cardWidth * 0.68))), [cardWidth]);
+  const previewSize = useMemo(() => Math.max(72, Math.min(140, Math.round(cardWidth * 0.78))), [cardWidth]);
   const galleryCardWidth = useMemo(() => {
     const horizontalPadding = theme.spacing.md * 2;
     const usableWidth = Math.max(0, width - horizontalPadding);
