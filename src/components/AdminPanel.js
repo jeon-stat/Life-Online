@@ -35,7 +35,7 @@ const ENERGY_6_SPECIAL_OPTIONS = [
   { key: "hipHopDancing", label: "Special 1" },
 ];
 
-export function AdminPanel({ admin, behavior }) {
+export function AdminPanel({ admin, behavior, onClose }) {
   if (!admin?.visible || !admin?.canOverride) {
     return null;
   }
@@ -52,10 +52,23 @@ export function AdminPanel({ admin, behavior }) {
 
   return (
     <View style={styles.shell}>
-      <Text style={styles.title}>개발자 패널</Text>
-      <Text style={styles.caption}>
-        에너지 단계, 스페셜 동작, 장기 상태, 피부톤만 조작할 수 있는 개발자용 패널이에요.
-      </Text>
+      <View style={styles.headerRow}>
+        <View style={styles.headerCopy}>
+          <Text style={styles.title}>개발자 패널</Text>
+          <Text style={styles.caption}>
+            에너지 단계, 스페셜 동작, 장기 상태, 피부톤만 조작할 수 있는 개발자용 패널이에요.
+          </Text>
+        </View>
+
+        <Pressable
+          onPress={onClose}
+          style={styles.closeButton}
+          accessibilityRole="button"
+          accessibilityLabel="Close admin panel"
+        >
+          <Text style={styles.closeButtonLabel}>×</Text>
+        </Pressable>
+      </View>
 
       <View style={styles.summaryCard}>
         <SummaryLine label="Current Energy" value={`${currentEnergyLevel} / ${currentEnergyLabel}`} />
@@ -223,6 +236,16 @@ const styles = StyleSheet.create({
     elevation: 3,
     gap: 12,
   },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  headerCopy: {
+    flex: 1,
+    gap: 4,
+  },
   title: {
     color: theme.colors.ink,
     fontSize: 17,
@@ -233,6 +256,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     fontWeight: "700",
+  },
+  closeButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  closeButtonLabel: {
+    color: theme.colors.ink,
+    fontSize: 18,
+    fontWeight: "900",
+    lineHeight: 18,
   },
   summaryCard: {
     borderRadius: theme.radius.lg,

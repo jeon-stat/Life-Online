@@ -158,7 +158,7 @@ function AppShell({ activeTab, onChangeTab }) {
         {admin?.visible && admin?.canOverride ? (
           <View style={styles.adminPanelOverlay} pointerEvents="box-none">
             <ScrollView contentContainerStyle={styles.adminPanelScrollContent} showsVerticalScrollIndicator={false}>
-              <AdminPanel admin={admin} behavior={viewState.behavior} />
+              <AdminPanel admin={admin} behavior={viewState.behavior} onClose={admin.toggleVisible} />
             </ScrollView>
           </View>
         ) : null}
