@@ -456,39 +456,45 @@ export function FriendsScreen() {
                   </Pressable>
                 </View>
 
-                <View style={styles.modalSceneWrap}>
-                  <FriendPreview character={previewCharacter} state={characterViewState} size={expandedPreviewSize} />
-                </View>
-
-                <View style={styles.modalStatsRow}>
-                  <StatBlock label="최근 7일" value={`${formatNumber(selectedFriend.weeklySteps)}보`} />
-                  <StatBlock label="연속" value={`${selectedFriend.streak}일`} />
-                  <StatBlock label="상태" value={getLongTermLabel(selectedFriend.longTermState)} />
-                </View>
-
-                <View style={styles.modalGroupCard}>
-                  <View style={styles.modalSectionHeader}>
-                    <Text style={styles.modalSectionTitle}>그룹</Text>
-                    <Text style={styles.modalSectionMeta}>{Math.max(0, selectedFriendGroupIds.length - 1)}개</Text>
+                <ScrollView
+                  style={styles.modalScroll}
+                  contentContainerStyle={styles.modalScrollContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                  <View style={styles.modalSceneWrap}>
+                    <FriendPreview character={previewCharacter} state={characterViewState} size={expandedPreviewSize} />
                   </View>
-                  <View style={styles.groupChecklist}>
-                    {selectableGroups.map((group) => {
-                      const checked = selectedFriendGroupIds.includes(group.id);
-                      return (
-                        <Pressable
-                          key={group.id}
-                          onPress={() => toggleMembership(selectedFriend.id, group.id)}
-                          style={[styles.checkRow, checked && styles.checkRowChecked]}
-                        >
-                          <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
-                            {checked ? <Text style={styles.checkboxMark}>✓</Text> : null}
-                          </View>
-                          <Text style={styles.checkLabel}>{group.name}</Text>
-                        </Pressable>
-                      );
-                    })}
+
+                  <View style={styles.modalStatsRow}>
+                    <StatBlock label="최근 7일" value={`${formatNumber(selectedFriend.weeklySteps)}보`} />
+                    <StatBlock label="연속" value={`${selectedFriend.streak}일`} />
+                    <StatBlock label="상태" value={getLongTermLabel(selectedFriend.longTermState)} />
                   </View>
-                </View>
+
+                  <View style={styles.modalGroupCard}>
+                    <View style={styles.modalSectionHeader}>
+                      <Text style={styles.modalSectionTitle}>그룹</Text>
+                      <Text style={styles.modalSectionMeta}>{Math.max(0, selectedFriendGroupIds.length - 1)}개</Text>
+                    </View>
+                    <View style={styles.groupChecklist}>
+                      {selectableGroups.map((group) => {
+                        const checked = selectedFriendGroupIds.includes(group.id);
+                        return (
+                          <Pressable
+                            key={group.id}
+                            onPress={() => toggleMembership(selectedFriend.id, group.id)}
+                            style={[styles.checkRow, checked && styles.checkRowChecked]}
+                          >
+                            <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+                              {checked ? <Text style={styles.checkboxMark}>✓</Text> : null}
+                            </View>
+                            <Text style={styles.checkLabel}>{group.name}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                </ScrollView>
               </>
             ) : null}
           </Pressable>
@@ -1213,6 +1219,15 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 14,
     maxHeight: "92%",
+    overflow: "hidden",
+  },
+  modalScroll: {
+    flexGrow: 0,
+    flexShrink: 1,
+  },
+  modalScrollContent: {
+    gap: 14,
+    paddingBottom: 10,
   },
   modalHeader: {
     flexDirection: "row",
@@ -1256,6 +1271,7 @@ const styles = StyleSheet.create({
   modalSceneWrap: {
     width: "100%",
     alignItems: "center",
+    flexShrink: 0,
   },
   modalStatsRow: {
     flexDirection: "row",
