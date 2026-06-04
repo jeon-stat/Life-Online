@@ -4,8 +4,12 @@ import { CharacterStage } from "./CharacterStage";
 
 const BASE_STAGE_WIDTH = 360;
 const BASE_STAGE_HEIGHT = 500;
-const DETAIL_CAMERA_POSITION = [0, 1.56, 6.9];
-const DETAIL_FOV = 24;
+const DETAIL_MINI_WORLD = {
+  radius: 10.8,
+  centerOffsetY: -10.55,
+  characterScale: 0.5,
+  sphereThetaLength: Math.PI,
+};
 
 export function FriendCharacterPreview({ character, state, size = 112, variant = "card" }) {
   const scale = size / BASE_STAGE_WIDTH;
@@ -19,8 +23,7 @@ export function FriendCharacterPreview({ character, state, size = 112, variant =
         state={state}
         presentation="full"
         scale={scale}
-        cameraPosition={isDetail ? DETAIL_CAMERA_POSITION : undefined}
-        fov={isDetail ? DETAIL_FOV : undefined}
+        miniWorldOverride={isDetail ? DETAIL_MINI_WORLD : undefined}
         onInteractionChange={undefined}
       />
     </View>

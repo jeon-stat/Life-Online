@@ -119,6 +119,7 @@ export function CharacterStage({
   height: heightOverride = null,
   cameraPosition: cameraPositionOverride = null,
   fov: fovOverride = null,
+  miniWorld: miniWorldOverride = null,
 }) {
   const preset = PRESENTATION_PRESETS[presentation] ?? PRESENTATION_PRESETS.full;
   const stageHeight = heightOverride ?? Math.round(preset.stageHeight * scale);
@@ -202,7 +203,7 @@ export function CharacterStage({
           state={state}
           specialAction={specialAction}
           modelBaseY={preset.modelBaseY}
-          miniWorld={preset.miniWorld}
+          miniWorld={miniWorldOverride ?? preset.miniWorld}
           characterScale={preset.characterScale}
         />
       </StageCanvas>
