@@ -52,7 +52,7 @@ const LONG_TERM_META = {
 export function FriendsScreen() {
   const { currentUser } = useAuth();
   const { today, history, goal, admin } = useStepData();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
 
   const [viewMode, setViewMode] = useState("ranking");
   const [rankMode, setRankMode] = useState("daily");
@@ -63,6 +63,7 @@ export function FriendsScreen() {
   const [newGroupName, setNewGroupName] = useState("");
   const [renameGroupName, setRenameGroupName] = useState("");
   const [selectedFriendId, setSelectedFriendId] = useState(null);
+  const [selectedRankingType, setSelectedRankingType] = useState("daily");
 
   const characterViewState = useMemo(
     () => buildCharacterViewModel({ todayRecord: today, history, goal, admin }),
@@ -110,6 +111,10 @@ export function FriendsScreen() {
     setFriendGroupState((current) => {
       const next = { ...current };
       for (const friend of friends) {
+        if (!friend?.id) {
+          continue;
+        }
+
         if (!next[friend.id]) {
           next[friend.id] = getFriendGroupIds(friend);
         }
@@ -138,8 +143,8 @@ export function FriendsScreen() {
   }, [selectedGroup]);
 
   useEffect(() => {
-    if (selectedFriendId && mergedFriends.every((friend) => friend.id !== selectedFriendId)) {
-      setSelectedFriendId(null);
+    if (!selectedFriendId) {
+      return;
     }
   }, [mergedFriends, selectedFriendId]);
 
@@ -168,8 +173,14 @@ export function FriendsScreen() {
   );
 
   const selectedFriend = useMemo(
-    () => (selectedFriendId ? listFriends.find((friend) => friend.id === selectedFriendId) ?? null : null),
+    () => (selectedFriendId ? listFriends.find((friend) => friend?.id === selectedFriendId) ?? null : null),
     [listFriends, selectedFriendId],
+  );
+
+  const activeDetailRankingType = selectedFriendId ? selectedRankingType : rankMode;
+  const selectedFriendStats = useMemo(
+    () => buildDetailStats(selectedFriend, activeDetailRankingType, goal),
+    [activeDetailRankingType, goal, selectedFriend],
   );
 
   const cardWidth = useMemo(() => {
@@ -192,10 +203,22 @@ export function FriendsScreen() {
     () => Math.max(88, Math.min(124, Math.round(galleryCardWidth * 0.92))),
     [galleryCardWidth],
   );
-  const expandedPreviewSize = useMemo(
-    () => Math.max(220, Math.min(360, Math.round(width - theme.spacing.md * 4))),
-    [width],
-  );
+  const expandedPreviewSize = useMemo(() => {
+    const availableWidth = Math.max(0, width - theme.spacing.md * 6);
+    const availableHeight = Math.max(0, Math.round(height * 0.34));
+    return Math.max(180, Math.min(300, Math.round(Math.min(availableWidth, availableHeight))));
+  }, [height, width]);
+
+  const modalHeight = useMemo(() => {
+    const safeHeight = Math.max(0, height - theme.spacing.lg * 2);
+    const idealHeight = Math.min(Math.round(height * 0.82), 660);
+
+    if (!safeHeight) {
+      return idealHeight;
+    }
+
+    return Math.min(Math.max(360, idealHeight), safeHeight);
+  }, [height]);
 
   const createGroup = () => {
     const name = newGroupName.trim();
@@ -229,6 +252,17 @@ export function FriendsScreen() {
 
   const selectedFriendGroupIds = selectedFriend ? getFriendGroupIds(selectedFriend, friendGroupState) : [];
   const selectableGroups = groups.filter((group) => !group.system);
+  const openFriendDetail = (friendId) => {
+    if (!friendId) {
+      return;
+    }
+
+    setSelectedRankingType(rankMode);
+    setSelectedFriendId(friendId);
+  };
+  const closeFriendDetail = () => {
+    setSelectedFriendId(null);
+  };
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -380,16 +414,16 @@ export function FriendsScreen() {
             <View style={styles.gridWrap}>
               {rankedFriends.map((friend, index) => (
                 <FriendRankCard
-                  key={friend.id}
+                  key={friend?.id ?? `friend-rank-${index}`}
                   friend={friend}
                   rank={index + 1}
-                  isMe={Boolean(friend.isMe)}
+                  isMe={Boolean(friend?.isMe)}
                   rankMode={rankMode}
                   cardWidth={cardWidth}
                   previewSize={previewSize}
                   previewCharacter={previewCharacter}
                   characterViewState={characterViewState}
-                  onPress={() => setSelectedFriendId(friend.id)}
+                  onPress={() => openFriendDetail(friend?.id)}
                 />
               ))}
             </View>
@@ -405,12 +439,12 @@ export function FriendsScreen() {
           </View>
 
           <View style={styles.friendGallery}>
-            {listFriends.map((friend) => {
-              const active = friend.id === selectedFriend?.id;
+            {listFriends.map((friend, index) => {
+              const active = friend?.id === selectedFriend?.id;
               return (
                 <Pressable
-                  key={friend.id}
-                  onPress={() => setSelectedFriendId(friend.id)}
+                  key={friend?.id ?? `friend-list-${index}`}
+                  onPress={() => openFriendDetail(friend?.id)}
                   style={[
                     styles.friendGalleryCard,
                     active && styles.friendGalleryCardSelected,
@@ -422,10 +456,10 @@ export function FriendsScreen() {
                   </View>
                   <View style={styles.friendGalleryCaption}>
                     <Text style={styles.friendGridName} numberOfLines={1}>
-                      {friend.nickname}
+                      {friend?.nickname ?? "정보 없음"}
                     </Text>
                     <Text style={styles.friendGridSteps} numberOfLines={1}>
-                      👣 {formatNumber(friend.todaySteps)}
+                      👣 {formatNumber(friend?.todaySteps ?? 0)}
                     </Text>
                   </View>
                 </Pressable>
@@ -437,60 +471,62 @@ export function FriendsScreen() {
       )}
 
       <Modal
-        visible={Boolean(selectedFriend)}
+        visible={Boolean(selectedFriendId)}
         transparent
         animationType="fade"
-        onRequestClose={() => setSelectedFriendId(null)}
+        onRequestClose={closeFriendDetail}
       >
-        <Pressable style={styles.modalBackdrop} onPress={() => setSelectedFriendId(null)}>
-          <Pressable style={styles.modalCard} onPress={() => null}>
-            {selectedFriend ? (
-              <>
-                <View style={styles.modalHeader}>
-                  <View style={styles.modalHeaderText}>
-                    <Text style={styles.modalTitle}>{selectedFriend.nickname}</Text>
-                    <Text style={styles.modalHandle}>@{selectedFriend.handle}</Text>
-                  </View>
-                  <Pressable onPress={() => setSelectedFriendId(null)} style={styles.modalCloseButton}>
-                    <Text style={styles.modalCloseButtonLabel}>×</Text>
-                  </Pressable>
-                </View>
+        <Pressable style={styles.modalBackdrop} onPress={closeFriendDetail}>
+          <Pressable style={[styles.modalCard, { height: modalHeight }]} onPress={() => {}}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderText}>
+                <Text style={styles.modalTitle}>{selectedFriend?.nickname ?? "정보 없음"}</Text>
+                <Text style={styles.modalHandle}>@{selectedFriend?.handle ?? "-"}</Text>
+              </View>
+              <Pressable onPress={closeFriendDetail} style={styles.modalCloseButton}>
+                <Text style={styles.modalCloseButtonLabel}>×</Text>
+              </Pressable>
+            </View>
 
-                <View style={styles.modalSceneWrap}>
-                  <FriendPreview character={previewCharacter} state={characterViewState} size={expandedPreviewSize} />
-                </View>
+            <View style={styles.modalBody}>
+              <View style={styles.modalSceneWrap}>
+                <FriendPreview character={previewCharacter} state={characterViewState} size={expandedPreviewSize} />
+              </View>
+            </View>
 
-                <View style={styles.modalStatsRow}>
-                  <StatBlock label="최근 7일" value={`${formatNumber(selectedFriend.weeklySteps)}보`} />
-                  <StatBlock label="연속" value={`${selectedFriend.streak}일`} />
-                  <StatBlock label="상태" value={getLongTermLabel(selectedFriend.longTermState)} />
-                </View>
+            <View style={styles.modalStatsRow}>
+              {selectedFriendStats.map((stat) => (
+                <StatBlock key={stat.label} label={stat.label} value={stat.value} />
+              ))}
+            </View>
 
-                <View style={styles.modalGroupCard}>
-                  <View style={styles.modalSectionHeader}>
-                    <Text style={styles.modalSectionTitle}>그룹</Text>
-                    <Text style={styles.modalSectionMeta}>{Math.max(0, selectedFriendGroupIds.length - 1)}개</Text>
-                  </View>
-                  <View style={styles.groupChecklist}>
-                    {selectableGroups.map((group) => {
-                      const checked = selectedFriendGroupIds.includes(group.id);
-                      return (
-                        <Pressable
-                          key={group.id}
-                          onPress={() => toggleMembership(selectedFriend.id, group.id)}
-                          style={[styles.checkRow, checked && styles.checkRowChecked]}
-                        >
-                          <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
-                            {checked ? <Text style={styles.checkboxMark}>✓</Text> : null}
-                          </View>
-                          <Text style={styles.checkLabel}>{group.name}</Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                </View>
-              </>
-            ) : null}
+            <View style={styles.modalGroupCard}>
+              <View style={styles.modalSectionHeader}>
+                <Text style={styles.modalSectionTitle}>그룹</Text>
+                <Text style={styles.modalSectionMeta}>{Math.max(0, (selectedFriendGroupIds?.length ?? 0) - 1)}개</Text>
+              </View>
+              <View style={styles.groupChecklist}>
+                {selectableGroups.map((group) => {
+                  const checked = selectedFriendGroupIds.includes(group.id);
+                  return (
+                    <Pressable
+                      key={group.id}
+                      onPress={() => {
+                        if (selectedFriend?.id) {
+                          toggleMembership(selectedFriend.id, group.id);
+                        }
+                      }}
+                      style={[styles.checkRow, checked && styles.checkRowChecked]}
+                    >
+                      <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+                        {checked ? <Text style={styles.checkboxMark}>✓</Text> : null}
+                      </View>
+                      <Text style={styles.checkLabel}>{group.name}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
           </Pressable>
         </Pressable>
       </Modal>
@@ -524,7 +560,7 @@ function FriendRankCard({
               <Text style={[styles.rankBadgeLabel, { color: rankBadge.textColor }]}>{rank}</Text>
             </View>
             <Text style={styles.friendName} numberOfLines={1}>
-              {friend.nickname}
+              {friend?.nickname ?? "정보 없음"}
             </Text>
           </View>
           {isMe ? <Text style={styles.meLabel}>나</Text> : null}
@@ -592,7 +628,7 @@ function buildGroupCounts(groups, friends) {
   }
 
   for (const friend of friends) {
-    for (const groupId of friend.groupIds ?? []) {
+    for (const groupId of friend?.groupIds ?? []) {
       if (counts[groupId] != null) {
         counts[groupId] += 1;
       }
@@ -630,34 +666,136 @@ function makeGroupId(name, groups) {
   return candidate;
 }
 
+function buildDetailStats(friend, rankMode, goal) {
+  const metrics = getSafeFriendMetrics(friend);
+  const goalValue = Number(goal ?? 0);
+
+  switch (rankMode) {
+    case "weekly": {
+      const weeklyGoalRatio = goalValue > 0 ? metrics.weeklySteps / (goalValue * 7) : null;
+      return [
+        { label: "최근 7일 걸음 수", value: `${formatNumber(metrics.weeklySteps)}보` },
+        { label: "일평균 걸음 수", value: `${formatNumber(Math.round(metrics.weeklySteps / 7))}보` },
+        { label: "주간 목표 달성률", value: formatPercent(weeklyGoalRatio) },
+      ];
+    }
+    case "streak":
+      return [
+        { label: "연속 달성 일수", value: `${formatNumber(metrics.streakDays)}일` },
+        { label: "최고 연속 기록", value: `${formatNumber(metrics.bestStreak)}일` },
+        { label: "상태", value: getStreakStatusLabel(metrics) },
+      ];
+    default: {
+      const dailyGoalRatio = goalValue > 0 ? metrics.todaySteps / goalValue : null;
+      return [
+        { label: "오늘 걸음 수", value: `${formatNumber(metrics.todaySteps)}보` },
+        { label: "목표 달성률", value: formatPercent(dailyGoalRatio) },
+        { label: "상태", value: getDailyStatusLabel(metrics, goalValue) },
+      ];
+    }
+  }
+}
+
+function getSafeFriendMetrics(friend = {}) {
+  const stats = friend?.stats ?? {};
+  const todaySteps = toNumber(
+    friend?.todaySteps ?? stats?.dailySteps ?? stats?.todaySteps ?? stats?.stepsToday ?? stats?.steps ?? 0,
+  );
+  const weeklySteps = toNumber(
+    friend?.weeklySteps ?? stats?.weeklySteps ?? stats?.recent7DaysSteps ?? stats?.sevenDaySteps ?? stats?.steps ?? 0,
+  );
+  const streakDays = toNumber(friend?.streak ?? stats?.streakDays ?? stats?.consecutiveDays ?? stats?.currentStreak ?? 0);
+  const bestStreak = toNumber(friend?.bestStreak ?? stats?.bestStreak ?? stats?.maxStreak ?? stats?.recordStreak ?? streakDays);
+  const energyLevel = toNumber(friend?.energyLevel ?? stats?.energyLevel ?? 0);
+  const longTermState = friend?.longTermState ?? stats?.longTermState ?? stats?.status ?? null;
+  const status = friend?.status ?? stats?.status ?? null;
+
+  return {
+    todaySteps,
+    weeklySteps,
+    streakDays,
+    bestStreak,
+    energyLevel,
+    longTermState,
+    status,
+  };
+}
+
+function getDailyStatusLabel(metrics, goalValue) {
+  if (!metrics) {
+    return "정보 없음";
+  }
+
+  if (goalValue > 0 && metrics.todaySteps >= goalValue) {
+    return "달성";
+  }
+
+  if (metrics.todaySteps > 0) {
+    return "진행 중";
+  }
+
+  return metrics.status ?? "정보 없음";
+}
+
+function getStreakStatusLabel(metrics) {
+  if (!metrics) {
+    return "정보 없음";
+  }
+
+  if (metrics.longTermState) {
+    return getLongTermLabel(metrics.longTermState);
+  }
+
+  if (metrics.streakDays > 0) {
+    return "유지 중";
+  }
+
+  return metrics.status ?? "정보 없음";
+}
+
+function toNumber(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function formatPercent(value) {
+  if (!Number.isFinite(value)) {
+    return "-";
+  }
+
+  return `${Math.max(0, Math.round(value * 100))}%`;
+}
+
 function getModeInfo(friend, rankMode) {
+  const metrics = getSafeFriendMetrics(friend);
+
   switch (rankMode) {
     case "weekly":
       return {
         primaryLabel: "이번 주",
-        primaryValue: `${formatNumber(friend.weeklySteps)}보`,
+        primaryValue: `${formatNumber(metrics.weeklySteps)}보`,
         secondaryLeftLabel: "평균",
-        secondaryLeftValue: `${formatNumber(Math.round((friend.weeklySteps ?? 0) / 7))}보`,
+        secondaryLeftValue: `${formatNumber(Math.round(metrics.weeklySteps / 7))}보`,
         secondaryRightLabel: "E",
-        secondaryRightValue: `${friend.energyLevel}`,
+        secondaryRightValue: `${metrics.energyLevel}`,
       };
     case "streak":
       return {
         primaryLabel: "연속",
-        primaryValue: `${friend.streak}일`,
+        primaryValue: `${formatNumber(metrics.streakDays)}일`,
         secondaryLeftLabel: "주간",
-        secondaryLeftValue: `${formatNumber(friend.weeklySteps)}보`,
+        secondaryLeftValue: `${formatNumber(metrics.weeklySteps)}보`,
         secondaryRightLabel: "상태",
-        secondaryRightValue: getLongTermLabel(friend.longTermState),
+        secondaryRightValue: metrics.longTermState ? getLongTermLabel(metrics.longTermState) : "정보 없음",
       };
     default:
       return {
         primaryLabel: "오늘",
-        primaryValue: `${formatNumber(friend.todaySteps)}보`,
+        primaryValue: `${formatNumber(metrics.todaySteps)}보`,
         secondaryLeftLabel: "E",
-        secondaryLeftValue: `${friend.energyLevel}`,
+        secondaryLeftValue: `${metrics.energyLevel}`,
         secondaryRightLabel: "상태",
-        secondaryRightValue: getLongTermLabel(friend.longTermState),
+        secondaryRightValue: metrics.longTermState ? getLongTermLabel(metrics.longTermState) : "정보 없음",
       };
   }
 }
@@ -1204,15 +1342,24 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.lg,
     backgroundColor: "rgba(17,17,17,0.28)",
     justifyContent: "center",
+    alignItems: "center",
   },
   modalCard: {
+    width: "100%",
     borderRadius: 28,
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: 16,
+    paddingBottom: 160,
     gap: 14,
-    maxHeight: "92%",
+    overflow: "hidden",
+    position: "relative",
+  },
+  modalBody: {
+    flex: 1,
+    minHeight: 0,
+    justifyContent: "center",
   },
   modalHeader: {
     flexDirection: "row",
@@ -1256,13 +1403,21 @@ const styles = StyleSheet.create({
   modalSceneWrap: {
     width: "100%",
     alignItems: "center",
+    justifyContent: "center",
+    flex: 1,
   },
   modalStatsRow: {
+    position: "absolute",
+    left: 20,
+    right: 20,
+    bottom: 20,
     flexDirection: "row",
     gap: 8,
+    zIndex: 3,
   },
   statBlock: {
     flex: 1,
+    minWidth: 0,
     borderRadius: theme.radius.lg,
     backgroundColor: theme.colors.surfaceMuted,
     borderWidth: 1,
@@ -1292,6 +1447,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
     gap: 10,
+    display: "none",
   },
   modalSectionHeader: {
     flexDirection: "row",
