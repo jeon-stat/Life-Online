@@ -180,7 +180,7 @@ export function FriendsScreen() {
     return Math.max(104, Math.min(210, baseWidth));
   }, [width]);
 
-  const previewSize = useMemo(() => Math.max(84, Math.min(118, Math.round(cardWidth * 0.86))), [cardWidth]);
+  const previewSize = useMemo(() => Math.max(96, Math.min(132, Math.round(cardWidth * 0.92))), [cardWidth]);
   const galleryCardWidth = useMemo(() => {
     const horizontalPadding = theme.spacing.md * 2;
     const usableWidth = Math.max(0, width - horizontalPadding);
@@ -189,7 +189,7 @@ export function FriendsScreen() {
     return Math.max(96, Math.min(140, baseWidth));
   }, [width]);
   const galleryPreviewSize = useMemo(
-    () => Math.max(72, Math.min(112, Math.round(galleryCardWidth * 0.82))),
+    () => Math.max(88, Math.min(124, Math.round(galleryCardWidth * 0.92))),
     [galleryCardWidth],
   );
   const expandedPreviewSize = useMemo(
@@ -1025,7 +1025,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: theme.colors.border,
-    aspectRatio: 0.58,
+    aspectRatio: 0.54,
     overflow: "hidden",
   },
   friendCardContent: {
@@ -1089,8 +1089,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: -12,
     right: -12,
-    top: 4,
-    bottom: 58,
+    top: 0,
+    bottom: 52,
     alignItems: "center",
     justifyContent: "center",
     pointerEvents: "none",
@@ -1157,7 +1157,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: theme.colors.border,
-    aspectRatio: 0.62,
+    aspectRatio: 0.58,
     overflow: "hidden",
     gap: 8,
   },
