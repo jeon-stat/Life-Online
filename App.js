@@ -12,6 +12,7 @@ import { CharacterScreen } from "./src/screens/CharacterScreen.js";
 import { FriendsScreen } from "./src/screens/FriendsScreen.js";
 import { AdminPanel } from "./src/components/AdminPanel.js";
 import { AccountMenu } from "./src/components/AccountMenu.js";
+import { ShopMenu } from "./src/components/ShopMenu.js";
 import { BottomTabs } from "./src/components/BottomTabs.js";
 import { theme } from "./src/constants/theme.js";
 import { buildCharacterViewModel } from "./src/game/characterState.js";
@@ -22,10 +23,10 @@ TextInput.defaultProps = TextInput.defaultProps ?? {};
 TextInput.defaultProps.style = [TextInput.defaultProps.style, { fontFamily: theme.fonts.body }];
 
 const TABS = [
-  { id: "home", label: "\uC0B0\uCC45", icon: "⌂" },
-  { id: "history", label: "\uCD94\uC5B5", icon: "▤" },
-  { id: "character", label: "\uCE90\uB9AD\uD130", icon: "◌" },
-  { id: "friends", label: "\uCE5C\uAD6C", icon: "◔" },
+  { id: "home", label: "산책", icon: "⌂" },
+  { id: "history", label: "추억", icon: "◌" },
+  { id: "character", label: "캐릭터", icon: "◐" },
+  { id: "friends", label: "친구", icon: "◍" },
 ];
 
 const STEP_DATA_MODE = Platform.OS === "web" ? "mock" : "auto";
@@ -114,6 +115,7 @@ function AppShell({ activeTab, onChangeTab }) {
   const { today, history, goal, admin } = useStepData();
   const { currentUser, signOut } = useAuth();
   const [menuVisible, setMenuVisible] = useState(false);
+  const [shopVisible, setShopVisible] = useState(false);
   const viewState = useMemo(
     () =>
       buildCharacterViewModel({
@@ -136,6 +138,15 @@ function AppShell({ activeTab, onChangeTab }) {
         </View>
 
         <Pressable
+          onPress={() => setShopVisible(true)}
+          style={styles.shopToggle}
+          accessibilityRole="button"
+          accessibilityLabel="Open shop"
+        >
+          <Text style={styles.shopToggleLabel}>🛍</Text>
+        </Pressable>
+
+        <Pressable
           onPress={() => setMenuVisible(true)}
           style={styles.menuToggle}
           accessibilityRole="button"
@@ -155,11 +166,11 @@ function AppShell({ activeTab, onChangeTab }) {
         {admin?.visible ? (
           <Pressable
             onPress={admin.toggleVisible}
-            style={styles.adminToggle}
+            style={[styles.adminToggle, styles.adminToggleActive]}
             accessibilityRole="button"
             accessibilityLabel="Hide admin panel"
           >
-            <Text style={styles.adminToggleLabel}>Hide Admin</Text>
+            <Text style={[styles.adminToggleLabel, styles.adminToggleLabelActive]}>Admin</Text>
           </Pressable>
         ) : admin?.canOverride ? (
           <Pressable
@@ -168,7 +179,7 @@ function AppShell({ activeTab, onChangeTab }) {
             accessibilityRole="button"
             accessibilityLabel="Show admin panel"
           >
-            <Text style={styles.adminToggleLabel}>Show Admin</Text>
+            <Text style={styles.adminToggleLabel}>Admin</Text>
           </Pressable>
         ) : null}
 
@@ -183,6 +194,8 @@ function AppShell({ activeTab, onChangeTab }) {
             signOut();
           }}
         />
+
+        <ShopMenu visible={shopVisible} onClose={() => setShopVisible(false)} />
 
         <BottomTabs items={TABS} activeId={activeTab} onChange={onChangeTab} />
       </View>
@@ -216,20 +229,45 @@ const styles = StyleSheet.create({
   },
   adminToggle: {
     position: "absolute",
-    top: 14,
-    left: 14,
-    zIndex: 30,
+    right: 14,
+    bottom: 96,
+    zIndex: 35,
     borderRadius: theme.radius.pill,
     paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: "rgba(255,255,255,0.9)",
     borderWidth: 1,
-    borderColor: "#dfc8b4",
+    borderColor: theme.colors.border,
+  },
+  adminToggleActive: {
+    backgroundColor: "#111111",
+    borderColor: "#111111",
   },
   adminToggleLabel: {
     color: theme.colors.ink,
     fontSize: 11,
     fontWeight: "900",
+  },
+  adminToggleLabelActive: {
+    color: "#ffffff",
+  },
+  shopToggle: {
+    position: "absolute",
+    top: 14,
+    left: 14,
+    zIndex: 30,
+    width: 38,
+    height: 38,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  shopToggleLabel: {
+    fontSize: 18,
+    lineHeight: 18,
   },
   menuToggle: {
     position: "absolute",
