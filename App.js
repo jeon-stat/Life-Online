@@ -11,6 +11,7 @@ import { HistoryScreen } from "./src/screens/HistoryScreen.js";
 import { CharacterScreen } from "./src/screens/CharacterScreen.js";
 import { FriendsScreen } from "./src/screens/FriendsScreen.js";
 import { AdminPanel } from "./src/components/AdminPanel.js";
+import { AccountMenu } from "./src/components/AccountMenu.js";
 import { BottomTabs } from "./src/components/BottomTabs.js";
 import { theme } from "./src/constants/theme.js";
 import { buildCharacterViewModel } from "./src/game/characterState.js";
@@ -111,6 +112,8 @@ function AppContent() {
 
 function AppShell({ activeTab, onChangeTab }) {
   const { today, history, goal, admin } = useStepData();
+  const { currentUser, signOut } = useAuth();
+  const [menuVisible, setMenuVisible] = useState(false);
   const viewState = useMemo(
     () =>
       buildCharacterViewModel({
@@ -131,6 +134,15 @@ function AppShell({ activeTab, onChangeTab }) {
           {activeTab === "character" ? <CharacterScreen /> : null}
           {activeTab === "friends" ? <FriendsScreen /> : null}
         </View>
+
+        <Pressable
+          onPress={() => setMenuVisible(true)}
+          style={styles.menuToggle}
+          accessibilityRole="button"
+          accessibilityLabel="Open account menu"
+        >
+          <Text style={styles.menuToggleLabel}>☰</Text>
+        </Pressable>
 
         {admin?.visible && admin?.canOverride ? (
           <View style={styles.adminPanelOverlay} pointerEvents="box-none">
@@ -159,6 +171,18 @@ function AppShell({ activeTab, onChangeTab }) {
             <Text style={styles.adminToggleLabel}>Show Admin</Text>
           </Pressable>
         ) : null}
+
+        <AccountMenu
+          visible={menuVisible}
+          currentUser={currentUser}
+          totalSteps={viewState.growth?.lifetimeSteps ?? 0}
+          goal={goal}
+          onClose={() => setMenuVisible(false)}
+          onLogout={() => {
+            setMenuVisible(false);
+            signOut();
+          }}
+        />
 
         <BottomTabs items={TABS} activeId={activeTab} onChange={onChangeTab} />
       </View>
@@ -206,5 +230,25 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 11,
     fontWeight: "900",
+  },
+  menuToggle: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+    zIndex: 30,
+    width: 38,
+    height: 38,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.9)",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  menuToggleLabel: {
+    color: theme.colors.ink,
+    fontSize: 18,
+    fontWeight: "900",
+    lineHeight: 18,
   },
 });

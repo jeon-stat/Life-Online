@@ -1,6 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { useAuth } from "../auth/AuthProvider.js";
 import { useStepData } from "../data/stepDataProvider.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
 import { theme } from "../constants/theme.js";
@@ -8,46 +7,47 @@ import { theme } from "../constants/theme.js";
 const LONG_TERM_META = {
   WEAK: {
     label: "허약",
-    description: "아직은 자주 쉬고 싶어해요.",
-    color: "#555555",
+    description: "아직은 천천히 쉬어가며 자라는 단계예요.",
+    icon: "◌",
     softBg: "#f5f5f3",
     border: "#e7e7e4",
-    icon: "○",
+    color: "#555555",
   },
   HEALTHY: {
     label: "건강",
-    description: "안정적으로 산책할 수 있어요.",
-    color: "#111111",
+    description: "안정적으로 산책을 이어가는 상태예요.",
+    icon: "◎",
     softBg: "#f7f7f5",
     border: "#e7e7e4",
-    icon: "◌",
+    color: "#111111",
   },
   ACTIVE: {
     label: "활발",
-    description: "움직임이 가볍고 에너지가 넘쳐요.",
-    color: "#111111",
+    description: "걸음과 움직임이 가볍고 생기가 넘쳐요.",
+    icon: "●",
     softBg: "#f3f3f1",
-    border: "#e7e7e4",
-    icon: "✦",
+    border: "#e4e4df",
+    color: "#111111",
   },
 };
 
 const CUSTOMIZATION_SLOTS = [
-  { key: "hair", label: "헤어", note: "준비 중" },
-  { key: "clothes", label: "의상", note: "준비 중" },
-  { key: "expression", label: "표정", note: "준비 중" },
-  { key: "background", label: "배경", note: "준비 중" },
+  { key: "hair", label: "헤어" },
+  { key: "clothes", label: "의상" },
+  { key: "expression", label: "표정" },
+  { key: "background", label: "배경" },
 ];
 
 export function CharacterScreen() {
-  const { currentUser, signOut } = useAuth();
   const { today, history, goal, admin } = useStepData();
   const viewState = buildCharacterViewModel({ todayRecord: today, history, goal, admin });
 
-  const profileName = currentUser?.nickname?.trim() || "내 산책 파트너";
-  const profileHandle = currentUser?.handle ? `@${currentUser.handle}` : "@walk";
   const longTermMeta = LONG_TERM_META[viewState.longTermState] ?? LONG_TERM_META.HEALTHY;
   const growth = viewState.growth ?? {};
+  const skinTones = admin?.skinTones ?? [];
+  const mainActions = viewState.behavior?.mainActions ?? [];
+  const specialActions = viewState.behavior?.specialActions ?? [];
+  const activeActionKey = viewState.currentAction?.key ?? viewState.animationState;
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -55,36 +55,29 @@ export function CharacterScreen() {
         <Text style={styles.pageTitle}>캐릭터</Text>
       </View>
 
-      <View style={styles.profileCard}>
-        <View style={styles.profileHeader}>
-          <View style={styles.profileCopy}>
-            <Text style={styles.profileKicker}>내 캐릭터</Text>
-            <Text style={styles.profileName}>{profileName}</Text>
-            <Text style={styles.profileHandle}>{profileHandle}</Text>
+      <View style={styles.heroCard}>
+        <View style={styles.heroHeader}>
+          <View style={styles.heroCopy}>
+            <Text style={styles.heroKicker}>현재 상태</Text>
+            <Text style={styles.heroTitle}>{viewState.statusLabel}</Text>
+            <Text style={styles.heroSubtitle}>{viewState.currentAction?.label ?? viewState.animationClip}</Text>
           </View>
 
           <View style={[styles.stateBadge, { backgroundColor: longTermMeta.softBg, borderColor: longTermMeta.border }]}>
-            <Text style={styles.stateBadgeLabel}>{longTermMeta.icon}</Text>
-            <Text style={[styles.stateBadgeValue, { color: longTermMeta.color }]}>{longTermMeta.label}</Text>
+            <Text style={styles.stateBadgeIcon}>{longTermMeta.icon}</Text>
+            <Text style={[styles.stateBadgeLabel, { color: longTermMeta.color }]}>{longTermMeta.label}</Text>
           </View>
         </View>
 
-        <View style={styles.profileGrid}>
-          <MiniStat icon="•" label="누적" value={`${formatNumber(growth.lifetimeSteps ?? 0)}보`} />
-          <MiniStat icon="↗" label="달성" value={`${growth.achievedDays ?? 0}일`} />
-          <MiniStat icon="✦" label="연속" value={`${growth.streak ?? 0}일`} />
-        </View>
-
-        <View style={styles.profileFooter}>
-          <Pressable onPress={signOut} style={styles.signOutButton}>
-            <Text style={styles.signOutLabel}>로그아웃</Text>
-          </Pressable>
+        <View style={styles.heroMetrics}>
+          <MetricChip label="누적" value={`${formatNumber(growth.lifetimeSteps ?? 0)}보`} />
+          <MetricChip label="연속" value={`${growth.streak ?? 0}일`} />
+          <MetricChip label="달성" value={`${growth.achievedDays ?? 0}일`} />
         </View>
       </View>
 
       <View style={styles.card}>
         <SectionHeader title="장기 상태" />
-
         <View style={[styles.longTermBanner, { backgroundColor: longTermMeta.softBg, borderColor: longTermMeta.border }]}>
           <Text style={styles.longTermIcon}>{longTermMeta.icon}</Text>
           <View style={styles.longTermCopy}>
@@ -96,26 +89,36 @@ export function CharacterScreen() {
 
       <View style={styles.card}>
         <SectionHeader title="성장 기록" />
-
         <View style={styles.metricGrid}>
-          <MetricCard icon="•" label="누적" value={`${formatNumber(growth.lifetimeSteps ?? 0)}보`} />
-          <MetricCard icon="↗" label="달성" value={`${growth.achievedDays ?? 0}일`} />
-          <MetricCard icon="✦" label="연속" value={`${growth.streak ?? 0}일`} />
-          <MetricCard icon="◌" label="기록" value={growth.growthLabel ?? "성장 중"} />
+          <MetricCard label="누적 걸음" value={`${formatNumber(growth.lifetimeSteps ?? 0)}보`} />
+          <MetricCard label="달성일" value={`${growth.achievedDays ?? 0}일`} />
+          <MetricCard label="연속일" value={`${growth.streak ?? 0}일`} />
+          <MetricCard label="성장 단계" value={growth.growthLabel ?? "성장 중"} />
+        </View>
+      </View>
+
+      <View style={styles.card}>
+        <SectionHeader title="획득한 행동" />
+        <View style={styles.actionGrid}>
+          {mainActions.map((action) => (
+            <ActionChip key={action.key} label={action.label} active={action.key === activeActionKey} />
+          ))}
+          {specialActions.map((action) => (
+            <ActionChip key={action.key} label={action.label} active={action.key === activeActionKey} muted />
+          ))}
         </View>
       </View>
 
       <View style={styles.card}>
         <SectionHeader title="피부 톤" />
-
         <View style={styles.skinToneGrid}>
-          {(admin.skinTones ?? []).map((tone) => {
-            const selected = admin.skinToneId === tone.id;
+          {skinTones.map((tone) => {
+            const selected = admin?.skinToneId === tone.id;
 
             return (
               <Pressable
                 key={tone.id}
-                onPress={() => admin.setSkinTone?.(tone.id)}
+                onPress={() => admin?.setSkinTone?.(tone.id)}
                 style={[styles.skinToneChip, selected && styles.skinToneChipSelected]}
               >
                 <View style={[styles.skinToneSwatch, { backgroundColor: tone.color }]} />
@@ -126,13 +129,12 @@ export function CharacterScreen() {
       </View>
 
       <View style={styles.card}>
-        <SectionHeader title="준비 중" />
-
+        <SectionHeader title="꾸미기" />
         <View style={styles.customizationGrid}>
           {CUSTOMIZATION_SLOTS.map((slot) => (
             <View key={slot.key} style={styles.placeholderCard}>
               <Text style={styles.placeholderLabel}>{slot.label}</Text>
-              <Text style={styles.placeholderNote}>{slot.note}</Text>
+              <Text style={styles.placeholderNote}>준비 중</Text>
             </View>
           ))}
         </View>
@@ -149,24 +151,28 @@ function SectionHeader({ title }) {
   );
 }
 
-function MiniStat({ icon, label, value }) {
+function MetricChip({ label, value }) {
   return (
-    <View style={styles.infoTile}>
-      <Text style={styles.infoTileLabel}>
-        {icon} {label}
-      </Text>
-      <Text style={styles.infoTileValue}>{value}</Text>
+    <View style={styles.metricChip}>
+      <Text style={styles.metricChipLabel}>{label}</Text>
+      <Text style={styles.metricChipValue}>{value}</Text>
     </View>
   );
 }
 
-function MetricCard({ icon, label, value }) {
+function MetricCard({ label, value }) {
   return (
     <View style={styles.metricCard}>
-      <Text style={styles.metricLabel}>
-        {icon} {label}
-      </Text>
+      <Text style={styles.metricLabel}>{label}</Text>
       <Text style={styles.metricValue}>{value}</Text>
+    </View>
+  );
+}
+
+function ActionChip({ label, active = false, muted = false }) {
+  return (
+    <View style={[styles.actionChip, active && styles.actionChipActive, muted && styles.actionChipMuted]}>
+      <Text style={[styles.actionChipLabel, active && styles.actionChipLabelActive]}>{label}</Text>
     </View>
   );
 }
@@ -197,7 +203,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
     fontFamily: theme.fonts.display,
   },
-  profileCard: {
+  heroCard: {
     borderRadius: theme.radius.xl,
     padding: 18,
     backgroundColor: theme.colors.surface,
@@ -210,33 +216,36 @@ const styles = StyleSheet.create({
     elevation: 3,
     gap: 14,
   },
-  profileHeader: {
+  heroHeader: {
     flexDirection: "row",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 12,
   },
-  profileCopy: {
+  heroCopy: {
     flex: 1,
     gap: 4,
   },
-  profileKicker: {
+  heroKicker: {
     color: theme.colors.inkSoft,
     fontSize: 11,
     fontWeight: "900",
     letterSpacing: 1.1,
     textTransform: "uppercase",
+    fontFamily: theme.fonts.body,
   },
-  profileName: {
+  heroTitle: {
     color: theme.colors.ink,
     fontSize: 26,
     lineHeight: 32,
     fontWeight: "900",
     fontFamily: theme.fonts.display,
   },
-  profileHandle: {
+  heroSubtitle: {
     color: theme.colors.inkSoft,
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   stateBadge: {
     minWidth: 96,
@@ -247,64 +256,42 @@ const styles = StyleSheet.create({
     gap: 2,
     alignItems: "flex-start",
   },
-  stateBadgeLabel: {
+  stateBadgeIcon: {
     fontSize: 14,
     fontWeight: "900",
   },
-  stateBadgeValue: {
+  stateBadgeLabel: {
     fontSize: 13,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
-  profileGrid: {
+  heroMetrics: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
   },
-  infoTile: {
-    width: "31.8%",
+  metricChip: {
+    flex: 1,
+    minWidth: "30%",
     borderRadius: theme.radius.lg,
-    padding: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     backgroundColor: theme.colors.surfaceSoft,
     borderWidth: 1,
     borderColor: theme.colors.border,
     gap: 4,
   },
-  infoTileLabel: {
+  metricChipLabel: {
     color: theme.colors.inkSoft,
     fontSize: 10,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
   },
-  infoTileValue: {
+  metricChipValue: {
     color: theme.colors.ink,
     fontSize: 13,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
-  },
-  profileFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  profileFooterText: {
-    flex: 1,
-    color: theme.colors.inkSoft,
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: "700",
-  },
-  signOutButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: theme.radius.pill,
-    backgroundColor: "#111111",
-  },
-  signOutLabel: {
-    color: "#ffffff",
-    fontSize: 11,
-    fontWeight: "900",
   },
   card: {
     borderRadius: theme.radius.xl,
@@ -322,12 +309,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "900",
     fontFamily: theme.fonts.display,
-  },
-  sectionSubtitle: {
-    color: theme.colors.inkSoft,
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: "700",
   },
   longTermBanner: {
     flexDirection: "row",
@@ -354,6 +335,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   metricGrid: {
     flexDirection: "row",
@@ -380,6 +362,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
+  },
+  actionGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  actionChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.colors.surfaceSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  actionChipActive: {
+    backgroundColor: "#111111",
+    borderColor: "#111111",
+  },
+  actionChipMuted: {
+    backgroundColor: "#f7f7f5",
+  },
+  actionChipLabel: {
+    color: theme.colors.ink,
+    fontSize: 12,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  actionChipLabelActive: {
+    color: "#ffffff",
   },
   skinToneGrid: {
     flexDirection: "row",
