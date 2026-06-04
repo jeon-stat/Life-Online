@@ -29,6 +29,42 @@ const MINI_WORLD_PATH = {
   stripSegments: 8,
 };
 
+const PRESENTATION_PRESETS = {
+  full: {
+    stageHeight: STAGE_LAYOUT.heroHeight,
+    glowBackTop: 32,
+    glowBackSize: 276,
+    gestureTop: 6,
+    gestureWidth: 292,
+    gestureInset: 16,
+    cameraPosition: STAGE_LAYOUT.cameraPosition,
+    fov: STAGE_LAYOUT.fov,
+    modelBaseY: STAGE_LAYOUT.modelBaseY,
+    miniWorld: MINI_WORLD_LAYOUT,
+    characterScale: MINI_WORLD_LAYOUT.characterScale,
+    interactionEnabled: true,
+  },
+  thumbnail: {
+    stageHeight: 136,
+    glowBackTop: 18,
+    glowBackSize: 168,
+    gestureTop: 0,
+    gestureWidth: 0,
+    gestureInset: 0,
+    cameraPosition: [0, 1.45, 8.45],
+    fov: 26,
+    modelBaseY: -0.58,
+    miniWorld: {
+      ...MINI_WORLD_LAYOUT,
+      radius: 7.6,
+      centerOffsetY: -7.45,
+      characterScale: 0.42,
+    },
+    characterScale: 0.42,
+    interactionEnabled: false,
+  },
+};
+
 const ENERGY_MOTION_KIND = {
   0: "neutral",
   1: "neutral",
@@ -74,15 +110,24 @@ function useEnergy6SpecialAction(energyLevel, actionPool = [], forcedSpecialActi
   return actionPool.find((action) => action.key === selectedActionKey) ?? null;
 }
 
-export function CharacterStage({ character, state, onInteractionChange, scale = 1 }) {
-  const stageHeight = Math.round(STAGE_LAYOUT.heroHeight * scale);
-  const glowBackTop = Math.round(32 * scale);
-  const glowBackSize = Math.round(276 * scale);
+export function CharacterStage({
+  character,
+  state,
+  onInteractionChange,
+  scale = 1,
+  presentation = "full",
+  height: heightOverride = null,
+}) {
+  const preset = PRESENTATION_PRESETS[presentation] ?? PRESENTATION_PRESETS.full;
+  const stageHeight = heightOverride ?? Math.round(preset.stageHeight * scale);
+  const appliedScale = heightOverride ? 1 : scale;
+  const glowBackTop = Math.round(preset.glowBackTop * appliedScale);
+  const glowBackSize = Math.round(preset.glowBackSize * appliedScale);
   const glowBackHalf = Math.round(glowBackSize / 2);
-  const gestureTop = Math.round(6 * scale);
-  const gestureWidth = Math.round(292 * scale);
+  const gestureTop = Math.round(preset.gestureTop * appliedScale);
+  const gestureWidth = Math.round(preset.gestureWidth * appliedScale);
   const gestureLeft = Math.round(-gestureWidth / 2);
-  const gestureHeight = Math.max(0, stageHeight - Math.round(16 * scale));
+  const gestureHeight = Math.max(0, stageHeight - Math.round(preset.gestureInset * appliedScale));
   const [rotation, setRotation] = useState(STAGE_LAYOUT.defaultRotation);
   const rotationRef = useRef(STAGE_LAYOUT.defaultRotation);
   const dragStartRef = useRef(STAGE_LAYOUT.defaultRotation);
@@ -127,6 +172,7 @@ export function CharacterStage({ character, state, onInteractionChange, scale = 
       }),
     [onInteractionChange],
   );
+  const interactionEnabled = preset.interactionEnabled;
 
   return (
     <View style={[styles.shell, { height: stageHeight }]}>
@@ -145,32 +191,37 @@ export function CharacterStage({ character, state, onInteractionChange, scale = 
       <View style={styles.effectWrap} pointerEvents="none">
         <StageEffect effect={state.effect} mood={state.sceneMood} />
       </View>
-      <StageCanvas>
+      <StageCanvas cameraPosition={preset.cameraPosition} fov={preset.fov}>
         <AnimatedCharacter
           character={character}
           rotation={rotation}
           state={state}
           specialAction={specialAction}
+          modelBaseY={preset.modelBaseY}
+          miniWorld={preset.miniWorld}
+          characterScale={preset.characterScale}
         />
       </StageCanvas>
       {state.debugVisible ? <BehaviorDebugOverlay state={state} specialAction={specialAction} actionKey={actionKey} /> : null}
-      <View
-        style={[
-          styles.gestureHotspot,
-          {
-            top: gestureTop,
-            width: gestureWidth,
-            height: gestureHeight,
-            marginLeft: gestureLeft,
-          },
-        ]}
-        {...panResponder.panHandlers}
-      />
+      {interactionEnabled ? (
+        <View
+          style={[
+            styles.gestureHotspot,
+            {
+              top: gestureTop,
+              width: gestureWidth,
+              height: gestureHeight,
+              marginLeft: gestureLeft,
+            },
+          ]}
+          {...panResponder.panHandlers}
+        />
+      ) : null}
     </View>
   );
 }
 
-function AnimatedCharacter({ character, rotation, state, specialAction }) {
+function AnimatedCharacter({ character, rotation, state, specialAction, modelBaseY, miniWorld, characterScale }) {
   const rootRef = useRef(null);
   const energyLevel = state.energyLevel ?? 3;
   const actionKey =
@@ -191,17 +242,17 @@ function AnimatedCharacter({ character, rotation, state, specialAction }) {
 
     rootRef.current.rotation.x = rotation.x;
     rootRef.current.rotation.y = rotation.y;
-    rootRef.current.position.y = STAGE_LAYOUT.modelBaseY + Math.sin(t * 1.2) * bobAmount;
+    rootRef.current.position.y = modelBaseY + Math.sin(t * 1.2) * bobAmount;
 
     const scalePulse = 1 + Math.sin(t * 0.7) * 0.015;
     rootRef.current.scale.set(scalePulse, scalePulse, scalePulse);
   });
 
   return (
-    <group ref={rootRef} position={[0, STAGE_LAYOUT.modelBaseY, 0]}>
-      <MiniWorld motionState={worldMotionKind} />
+    <group ref={rootRef} position={[0, modelBaseY, 0]}>
+      <MiniWorld motionState={worldMotionKind} layout={miniWorld} />
 
-      <group position={[0, 0.16, 0]} scale={MINI_WORLD_LAYOUT.characterScale}>
+      <group position={[0, 0.16, 0]} scale={characterScale}>
         <GLBCharacterModel
           character={character}
           animationState={actionKey}
@@ -234,13 +285,13 @@ function DebugLine({ label, value }) {
   );
 }
 
-function MiniWorld({ motionState, rotationSpeed = 0 }) {
+function MiniWorld({ motionState, rotationSpeed = 0, layout = MINI_WORLD_LAYOUT }) {
   const worldRef = useRef(null);
 
   const pathGeometry = useMemo(
     () =>
       buildMeridianPathGeometry({
-        radius: MINI_WORLD_LAYOUT.radius,
+        radius: layout.radius,
         halfWidth: MINI_WORLD_PATH.halfWidth,
         lift: MINI_WORLD_PATH.lift,
         centerX: MINI_WORLD_PATH.centerX,
@@ -257,18 +308,18 @@ function MiniWorld({ motionState, rotationSpeed = 0 }) {
   });
 
   return (
-    <group position={[0, MINI_WORLD_LAYOUT.centerOffsetY, 0]}>
+    <group position={[0, layout.centerOffsetY, 0]}>
       <group ref={worldRef}>
         <mesh position={[0, 0, 0]}>
           <sphereGeometry
             args={[
-              MINI_WORLD_LAYOUT.radius,
+              layout.radius,
               64,
               42,
               0,
               Math.PI * 2,
               0,
-              MINI_WORLD_LAYOUT.sphereThetaLength,
+              layout.sphereThetaLength,
             ]}
           />
           <meshStandardMaterial color={MINI_WORLD_THEME.grass} />
