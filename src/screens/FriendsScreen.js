@@ -1112,9 +1112,10 @@ const styles = StyleSheet.create({
   },
   primaryStatValue: {
     color: theme.colors.ink,
-    fontSize: 18,
-    lineHeight: 22,
+    fontSize: 16,
+    lineHeight: 19,
     fontWeight: "900",
+    flexShrink: 1,
     fontFamily: theme.fonts.body,
   },
   footerInfoRow: {
@@ -1142,8 +1143,10 @@ const styles = StyleSheet.create({
   },
   footerStatValue: {
     color: theme.colors.ink,
-    fontSize: 11,
+    fontSize: 10,
+    lineHeight: 12,
     fontWeight: "900",
+    flexShrink: 1,
     fontFamily: theme.fonts.body,
   },
   friendGallery: {
@@ -1188,9 +1191,11 @@ const styles = StyleSheet.create({
   },
   friendGridSteps: {
     color: theme.colors.inkSoft,
-    fontSize: 11,
+    fontSize: 9,
+    lineHeight: 11,
     fontWeight: "800",
     textAlign: "center",
+    flexShrink: 1,
     fontFamily: theme.fonts.body,
   },
   modalBackdrop: {
@@ -1274,8 +1279,10 @@ const styles = StyleSheet.create({
   },
   statBlockValue: {
     color: theme.colors.ink,
-    fontSize: 13,
+    fontSize: 12,
+    lineHeight: 14,
     fontWeight: "900",
+    flexShrink: 1,
     fontFamily: theme.fonts.body,
   },
   modalGroupCard: {
