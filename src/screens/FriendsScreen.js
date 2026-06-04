@@ -1112,9 +1112,9 @@ const styles = StyleSheet.create({
   },
   primaryStatValue: {
     color: theme.colors.ink,
-    fontSize: 16,
-    lineHeight: 19,
-    fontWeight: "900",
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: "800",
     flexShrink: 1,
     fontFamily: theme.fonts.body,
   },
@@ -1191,8 +1191,8 @@ const styles = StyleSheet.create({
   },
   friendGridSteps: {
     color: theme.colors.inkSoft,
-    fontSize: 9,
-    lineHeight: 11,
+    fontSize: 12,
+    lineHeight: 14,
     fontWeight: "800",
     textAlign: "center",
     flexShrink: 1,
