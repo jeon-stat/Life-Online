@@ -4,7 +4,6 @@ import { CharacterStage } from "./CharacterStage";
 
 const BASE_STAGE_WIDTH = 360;
 const BASE_STAGE_HEIGHT = 500;
-const DETAIL_CAMERA_POSITION = [-0.18, 1.56, 7.9];
 const DETAIL_MINI_WORLD = {
   radius: 12.2,
   centerOffsetY: -11.95,
@@ -24,7 +23,6 @@ export function FriendCharacterPreview({ character, state, size = 112, variant =
         state={state}
         presentation="full"
         scale={scale}
-        cameraPosition={isDetail ? DETAIL_CAMERA_POSITION : undefined}
         miniWorldOverride={isDetail ? DETAIL_MINI_WORLD : undefined}
         onInteractionChange={undefined}
       />
