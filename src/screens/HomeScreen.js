@@ -30,7 +30,7 @@ export function HomeScreen() {
   }, [admin?.skinToneId, admin?.skinTones]);
 
   const viewState = buildCharacterViewModel({ todayRecord: today, history, goal, admin });
-  const stageHeight = Math.max(380, Math.min(560, Math.round(windowHeight * 0.62)));
+  const stageHeight = Math.max(520, Math.min(720, Math.round(windowHeight * 0.8)));
   const progressWidth = `${Math.max(0, Math.min(viewState.progressPercent, 100))}%`;
 
   return (
