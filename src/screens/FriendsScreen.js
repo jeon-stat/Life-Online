@@ -462,7 +462,7 @@ export function FriendsScreen() {
                   showsVerticalScrollIndicator={false}
                 >
                   <View style={styles.modalSceneWrap}>
-                    <FriendPreview character={previewCharacter} state={characterViewState} size={expandedPreviewSize} />
+                    <FriendPreview character={previewCharacter} state={characterViewState} size={expandedPreviewSize} variant="detail" />
                   </View>
 
                   <View style={styles.modalStatsRow}>
@@ -556,8 +556,8 @@ function FriendRankCard({
   );
 }
 
-function FriendPreview({ character, state, size }) {
-  return <FriendCharacterPreview character={character} state={state} size={size} />;
+function FriendPreview({ character, state, size, variant }) {
+  return <FriendCharacterPreview character={character} state={state} size={size} variant={variant} />;
 }
 
 function FooterStat({ label, value }) {
