@@ -31,12 +31,18 @@ export function HomeScreen() {
 
   const viewState = buildCharacterViewModel({ todayRecord: today, history, goal, admin });
   const stageHeight = Math.max(600, Math.min(860, Math.round(windowHeight * 0.94)));
+  const cameraPosition = [0, 1.56, 8.5];
   const progressWidth = `${Math.max(0, Math.min(viewState.progressPercent, 100))}%`;
 
   return (
     <View style={[styles.screen, { backgroundColor: viewState.sceneBackground }]}>
       <View style={styles.stageWrap}>
-        <CharacterStage character={character} state={viewState} height={stageHeight} />
+        <CharacterStage
+          character={character}
+          state={viewState}
+          height={stageHeight}
+          cameraPosition={cameraPosition}
+        />
       </View>
 
       <View style={styles.todayCard}>

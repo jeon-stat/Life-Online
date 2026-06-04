@@ -117,10 +117,14 @@ export function CharacterStage({
   scale = 1,
   presentation = "full",
   height: heightOverride = null,
+  cameraPosition: cameraPositionOverride = null,
+  fov: fovOverride = null,
 }) {
   const preset = PRESENTATION_PRESETS[presentation] ?? PRESENTATION_PRESETS.full;
   const stageHeight = heightOverride ?? Math.round(preset.stageHeight * scale);
   const appliedScale = heightOverride ? 1 : scale;
+  const cameraPosition = cameraPositionOverride ?? preset.cameraPosition;
+  const fov = fovOverride ?? preset.fov;
   const glowBackTop = Math.round(preset.glowBackTop * appliedScale);
   const glowBackSize = Math.round(preset.glowBackSize * appliedScale);
   const glowBackHalf = Math.round(glowBackSize / 2);
@@ -191,7 +195,7 @@ export function CharacterStage({
       <View style={styles.effectWrap} pointerEvents="none">
         <StageEffect effect={state.effect} mood={state.sceneMood} />
       </View>
-      <StageCanvas cameraPosition={preset.cameraPosition} fov={preset.fov}>
+      <StageCanvas cameraPosition={cameraPosition} fov={fov}>
         <AnimatedCharacter
           character={character}
           rotation={rotation}
