@@ -10,9 +10,9 @@ import { HomeScreen } from "./src/screens/HomeScreen.js";
 import { HistoryScreen } from "./src/screens/HistoryScreen.js";
 import { CharacterScreen } from "./src/screens/CharacterScreen.js";
 import { FriendsScreen } from "./src/screens/FriendsScreen.js";
+import { ShopScreen } from "./src/screens/ShopScreen.js";
 import { AdminPanel } from "./src/components/AdminPanel.js";
 import { AccountMenu } from "./src/components/AccountMenu.js";
-import { ShopMenu } from "./src/components/ShopMenu.js";
 import { BottomTabs } from "./src/components/BottomTabs.js";
 import { theme } from "./src/constants/theme.js";
 import { LAST_UPDATED_LABEL } from "./src/generated/buildInfo.js";
@@ -26,8 +26,9 @@ TextInput.defaultProps.style = [TextInput.defaultProps.style, { fontFamily: them
 const TABS = [
   { id: "home", label: "산책", icon: "⌂" },
   { id: "history", label: "추억", icon: "◌" },
-  { id: "character", label: "캐릭터", icon: "◐" },
-  { id: "friends", label: "친구", icon: "◍" },
+  { id: "character", label: "캐릭터", icon: "○" },
+  { id: "friends", label: "친구", icon: "◔" },
+  { id: "shop", label: "상점", icon: "✦" },
 ];
 
 const STEP_DATA_MODE = Platform.OS === "web" ? "mock" : "auto";
@@ -115,8 +116,7 @@ function AppContent() {
 function AppShell({ activeTab, onChangeTab }) {
   const { today, history, goal, admin } = useStepData();
   const { currentUser, signOut } = useAuth();
-  const [menuVisible, setMenuVisible] = useState(false);
-  const [shopVisible, setShopVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
   const viewState = useMemo(
     () =>
       buildCharacterViewModel({
@@ -142,16 +142,8 @@ function AppShell({ activeTab, onChangeTab }) {
           {activeTab === "history" ? <HistoryScreen /> : null}
           {activeTab === "character" ? <CharacterScreen /> : null}
           {activeTab === "friends" ? <FriendsScreen /> : null}
+          {activeTab === "shop" ? <ShopScreen /> : null}
         </View>
-
-        <Pressable
-          onPress={() => setShopVisible(true)}
-          style={styles.shopToggle}
-          accessibilityRole="button"
-          accessibilityLabel="Open shop"
-        >
-          <Text style={styles.shopToggleLabel}>🛍</Text>
-        </Pressable>
 
         <Pressable
           onPress={() => setMenuVisible(true)}
@@ -201,8 +193,6 @@ function AppShell({ activeTab, onChangeTab }) {
             signOut();
           }}
         />
-
-        <ShopMenu visible={shopVisible} onClose={() => setShopVisible(false)} />
 
         <BottomTabs items={TABS} activeId={activeTab} onChange={onChangeTab} />
       </View>

@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.ink,
   },
   icon: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "900",
     color: theme.colors.muted,
     fontFamily: theme.fonts.body,
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
   label: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "900",
     color: theme.colors.inkSoft,
     fontFamily: theme.fonts.body,

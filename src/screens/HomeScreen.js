@@ -45,15 +45,12 @@ export function HomeScreen() {
         />
       </View>
 
-      <View style={styles.todayCard}>
-        <View style={styles.todayHeader}>
-          <Text style={styles.todayTitle}>오늘</Text>
+      <View style={styles.todayInline} pointerEvents="none">
+        <View style={styles.todayTextRow}>
+          <Text style={styles.todaySteps}>{formatNumber(viewState.steps)}보</Text>
+          <Text style={styles.todaySlash}>/</Text>
+          <Text style={styles.todayGoal}>{formatNumber(viewState.goal)}보</Text>
           <Text style={styles.todayPercent}>{Math.round(viewState.progressPercent)}%</Text>
-        </View>
-
-        <View style={styles.todayRow}>
-          <Text style={styles.todaySteps}>{formatNumber(viewState.steps)}</Text>
-          <Text style={styles.todayGoal}>/ {formatNumber(viewState.goal)}보</Text>
         </View>
 
         <View style={styles.track}>
@@ -80,60 +77,47 @@ const styles = StyleSheet.create({
     marginHorizontal: -theme.spacing.sm,
     justifyContent: "flex-start",
   },
-  todayCard: {
+  todayInline: {
     position: "absolute",
     left: theme.spacing.md,
     right: theme.spacing.md,
     bottom: 14,
-    borderRadius: theme.radius.xl,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    shadowColor: "#000000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 1,
-    gap: 10,
+    gap: 8,
   },
-  todayHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  todayTitle: {
-    color: theme.colors.ink,
-    fontSize: 13,
-    fontWeight: "900",
-    letterSpacing: 0.5,
-    fontFamily: theme.fonts.body,
-  },
-  todayPercent: {
-    color: theme.colors.inkSoft,
-    fontSize: 12,
-    fontWeight: "800",
-    fontFamily: theme.fonts.body,
-  },
-  todayRow: {
+  todayTextRow: {
     flexDirection: "row",
     alignItems: "flex-end",
     gap: 6,
+    flexWrap: "wrap",
   },
   todaySteps: {
     color: theme.colors.ink,
-    fontSize: 30,
-    lineHeight: 34,
+    fontSize: 18,
+    lineHeight: 22,
     fontWeight: "900",
-    letterSpacing: -0.8,
+    letterSpacing: -0.3,
     fontFamily: theme.fonts.display,
   },
-  todayGoal: {
+  todaySlash: {
     color: theme.colors.muted,
-    fontSize: 13,
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  todayGoal: {
+    color: theme.colors.inkSoft,
+    fontSize: 16,
+    lineHeight: 22,
     fontWeight: "800",
-    paddingBottom: 4,
+    fontFamily: theme.fonts.body,
+  },
+  todayPercent: {
+    color: theme.colors.muted,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "800",
+    paddingLeft: 6,
     fontFamily: theme.fonts.body,
   },
   track: {

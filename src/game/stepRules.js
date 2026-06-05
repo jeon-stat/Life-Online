@@ -1,4 +1,4 @@
-export const DEFAULT_STEP_GOAL = 6000;
+export const DEFAULT_STEP_GOAL = 10000;
 
 export function getStepRatio(steps, goal = DEFAULT_STEP_GOAL) {
   if (!goal) return 0;
