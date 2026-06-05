@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { theme } from "../constants/theme.js";
@@ -31,14 +31,28 @@ export function HistoryScreen() {
   const { history, goal } = useStepData();
   const [storyTab, setStoryTab] = useState("footprints");
   const [achievementTab, setAchievementTab] = useState("mission");
+  const [selectedTrailId, setSelectedTrailId] = useState(null);
 
   const trail = history.slice(0, 7);
+  const trailChrono = useMemo(() => [...trail].reverse(), [trail]);
   const streak = useMemo(() => getStreak(history, goal), [history, goal]);
   const weekSummary = useMemo(() => buildWeekSummary(trail, goal, streak), [goal, streak, trail]);
   const trailLogs = useMemo(() => buildTrailLogs(trail, goal), [goal, trail]);
   const memories = useMemo(() => getMemories(history, goal, 2), [goal, history]);
   const achievementCards = useMemo(() => getMemories(history, goal, 3), [goal, history]);
   const missionCards = useMemo(() => buildMissionCards({ history, goal, streak }), [goal, history, streak]);
+  const selectedTrail = useMemo(() => {
+    if (!trailChrono.length) return null;
+    return trailChrono.find((record) => record.id === selectedTrailId) ?? trailChrono[trailChrono.length - 1] ?? null;
+  }, [selectedTrailId, trailChrono]);
+
+  useEffect(() => {
+    if (!trailChrono.length) return;
+    const hasSelected = trailChrono.some((record) => record.id === selectedTrailId);
+    if (!hasSelected) {
+      setSelectedTrailId(trailChrono[trailChrono.length - 1]?.id ?? null);
+    }
+  }, [selectedTrailId, trailChrono]);
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -64,29 +78,57 @@ export function HistoryScreen() {
           </View>
 
           <Section title="최근 7일">
-            <View style={styles.trailGrid}>
-              {trail.map((record, index) => {
-                const energyLevel = getEnergyLevel(record.steps, goal);
-                const meta = ENERGY_META[energyLevel] ?? ENERGY_META[3];
-                const dateLabel = formatTrailDateLabel(record.date, index === 0);
+            <View style={styles.trailDateRow}>
+              {trailChrono.map((record, index) => {
+                const isToday = index === trailChrono.length - 1;
+                const active = record.id === selectedTrail?.id;
+                const dayLabel = formatTrailDayLabel(record.date, isToday);
 
                 return (
-                  <View key={record.id} style={styles.trailCard}>
-                    <View style={styles.trailHead}>
-                      <Text style={styles.trailDate}>{dateLabel}</Text>
-                      <View style={[styles.energyBadge, { backgroundColor: `${meta.tone}1A`, borderColor: `${meta.tone}33` }]}>
-                        <Text style={[styles.energyBadgeText, { color: meta.tone }]}>
-                          {`${meta.icon} E${energyLevel}`}
-                        </Text>
-                      </View>
+                  <Pressable
+                    key={record.id}
+                    onPress={() => setSelectedTrailId(record.id)}
+                    style={styles.trailDateItem}
+                  >
+                    <View style={[styles.trailDateCircle, active && styles.trailDateCircleActive]}>
+                      <Text style={[styles.trailDateCircleText, active && styles.trailDateCircleTextActive]}>
+                        {dayLabel}
+                      </Text>
                     </View>
-
-                    <Text style={styles.trailSteps}>{`${formatNumber(record.steps)}보`}</Text>
-                    <Text style={styles.trailLabel}>{meta.label}</Text>
-                  </View>
+                  </Pressable>
                 );
               })}
             </View>
+
+            {selectedTrail ? (
+              <View style={styles.trailDetailCard}>
+                <View style={styles.trailDetailTop}>
+                  <View style={styles.trailDetailDateBlock}>
+                    <Text style={styles.trailDetailDate}>{formatTrailDateLabel(selectedTrail.date, selectedTrail.id === trail[0]?.id)}</Text>
+                    <Text style={styles.trailDetailHint}>선택한 날짜</Text>
+                  </View>
+
+                  <View style={styles.trailDetailEnergyBadge}>
+                    {(() => {
+                      const energyLevel = getEnergyLevel(selectedTrail.steps, goal);
+                      const meta = ENERGY_META[energyLevel] ?? ENERGY_META[3];
+                      return (
+                        <Text style={[styles.trailDetailEnergyText, { color: meta.tone }]}>
+                          {`${meta.icon} E${energyLevel} · ${meta.label}`}
+                        </Text>
+                      );
+                    })()}
+                  </View>
+                </View>
+
+                <View style={styles.trailDetailBody}>
+                  <Text style={styles.trailDetailSteps}>{`${formatNumber(selectedTrail.steps)}보`}</Text>
+                  <Text style={styles.trailDetailGoal}>
+                    {selectedTrail.steps >= goal ? "목표 달성" : `목표까지 ${formatNumber(goal - selectedTrail.steps)}보`}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
           </Section>
 
           <Section title="기록">
@@ -327,6 +369,19 @@ function formatTrailDateLabel(value, isToday) {
   return isToday ? `오늘 · ${month}.${day}` : `${month}.${day} (${weekday})`;
 }
 
+function formatTrailDayLabel(value, isToday) {
+  if (isToday) {
+    return "오늘";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return String(value ?? "");
+  }
+
+  return String(date.getDate()).padStart(2, "0");
+}
+
 function formatNumber(value) {
   return Number(value ?? 0).toLocaleString("ko-KR");
 }
@@ -440,46 +495,92 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
   },
-  trailCard: {
-    width: "48.5%",
-    borderRadius: theme.radius.lg,
-    padding: 12,
+  trailDateRow: {
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  trailDateItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  trailDateCircle: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    gap: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  trailHead: {
+  trailDateCircleActive: {
+    backgroundColor: theme.colors.ink,
+    borderColor: theme.colors.ink,
+  },
+  trailDateCircleText: {
+    color: theme.colors.ink,
+    fontSize: 11,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  trailDateCircleTextActive: {
+    color: "#ffffff",
+  },
+  trailDetailCard: {
+    borderRadius: theme.radius.xl,
+    padding: 14,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 12,
+  },
+  trailDetailTop: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "flex-start",
-    gap: 8,
+    justifyContent: "space-between",
+    gap: 12,
   },
-  trailDate: {
+  trailDetailDateBlock: {
     flex: 1,
+    gap: 4,
+  },
+  trailDetailDate: {
+    color: theme.colors.ink,
+    fontSize: 14,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  trailDetailHint: {
     color: theme.colors.inkSoft,
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
-  energyBadge: {
+  trailDetailEnergyBadge: {
     borderRadius: theme.radius.pill,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
+    backgroundColor: theme.colors.appBackground,
     borderWidth: 1,
+    borderColor: theme.colors.border,
   },
-  energyBadgeText: {
-    fontSize: 10,
+  trailDetailEnergyText: {
+    fontSize: 11,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
-  trailSteps: {
+  trailDetailBody: {
+    gap: 4,
+  },
+  trailDetailSteps: {
     color: theme.colors.ink,
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
-  trailLabel: {
+  trailDetailGoal: {
     color: theme.colors.inkSoft,
     fontSize: 12,
     fontWeight: "700",
