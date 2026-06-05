@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: theme.spacing.md,
     right: theme.spacing.md,
-    bottom: 28,
+    bottom: 84,
     gap: 10,
     alignItems: "center",
   },
