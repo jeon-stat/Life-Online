@@ -81,14 +81,16 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: theme.spacing.md,
     right: theme.spacing.md,
-    bottom: 14,
-    gap: 8,
+    bottom: 28,
+    gap: 10,
+    alignItems: "center",
   },
   todayTextRow: {
     flexDirection: "row",
     alignItems: "flex-end",
     gap: 6,
     flexWrap: "wrap",
+    justifyContent: "center",
   },
   todaySteps: {
     color: theme.colors.ink,
@@ -121,10 +123,12 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.body,
   },
   track: {
+    width: "72%",
     height: 10,
     borderRadius: theme.radius.pill,
     overflow: "hidden",
     backgroundColor: "#efefed",
+    alignSelf: "center",
   },
   fill: {
     height: "100%",
