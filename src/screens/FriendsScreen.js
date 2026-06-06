@@ -523,31 +523,26 @@ function FriendRankCard({
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.friendRankCard, isMe && styles.friendRankCardMe, { width: cardWidth }]}
+      style={[styles.friendGalleryCard, isMe && styles.friendGalleryCardSelected, { width: cardWidth }]}
     >
-      <View style={styles.friendRankScene}>
-        <View style={styles.friendHeader}>
-          <View style={styles.rankNameRow}>
-            <View style={[styles.rankBadge, rankBadge.badgeStyle]}>
-              <Text style={[styles.rankBadgeLabel, { color: rankBadge.textColor }]}>{rank}</Text>
-            </View>
-            <Text style={styles.friendName} numberOfLines={1}>
-              {friend.nickname}
-            </Text>
-          </View>
-          {isMe ? <Text style={styles.meLabel}>나</Text> : null}
+      <View style={styles.rankCardBadgeWrap}>
+        <View style={[styles.rankBadge, rankBadge.badgeStyle]}>
+          <Text style={[styles.rankBadgeLabel, { color: rankBadge.textColor }]}>{rank}</Text>
         </View>
+        {isMe ? <Text style={styles.meLabel}>나</Text> : null}
+      </View>
 
+      <View style={styles.friendGalleryScene}>
         <View style={styles.characterStage}>
           <FriendPreview character={previewCharacter} state={characterViewState} size={previewSize} />
         </View>
       </View>
 
-      <View style={styles.friendRankCaption}>
-        <Text style={styles.friendRankName} numberOfLines={1}>
+      <View style={styles.friendGalleryCaption}>
+        <Text style={styles.friendGridName} numberOfLines={1}>
           {friend.nickname}
         </Text>
-        <Text style={styles.friendRankMetric} numberOfLines={1}>
+        <Text style={styles.friendGridSteps} numberOfLines={1}>
           {info.primaryValue}
         </Text>
       </View>
@@ -1023,32 +1018,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     elevation: 0,
   },
-  friendRankCard: {
-    position: "relative",
-    borderRadius: theme.radius.xl,
-    padding: 8,
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    aspectRatio: 0.58,
-    overflow: "hidden",
-  },
-  friendRankCardMe: {
-    backgroundColor: "#f9f9f8",
-    borderColor: "#111111",
-    shadowColor: "transparent",
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    shadowOffset: { width: 0, height: 0 },
-    elevation: 0,
-  },
-  friendRankScene: {
-    flex: 1,
-    position: "relative",
-    borderRadius: theme.radius.lg,
-    overflow: "hidden",
-  },
-  friendHeader: {
+  rankCardBadgeWrap: {
     position: "absolute",
     top: 0,
     left: 0,
@@ -1057,14 +1027,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    gap: 8,
-  },
-  rankNameRow: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    minWidth: 0,
   },
   rankBadge: {
     width: 24,
@@ -1101,29 +1063,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     pointerEvents: "none",
-  },
-  friendRankCaption: {
-    minHeight: 42,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 2,
-    paddingHorizontal: 4,
-    paddingTop: 8,
-  },
-  friendRankName: {
-    color: theme.colors.ink,
-    fontSize: 13,
-    fontWeight: "900",
-    textAlign: "center",
-    fontFamily: theme.fonts.body,
-  },
-  friendRankMetric: {
-    color: theme.colors.inkSoft,
-    fontSize: 12,
-    lineHeight: 14,
-    fontWeight: "800",
-    textAlign: "center",
-    fontFamily: theme.fonts.body,
   },
   friendGallery: {
     flexDirection: "row",
