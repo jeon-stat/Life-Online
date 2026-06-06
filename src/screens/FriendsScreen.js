@@ -521,9 +521,7 @@ function FriendGalleryCard({
       style={[styles.friendGalleryCard, isMe && styles.friendGalleryCardSelected, { width: cardWidth }]}
     >
       <View style={styles.friendGalleryScene}>
-        <View style={styles.characterStage}>
-          <FriendPreview character={previewCharacter} state={characterViewState} size={previewSize} />
-        </View>
+        <FriendPreview character={previewCharacter} state={characterViewState} size={previewSize} />
       </View>
 
       <View style={styles.friendGalleryCaption}>
