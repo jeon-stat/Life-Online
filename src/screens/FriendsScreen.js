@@ -379,7 +379,7 @@ export function FriendsScreen() {
           {rankedFriends.length ? (
             <View style={styles.gridWrap}>
               {rankedFriends.map((friend, index) => (
-                <FriendGalleryCard
+                <FriendCardShell
                   key={friend.id}
                   friend={friend}
                   isMe={Boolean(friend.isMe)}
@@ -387,7 +387,8 @@ export function FriendsScreen() {
                   previewSize={galleryPreviewSize}
                   previewCharacter={previewCharacter}
                   characterViewState={characterViewState}
-                  caption={getModeInfo(friend, rankMode).primaryValue}
+                  badge={index + 1}
+                  subtitle={getModeInfo(friend, rankMode).primaryValue}
                   onPress={() => setSelectedFriendId(friend.id)}
                 />
               ))}
@@ -407,27 +408,17 @@ export function FriendsScreen() {
             {listFriends.map((friend) => {
               const active = friend.id === selectedFriend?.id;
               return (
-                <Pressable
+                <FriendCardShell
                   key={friend.id}
                   onPress={() => setSelectedFriendId(friend.id)}
-                  style={[
-                    styles.friendGalleryCard,
-                    active && styles.friendGalleryCardSelected,
-                    { width: galleryCardWidth },
-                  ]}
-                >
-                  <View style={styles.friendGalleryScene}>
-                    <FriendPreview character={previewCharacter} state={characterViewState} size={galleryPreviewSize} />
-                  </View>
-                  <View style={styles.friendGalleryCaption}>
-                    <Text style={styles.friendGridName} numberOfLines={1}>
-                      {friend.nickname}
-                    </Text>
-                    <Text style={styles.friendGridSteps} numberOfLines={1}>
-                      👣 {formatNumber(friend.todaySteps)}
-                    </Text>
-                  </View>
-                </Pressable>
+                  friend={friend}
+                  isSelected={active}
+                  cardWidth={galleryCardWidth}
+                  previewSize={galleryPreviewSize}
+                  previewCharacter={previewCharacter}
+                  characterViewState={characterViewState}
+                  subtitle={`👣 ${formatNumber(friend.todaySteps)}`}
+                />
               );
             })}
           </View>
@@ -505,21 +496,36 @@ export function FriendsScreen() {
   );
 }
 
-function FriendGalleryCard({
+function FriendCardShell({
   friend,
+  badge,
   isMe,
+  isSelected,
   cardWidth,
   previewSize,
   previewCharacter,
   characterViewState,
-  caption,
+  subtitle,
   onPress,
 }) {
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.friendGalleryCard, isMe && styles.friendGalleryCardSelected, { width: cardWidth }]}
+      style={[
+        styles.friendGalleryCard,
+        isMe && styles.friendGalleryCardSelected,
+        isSelected && styles.friendGalleryCardSelected,
+        { width: cardWidth },
+      ]}
     >
+      {typeof badge === "number" ? (
+        <View style={styles.rankBadgeOverlay}>
+          <View style={styles.rankBadge}>
+            <Text style={styles.rankBadgeLabel}>{badge}</Text>
+          </View>
+        </View>
+      ) : null}
+
       <View style={styles.friendGalleryScene}>
         <View style={styles.characterStage}>
           <FriendPreview character={previewCharacter} state={characterViewState} size={previewSize} />
@@ -531,7 +537,7 @@ function FriendGalleryCard({
           {friend.nickname}
         </Text>
         <Text style={styles.friendGridSteps} numberOfLines={1}>
-          {caption}
+          {subtitle}
         </Text>
       </View>
     </Pressable>
@@ -1070,6 +1076,12 @@ const styles = StyleSheet.create({
   friendGalleryCardSelected: {
     borderColor: "#111111",
     backgroundColor: "#f8f8f7",
+  },
+  rankBadgeOverlay: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    zIndex: 3,
   },
   friendGalleryScene: {
     flex: 1,
