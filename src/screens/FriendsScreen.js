@@ -517,7 +517,6 @@ function FriendRankCard({
   characterViewState,
   onPress,
 }) {
-  const rankBadge = getRankBadgeStyle(rank);
   const info = getModeInfo(friend, rankMode);
 
   return (
@@ -525,13 +524,6 @@ function FriendRankCard({
       onPress={onPress}
       style={[styles.friendGalleryCard, isMe && styles.friendGalleryCardSelected, { width: cardWidth }]}
     >
-      <View style={styles.rankCardBadgeWrap}>
-        <View style={[styles.rankBadge, rankBadge.badgeStyle]}>
-          <Text style={[styles.rankBadgeLabel, { color: rankBadge.textColor }]}>{rank}</Text>
-        </View>
-        {isMe ? <Text style={styles.meLabel}>나</Text> : null}
-      </View>
-
       <View style={styles.friendGalleryScene}>
         <View style={styles.characterStage}>
           <FriendPreview character={previewCharacter} state={characterViewState} size={previewSize} />
