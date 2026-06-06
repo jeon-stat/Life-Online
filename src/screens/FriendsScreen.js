@@ -28,7 +28,7 @@ import { FriendCharacterPreview } from "../components/FriendCharacterPreview";
 
 const VIEW_TABS = [
   { id: "ranking", label: "랭킹" },
-  { id: "list", label: "목록" },
+  { id: "list", label: "그룹 관리" },
 ];
 
 const RANK_TABS = [
