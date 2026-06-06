@@ -379,16 +379,15 @@ export function FriendsScreen() {
           {rankedFriends.length ? (
             <View style={styles.gridWrap}>
               {rankedFriends.map((friend, index) => (
-                <FriendRankCard
+                <FriendGalleryCard
                   key={friend.id}
                   friend={friend}
-                  rank={index + 1}
                   isMe={Boolean(friend.isMe)}
-                  rankMode={rankMode}
                   cardWidth={galleryCardWidth}
                   previewSize={galleryPreviewSize}
                   previewCharacter={previewCharacter}
                   characterViewState={characterViewState}
+                  caption={getModeInfo(friend, rankMode).primaryValue}
                   onPress={() => setSelectedFriendId(friend.id)}
                 />
               ))}
@@ -506,19 +505,16 @@ export function FriendsScreen() {
   );
 }
 
-function FriendRankCard({
+function FriendGalleryCard({
   friend,
-  rank,
   isMe,
-  rankMode,
   cardWidth,
   previewSize,
   previewCharacter,
   characterViewState,
+  caption,
   onPress,
 }) {
-  const info = getModeInfo(friend, rankMode);
-
   return (
     <Pressable
       onPress={onPress}
@@ -535,7 +531,7 @@ function FriendRankCard({
           {friend.nickname}
         </Text>
         <Text style={styles.friendGridSteps} numberOfLines={1}>
-          {info.primaryValue}
+          {caption}
         </Text>
       </View>
     </Pressable>
