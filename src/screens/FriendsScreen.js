@@ -471,29 +471,31 @@ export function FriendsScreen() {
                     <StatBlock label="상태" value={getLongTermLabel(selectedFriend.longTermState)} />
                   </View>
 
-                  <View style={styles.modalGroupCard}>
-                    <View style={styles.modalSectionHeader}>
-                      <Text style={styles.modalSectionTitle}>그룹</Text>
-                      <Text style={styles.modalSectionMeta}>{Math.max(0, selectedFriendGroupIds.length - 1)}개</Text>
+                  {viewMode === "list" ? (
+                    <View style={styles.modalGroupCard}>
+                      <View style={styles.modalSectionHeader}>
+                        <Text style={styles.modalSectionTitle}>그룹</Text>
+                        <Text style={styles.modalSectionMeta}>{Math.max(0, selectedFriendGroupIds.length - 1)}개</Text>
+                      </View>
+                      <View style={styles.groupChecklist}>
+                        {selectableGroups.map((group) => {
+                          const checked = selectedFriendGroupIds.includes(group.id);
+                          return (
+                            <Pressable
+                              key={group.id}
+                              onPress={() => toggleMembership(selectedFriend.id, group.id)}
+                              style={[styles.checkRow, checked && styles.checkRowChecked]}
+                            >
+                              <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
+                                {checked ? <Text style={styles.checkboxMark}>✓</Text> : null}
+                              </View>
+                              <Text style={styles.checkLabel}>{group.name}</Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
                     </View>
-                    <View style={styles.groupChecklist}>
-                      {selectableGroups.map((group) => {
-                        const checked = selectedFriendGroupIds.includes(group.id);
-                        return (
-                          <Pressable
-                            key={group.id}
-                            onPress={() => toggleMembership(selectedFriend.id, group.id)}
-                            style={[styles.checkRow, checked && styles.checkRowChecked]}
-                          >
-                            <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
-                              {checked ? <Text style={styles.checkboxMark}>✓</Text> : null}
-                            </View>
-                            <Text style={styles.checkLabel}>{group.name}</Text>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
-                  </View>
+                  ) : null}
                 </ScrollView>
               </>
             ) : null}
@@ -546,11 +548,6 @@ function FriendRankCard({
             {info.primaryValue}
           </Text>
         </View>
-
-        <View style={styles.footerInfoRow}>
-          <FooterStat label={info.secondaryLeftLabel} value={info.secondaryLeftValue} />
-          <FooterStat label={info.secondaryRightLabel} value={info.secondaryRightValue} />
-        </View>
       </View>
     </Pressable>
   );
@@ -558,17 +555,6 @@ function FriendRankCard({
 
 function FriendPreview({ character, state, size, variant }) {
   return <FriendCharacterPreview character={character} state={state} size={size} variant={variant} />;
-}
-
-function FooterStat({ label, value }) {
-  return (
-    <View style={styles.footerStat}>
-      <Text style={styles.footerStatLabel}>{label}</Text>
-      <Text style={styles.footerStatValue} numberOfLines={1}>
-        {value}
-      </Text>
-    </View>
-  );
 }
 
 function StatBlock({ label, value }) {
@@ -642,28 +628,16 @@ function getModeInfo(friend, rankMode) {
       return {
         primaryLabel: "이번 주",
         primaryValue: `${formatNumber(friend.weeklySteps)}보`,
-        secondaryLeftLabel: "평균",
-        secondaryLeftValue: `${formatNumber(Math.round((friend.weeklySteps ?? 0) / 7))}보`,
-        secondaryRightLabel: "E",
-        secondaryRightValue: `${friend.energyLevel}`,
       };
     case "streak":
       return {
         primaryLabel: "연속",
         primaryValue: `${friend.streak}일`,
-        secondaryLeftLabel: "주간",
-        secondaryLeftValue: `${formatNumber(friend.weeklySteps)}보`,
-        secondaryRightLabel: "상태",
-        secondaryRightValue: getLongTermLabel(friend.longTermState),
       };
     default:
       return {
         primaryLabel: "오늘",
         primaryValue: `${formatNumber(friend.todaySteps)}보`,
-        secondaryLeftLabel: "E",
-        secondaryLeftValue: `${friend.energyLevel}`,
-        secondaryRightLabel: "상태",
-        secondaryRightValue: getLongTermLabel(friend.longTermState),
       };
   }
 }
