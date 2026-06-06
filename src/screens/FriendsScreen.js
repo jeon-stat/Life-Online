@@ -385,8 +385,8 @@ export function FriendsScreen() {
                   rank={index + 1}
                   isMe={Boolean(friend.isMe)}
                   rankMode={rankMode}
-                  cardWidth={cardWidth}
-                  previewSize={previewSize}
+                  cardWidth={galleryCardWidth}
+                  previewSize={galleryPreviewSize}
                   previewCharacter={previewCharacter}
                   characterViewState={characterViewState}
                   onPress={() => setSelectedFriendId(friend.id)}
@@ -523,9 +523,9 @@ function FriendRankCard({
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.friendCard, isMe && styles.friendCardMe, { width: cardWidth, maxWidth: 210 }]}
+      style={[styles.friendRankCard, isMe && styles.friendRankCardMe, { width: cardWidth }]}
     >
-      <View style={styles.friendCardContent}>
+      <View style={styles.friendRankScene}>
         <View style={styles.friendHeader}>
           <View style={styles.rankNameRow}>
             <View style={[styles.rankBadge, rankBadge.badgeStyle]}>
@@ -541,13 +541,15 @@ function FriendRankCard({
         <View style={styles.characterStage}>
           <FriendPreview character={previewCharacter} state={characterViewState} size={previewSize} />
         </View>
+      </View>
 
-        <View style={styles.primaryStatBlock}>
-          <Text style={styles.primaryStatLabel}>{info.primaryLabel}</Text>
-          <Text style={styles.primaryStatValue} numberOfLines={1}>
-            {info.primaryValue}
-          </Text>
-        </View>
+      <View style={styles.friendRankCaption}>
+        <Text style={styles.friendRankName} numberOfLines={1}>
+          {friend.nickname}
+        </Text>
+        <Text style={styles.friendRankMetric} numberOfLines={1}>
+          {info.primaryValue}
+        </Text>
       </View>
     </Pressable>
   );
@@ -1021,6 +1023,31 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     elevation: 0,
   },
+  friendRankCard: {
+    position: "relative",
+    borderRadius: theme.radius.xl,
+    padding: 8,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    aspectRatio: 0.58,
+    overflow: "hidden",
+  },
+  friendRankCardMe: {
+    backgroundColor: "#f9f9f8",
+    borderColor: "#111111",
+    shadowColor: "transparent",
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 0,
+  },
+  friendRankScene: {
+    flex: 1,
+    position: "relative",
+    borderRadius: theme.radius.lg,
+    overflow: "hidden",
+  },
   friendHeader: {
     position: "absolute",
     top: 0,
@@ -1075,58 +1102,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     pointerEvents: "none",
   },
-  primaryStatBlock: {
-    position: "absolute",
-    left: 0,
-    bottom: 36,
-    zIndex: 2,
-    maxWidth: "64%",
+  friendRankCaption: {
+    minHeight: 42,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 2,
+    paddingHorizontal: 4,
+    paddingTop: 8,
   },
-  primaryStatLabel: {
-    color: theme.colors.inkSoft,
-    fontSize: 10,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-    fontFamily: theme.fonts.body,
-  },
-  primaryStatValue: {
+  friendRankName: {
     color: theme.colors.ink,
     fontSize: 13,
-    lineHeight: 16,
-    fontWeight: "800",
-    flexShrink: 1,
-    fontFamily: theme.fonts.body,
-  },
-  footerInfoRow: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 2,
-    flexDirection: "row",
-    gap: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(0,0,0,0.06)",
-  },
-  footerStat: {
-    flex: 1,
-    minWidth: 0,
-  },
-  footerStatLabel: {
-    color: theme.colors.inkSoft,
-    fontSize: 9,
-    fontWeight: "800",
-    marginBottom: 2,
-    fontFamily: theme.fonts.body,
-  },
-  footerStatValue: {
-    color: theme.colors.ink,
-    fontSize: 10,
-    lineHeight: 12,
     fontWeight: "900",
-    flexShrink: 1,
+    textAlign: "center",
+    fontFamily: theme.fonts.body,
+  },
+  friendRankMetric: {
+    color: theme.colors.inkSoft,
+    fontSize: 12,
+    lineHeight: 14,
+    fontWeight: "800",
+    textAlign: "center",
     fontFamily: theme.fonts.body,
   },
   friendGallery: {
