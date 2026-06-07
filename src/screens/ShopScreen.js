@@ -106,6 +106,7 @@ export function ShopScreen() {
           state={characterViewState}
           presentation="full"
           scale={0.88}
+          interactionEnabled={false}
         />
       </View>
 

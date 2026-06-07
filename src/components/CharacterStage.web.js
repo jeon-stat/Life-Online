@@ -120,6 +120,7 @@ export function CharacterStage({
   cameraPosition: cameraPositionOverride = null,
   fov: fovOverride = null,
   miniWorld: miniWorldOverride = null,
+  interactionEnabled: interactionEnabledOverride = null,
 }) {
   const preset = PRESENTATION_PRESETS[presentation] ?? PRESENTATION_PRESETS.full;
   const stageHeight = heightOverride ?? Math.round(preset.stageHeight * scale);
@@ -177,7 +178,7 @@ export function CharacterStage({
       }),
     [onInteractionChange],
   );
-  const interactionEnabled = preset.interactionEnabled;
+  const interactionEnabled = interactionEnabledOverride ?? preset.interactionEnabled;
 
   return (
     <View style={[styles.shell, { height: stageHeight }]}>
