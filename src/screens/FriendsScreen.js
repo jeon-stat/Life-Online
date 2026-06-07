@@ -1166,8 +1166,8 @@ const styles = StyleSheet.create({
   modalSceneWrap: {
     width: "100%",
     alignItems: "center",
+    justifyContent: "center",
     flexShrink: 0,
-    marginHorizontal: -theme.spacing.md,
   },
   modalStatsRow: {
     flexDirection: "row",
