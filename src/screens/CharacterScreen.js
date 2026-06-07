@@ -39,16 +39,15 @@ export function CharacterScreen() {
         </View>
       </View>
 
-      <View style={styles.card}>
-        <SectionHeader title="꾸미기" />
-        <View style={styles.customizationGrid}>
-          {CUSTOMIZATION_SLOTS.map((slot) => (
-            <View key={slot.key} style={styles.placeholderCard}>
-              <Text style={styles.placeholderLabel}>{slot.label}</Text>
+      <View style={styles.slotList}>
+        {CUSTOMIZATION_SLOTS.map((slot) => (
+          <View key={slot.key} style={styles.card}>
+            <SectionHeader title={slot.label} />
+            <View style={styles.slotBody}>
               <Text style={styles.placeholderNote}>준비 중</Text>
             </View>
-          ))}
-        </View>
+          </View>
+        ))}
       </View>
     </ScrollView>
   );
@@ -92,6 +91,9 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     gap: 12,
   },
+  slotList: {
+    gap: theme.spacing.md,
+  },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -128,26 +130,15 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 999,
   },
-  customizationGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  placeholderCard: {
-    width: "48.5%",
-    minHeight: 92,
+  slotBody: {
+    minHeight: 56,
     borderRadius: theme.radius.lg,
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     backgroundColor: theme.colors.surfaceSoft,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    justifyContent: "space-between",
-  },
-  placeholderLabel: {
-    color: theme.colors.ink,
-    fontSize: 15,
-    fontWeight: "900",
-    fontFamily: theme.fonts.body,
+    justifyContent: "center",
   },
   placeholderNote: {
     color: theme.colors.inkSoft,
