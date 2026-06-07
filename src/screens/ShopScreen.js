@@ -100,19 +100,13 @@ export function ShopScreen() {
         </View>
       </View>
 
-      <View style={[styles.scenePanel, { backgroundColor: selectedCategory.accentSoft }]}>
-        <View style={styles.sceneDotOne} />
-        <View style={styles.sceneDotTwo} />
-        <View style={styles.sceneCloudOne} />
-        <View style={styles.sceneCloudTwo} />
-        <View style={styles.sceneStageWrap}>
-          <CharacterStage
-            character={previewCharacter}
-            state={characterViewState}
-            presentation="thumbnail"
-            scale={1.7}
-          />
-        </View>
+      <View style={styles.scenePanel}>
+        <CharacterStage
+          character={previewCharacter}
+          state={characterViewState}
+          presentation="full"
+          scale={0.88}
+        />
       </View>
 
       <View style={styles.itemsCard}>
@@ -206,53 +200,13 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
   scenePanel: {
-    minHeight: 308,
-    borderRadius: 30,
+    minHeight: 388,
+    borderRadius: 0,
     overflow: "hidden",
     position: "relative",
-    paddingTop: 6,
-    paddingBottom: 0,
-  },
-  sceneStageWrap: {
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-  },
-  sceneDotOne: {
-    position: "absolute",
-    top: 22,
-    right: 26,
-    width: 16,
-    height: 16,
-    borderRadius: 999,
-    backgroundColor: "rgba(255, 205, 106, 0.88)",
-  },
-  sceneDotTwo: {
-    position: "absolute",
-    top: 76,
-    left: 28,
-    width: 12,
-    height: 12,
-    borderRadius: 999,
-    backgroundColor: "rgba(255, 205, 106, 0.72)",
-  },
-  sceneCloudOne: {
-    position: "absolute",
-    top: 52,
-    left: 66,
-    width: 56,
-    height: 18,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.82)",
-  },
-  sceneCloudTwo: {
-    position: "absolute",
-    top: 48,
-    right: 74,
-    width: 64,
-    height: 20,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.72)",
+    marginHorizontal: -theme.spacing.md,
+    marginTop: -4,
+    marginBottom: -2,
   },
   itemsCard: {
     borderRadius: theme.radius.xl,
