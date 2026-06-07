@@ -12,18 +12,34 @@ const SHOP_SECTIONS = [
 export function ShopScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-      <Text style={styles.title}>상점</Text>
-      <Text style={styles.subtitle}>캐릭터 꾸미기 공간</Text>
+      <View style={styles.pageTitleWrap}>
+        <Text style={styles.pageTitle}>상점</Text>
+      </View>
 
-      <View style={styles.grid}>
+      <View style={styles.introCard}>
+        <Text style={styles.introTitle}>캐릭터 꾸미기 공간</Text>
+        <Text style={styles.introNote}>준비 중인 항목을 한눈에 볼 수 있어요.</Text>
+      </View>
+
+      <View style={styles.sectionList}>
         {SHOP_SECTIONS.map((section) => (
           <View key={section.title} style={styles.card}>
-            <Text style={styles.cardTitle}>{section.title}</Text>
-            <Text style={styles.cardNote}>{section.note}</Text>
+            <SectionHeader title={section.title} />
+            <View style={styles.slotBody}>
+              <Text style={styles.cardNote}>{section.note}</Text>
+            </View>
           </View>
         ))}
       </View>
     </ScrollView>
+  );
+}
+
+function SectionHeader({ title }) {
+  return (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+    </View>
   );
 }
 
@@ -36,42 +52,73 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingTop: theme.spacing.lg,
     paddingBottom: theme.spacing.xl,
-    gap: 16,
+    gap: theme.spacing.md,
   },
-  title: {
+  pageTitleWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 4,
+  },
+  pageTitle: {
     color: theme.colors.ink,
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "900",
     textAlign: "center",
+    letterSpacing: 0.6,
     fontFamily: theme.fonts.display,
   },
-  subtitle: {
-    color: theme.colors.inkSoft,
-    fontSize: 12,
-    fontWeight: "700",
-    textAlign: "center",
-    fontFamily: theme.fonts.body,
-  },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  card: {
-    width: "48.5%",
-    minHeight: 104,
-    borderRadius: theme.radius.lg,
-    padding: 14,
+  introCard: {
+    borderRadius: theme.radius.xl,
+    padding: 16,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    justifyContent: "space-between",
+    gap: 6,
   },
-  cardTitle: {
+  introTitle: {
     color: theme.colors.ink,
     fontSize: 16,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
+  },
+  introNote: {
+    color: theme.colors.inkSoft,
+    fontSize: 12,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
+  },
+  sectionList: {
+    gap: theme.spacing.md,
+  },
+  card: {
+    borderRadius: theme.radius.xl,
+    padding: 16,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 12,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  sectionTitle: {
+    color: theme.colors.ink,
+    fontSize: 16,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  slotBody: {
+    minHeight: 56,
+    borderRadius: theme.radius.lg,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: theme.colors.surfaceSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
   },
   cardNote: {
     color: theme.colors.inkSoft,
