@@ -120,7 +120,9 @@ export function CharacterStage({
   cameraPosition: cameraPositionOverride = null,
   fov: fovOverride = null,
   miniWorld: miniWorldOverride = null,
+  characterScale: characterScaleOverride = null,
   interactionEnabled: interactionEnabledOverride = null,
+  showMiniWorld = true,
 }) {
   const preset = PRESENTATION_PRESETS[presentation] ?? PRESENTATION_PRESETS.full;
   const stageHeight = heightOverride ?? Math.round(preset.stageHeight * scale);
@@ -205,7 +207,8 @@ export function CharacterStage({
           specialAction={specialAction}
           modelBaseY={preset.modelBaseY}
           miniWorld={miniWorldOverride ?? preset.miniWorld}
-          characterScale={preset.characterScale}
+          characterScale={characterScaleOverride ?? preset.characterScale}
+          showMiniWorld={showMiniWorld}
         />
       </StageCanvas>
       {state.debugVisible ? <BehaviorDebugOverlay state={state} specialAction={specialAction} actionKey={actionKey} /> : null}
@@ -227,7 +230,16 @@ export function CharacterStage({
   );
 }
 
-function AnimatedCharacter({ character, rotation, state, specialAction, modelBaseY, miniWorld, characterScale }) {
+function AnimatedCharacter({
+  character,
+  rotation,
+  state,
+  specialAction,
+  modelBaseY,
+  miniWorld,
+  characterScale,
+  showMiniWorld,
+}) {
   const rootRef = useRef(null);
   const energyLevel = state.energyLevel ?? 3;
   const actionKey =
@@ -256,7 +268,7 @@ function AnimatedCharacter({ character, rotation, state, specialAction, modelBas
 
   return (
     <group ref={rootRef} position={[0, modelBaseY, 0]}>
-      <MiniWorld motionState={worldMotionKind} layout={miniWorld} />
+      {showMiniWorld ? <MiniWorld motionState={worldMotionKind} layout={miniWorld} /> : null}
 
       <group position={[0, 0.16, 0]} scale={characterScale}>
         <GLBCharacterModel
