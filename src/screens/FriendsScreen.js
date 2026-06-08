@@ -20,7 +20,6 @@ import {
   findFriendByHandle,
   getFriendGroupIds,
   sortFriendCards,
-  toggleFriendGroupMembership,
 } from "../data/mockFriendData.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
 import { getStreak } from "../game/progression.js";
@@ -29,7 +28,8 @@ import { FriendCharacterPreview } from "../components/FriendCharacterPreview";
 
 const VIEW_TABS = [
   { id: "ranking", label: "랭킹" },
-  { id: "list", label: "친구 관리" },
+  { id: "friends", label: "친구 관리" },
+  { id: "groups", label: "그룹 관리" },
 ];
 
 const RANK_TABS = [
@@ -60,10 +60,10 @@ export function FriendsScreen() {
   const [groups, setGroups] = useState(() => DEFAULT_FRIEND_GROUPS.map((group) => ({ ...group })));
   const [friendGroupState, setFriendGroupState] = useState(() => ({}));
   const [selectedGroupId, setSelectedGroupId] = useState("all");
-  const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupCode, setNewGroupCode] = useState("");
   const [renameGroupName, setRenameGroupName] = useState("");
+  const [showGroupRename, setShowGroupRename] = useState(false);
   const [selectedFriendId, setSelectedFriendId] = useState(null);
   const [friendHandleInput, setFriendHandleInput] = useState("");
   const [friendAddMessage, setFriendAddMessage] = useState("");
@@ -141,6 +141,7 @@ export function FriendsScreen() {
 
   useEffect(() => {
     setRenameGroupName(selectedGroup && !selectedGroup.system ? selectedGroup.name : "");
+    setShowGroupRename(false);
   }, [selectedGroup]);
 
   useEffect(() => {
@@ -149,15 +150,17 @@ export function FriendsScreen() {
     }
   }, [mergedFriends, selectedFriendId]);
 
-  useEffect(() => {
-    if (viewMode !== "list") {
-      setSelectedFriendId(null);
-    }
-  }, [viewMode]);
-
   const selectedGroupFriends = useMemo(
     () => filterFriendsByGroup(mergedFriends, selectedGroupId),
     [mergedFriends, selectedGroupId],
+  );
+
+  const groupFriends = useMemo(
+    () =>
+      [...selectedGroupFriends].sort((a, b) =>
+        String(a.nickname ?? "").localeCompare(String(b.nickname ?? ""), "ko-KR"),
+      ),
+    [selectedGroupFriends],
   );
 
   const rankedFriends = useMemo(
@@ -211,9 +214,9 @@ export function FriendsScreen() {
     const id = makeGroupId(name, groups);
     setGroups((current) => [...current, { id, name, code, system: false }]);
     setSelectedGroupId(id);
-    setShowCreateGroup(false);
     setNewGroupName("");
     setNewGroupCode(code);
+    setShowGroupRename(false);
   };
 
   const joinGroup = () => {
@@ -239,6 +242,7 @@ export function FriendsScreen() {
     if (!name || !selectedGroup || selectedGroup.system) return;
 
     setGroups((current) => current.map((group) => (group.id === selectedGroup.id ? { ...group, name } : group)));
+    setShowGroupRename(false);
   };
 
   const deleteGroup = () => {
@@ -247,14 +251,9 @@ export function FriendsScreen() {
     setGroups((current) => current.filter((group) => group.id !== selectedGroup.id));
     setFriendGroupState((current) => removeGroupFromAllFriends(current, selectedGroup.id));
     setSelectedGroupId("all");
+    setShowGroupRename(false);
   };
 
-  const toggleMembership = (friendId, groupId) => {
-    setFriendGroupState((current) => toggleFriendGroupMembership(current, friendId, groupId));
-  };
-
-  const selectedFriendGroupIds = selectedFriend ? getFriendGroupIds(selectedFriend, friendGroupState) : [];
-  const selectableGroups = groups.filter((group) => !group.system);
   const addFriendFromHandle = () => {
     const raw = String(friendHandleInput ?? "").trim();
     const normalized = raw.toLowerCase();
@@ -323,123 +322,130 @@ export function FriendsScreen() {
         </View>
       </View>
 
-      <View style={styles.groupCard}>
-        <View style={styles.groupCardTop}>
-          <View>
-            <Text style={styles.groupCardLabel}>그룹</Text>
-            <Text style={styles.groupCardTitle}>{selectedGroup.name}</Text>
-          </View>
-          {selectedGroup.system ? <Text style={styles.systemBadge}>SYS</Text> : null}
-        </View>
-        <Text style={styles.groupCardMeta}>
-          {groupCounts[selectedGroup.id] ?? 0}명{selectedGroup.code ? ` · 번호 ${selectedGroup.code}` : ""}
-        </Text>
-
-        <ScrollView
-          horizontal
-          nestedScrollEnabled
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.groupChipRow}
-          style={styles.groupChipScroller}
-        >
-          {groups.map((group) => {
-            const active = group.id === selectedGroupId;
-            const count = groupCounts[group.id] ?? 0;
-            return (
-              <Pressable
-                key={group.id}
-                onPress={() => {
-                  setSelectedGroupId(group.id);
-                  setShowCreateGroup(false);
-                }}
-                style={[styles.groupChip, active && styles.groupChipActive]}
-              >
-                <Text style={[styles.groupChipLabel, active && styles.groupChipLabelActive]}>
-                  {group.name} ({count})
-                </Text>
+      {viewMode === "groups" ? (
+        <View style={styles.groupToolsRow}>
+          <View style={styles.groupToolCard}>
+            <View style={styles.groupActionHeader}>
+              <Text style={styles.groupActionTitle}>그룹 만들기</Text>
+              <Text style={styles.groupActionHint}>고유 번호</Text>
+            </View>
+            <View style={styles.inlineInputRow}>
+              <TextInput
+                value={newGroupName}
+                onChangeText={setNewGroupName}
+                placeholder="그룹 이름"
+                placeholderTextColor={theme.colors.inkSoft}
+                style={styles.textInput}
+              />
+              <Pressable onPress={createGroup} style={styles.primaryButton}>
+                <Text style={styles.primaryButtonLabel}>생성</Text>
               </Pressable>
-            );
-          })}
-        </ScrollView>
+            </View>
+            <Text style={styles.groupActionNote}>
+              만들면 고유 번호가 생겨요. {newGroupCode ? `최근 번호 ${newGroupCode}` : ""}
+            </Text>
+          </View>
 
-        {viewMode === "list" ? (
-          <>
-            <View style={styles.groupActionCard}>
-              <View style={styles.groupActionHeader}>
-                <Text style={styles.groupActionTitle}>그룹 관리</Text>
-                {selectedGroup.system ? <Text style={styles.groupActionHint}>시스템 그룹</Text> : null}
-              </View>
-              {selectedGroup.system ? (
-                <Text style={styles.groupActionNote}>전체 그룹은 이름 변경과 삭제를 할 수 없어요.</Text>
-              ) : (
-                <>
-                  <View style={styles.inlineInputRow}>
-                    <TextInput
-                      value={renameGroupName}
-                      onChangeText={setRenameGroupName}
-                      placeholder="그룹 이름"
-                      placeholderTextColor={theme.colors.inkSoft}
-                      style={styles.textInput}
-                    />
-                    <Pressable onPress={renameGroup} style={styles.secondaryButton}>
-                      <Text style={styles.secondaryButtonLabel}>이름 변경</Text>
+          <View style={styles.groupToolCard}>
+            <View style={styles.groupActionHeader}>
+              <Text style={styles.groupActionTitle}>그룹 들어가기</Text>
+              <Text style={styles.groupActionHint}>번호 입력</Text>
+            </View>
+            <View style={styles.inlineInputRow}>
+              <TextInput
+                value={groupJoinCode}
+                onChangeText={setGroupJoinCode}
+                placeholder="그룹 번호"
+                placeholderTextColor={theme.colors.inkSoft}
+                keyboardType="number-pad"
+                style={styles.textInput}
+              />
+              <Pressable onPress={joinGroup} style={styles.primaryButton}>
+                <Text style={styles.primaryButtonLabel}>입장</Text>
+              </Pressable>
+            </View>
+            {groupJoinMessage ? <Text style={styles.groupActionNote}>{groupJoinMessage}</Text> : null}
+          </View>
+        </View>
+      ) : null}
+
+      {viewMode !== "friends" ? (
+        <View style={styles.groupCard}>
+          <View style={styles.groupCardTop}>
+            <View>
+              <Text style={styles.groupCardLabel}>그룹</Text>
+              <Text style={styles.groupCardTitle}>{selectedGroup.name}</Text>
+            </View>
+            {selectedGroup.system ? <Text style={styles.systemBadge}>SYS</Text> : null}
+          </View>
+          <Text style={styles.groupCardMeta}>
+            {groupCounts[selectedGroup.id] ?? 0}명{selectedGroup.code ? ` · 번호 ${selectedGroup.code}` : ""}
+          </Text>
+
+          <ScrollView
+            horizontal
+            nestedScrollEnabled
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.groupChipRow}
+            style={styles.groupChipScroller}
+          >
+            {groups.map((group) => {
+              const active = group.id === selectedGroupId;
+              const count = groupCounts[group.id] ?? 0;
+              return (
+                <Pressable
+                  key={group.id}
+                  onPress={() => setSelectedGroupId(group.id)}
+                  style={[styles.groupChip, active && styles.groupChipActive]}
+                >
+                  <Text style={[styles.groupChipLabel, active && styles.groupChipLabelActive]}>
+                    {group.name} ({count})
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+
+          {viewMode === "groups" ? (
+            <>
+              <View style={styles.groupButtonRow}>
+                {selectedGroup.system ? (
+                  <Text style={styles.groupActionNote}>전체 그룹은 관리할 수 없어요.</Text>
+                ) : (
+                  <>
+                    <Pressable
+                      onPress={() => setShowGroupRename((current) => !current)}
+                      style={styles.groupActionFlexButton}
+                    >
+                      <Text style={styles.secondaryButtonLabel}>그룹 관리</Text>
                     </Pressable>
-                  </View>
-                  <Pressable onPress={deleteGroup} style={styles.dangerButton}>
-                    <Text style={styles.dangerButtonLabel}>그룹 삭제</Text>
+                    <Pressable onPress={deleteGroup} style={styles.dangerButton}>
+                      <Text style={styles.dangerButtonLabel}>그룹 삭제</Text>
+                    </Pressable>
+                  </>
+                )}
+              </View>
+
+              {!selectedGroup.system && showGroupRename ? (
+                <View style={styles.inlineInputRow}>
+                  <TextInput
+                    value={renameGroupName}
+                    onChangeText={setRenameGroupName}
+                    placeholder="그룹 이름"
+                    placeholderTextColor={theme.colors.inkSoft}
+                    style={styles.textInput}
+                  />
+                  <Pressable onPress={renameGroup} style={styles.secondaryButton}>
+                    <Text style={styles.secondaryButtonLabel}>변경</Text>
                   </Pressable>
-                </>
-              )}
-              {selectedGroup.code ? (
-                <Text style={styles.groupActionNote}>그룹 번호 {selectedGroup.code}</Text>
+                </View>
               ) : null}
-            </View>
 
-            <View style={styles.groupActionCard}>
-              <View style={styles.groupActionHeader}>
-                <Text style={styles.groupActionTitle}>그룹 만들기</Text>
-                <Text style={styles.groupActionHint}>고유 번호 발급</Text>
-              </View>
-              <View style={styles.inlineInputRow}>
-                <TextInput
-                  value={newGroupName}
-                  onChangeText={setNewGroupName}
-                  placeholder="그룹 이름"
-                  placeholderTextColor={theme.colors.inkSoft}
-                  style={styles.textInput}
-                />
-                <Pressable onPress={createGroup} style={styles.primaryButton}>
-                  <Text style={styles.primaryButtonLabel}>생성</Text>
-                </Pressable>
-              </View>
-              <Text style={styles.groupActionNote}>
-                만들면 고유 번호가 생겨요. {newGroupCode ? `최근 번호 ${newGroupCode}` : ""}
-              </Text>
-            </View>
-
-            <View style={styles.groupActionCard}>
-              <View style={styles.groupActionHeader}>
-                <Text style={styles.groupActionTitle}>그룹 들어가기</Text>
-                <Text style={styles.groupActionHint}>번호 입력</Text>
-              </View>
-              <View style={styles.inlineInputRow}>
-                <TextInput
-                  value={groupJoinCode}
-                  onChangeText={setGroupJoinCode}
-                  placeholder="그룹 번호"
-                  placeholderTextColor={theme.colors.inkSoft}
-                  keyboardType="number-pad"
-                  style={styles.textInput}
-                />
-                <Pressable onPress={joinGroup} style={styles.primaryButton}>
-                  <Text style={styles.primaryButtonLabel}>입장</Text>
-                </Pressable>
-              </View>
-              {groupJoinMessage ? <Text style={styles.groupActionNote}>{groupJoinMessage}</Text> : null}
-            </View>
-          </>
-        ) : null}
-      </View>
+              {selectedGroup.code ? <Text style={styles.groupActionNote}>그룹 번호 {selectedGroup.code}</Text> : null}
+            </>
+          ) : null}
+        </View>
+      ) : null}
 
       {viewMode === "ranking" ? (
         <>
@@ -467,7 +473,7 @@ export function FriendsScreen() {
 
           {rankedFriends.length ? (
             <View style={styles.gridWrap}>
-              {rankedFriends.map((friend, index) => (
+              {rankedFriends.map((friend) => (
                 <FriendGalleryCard
                   key={friend.id}
                   friend={friend}
@@ -485,7 +491,7 @@ export function FriendsScreen() {
             <EmptyState />
           )}
         </>
-        ) : (
+      ) : viewMode === "friends" ? (
         <>
           <View style={styles.groupActionCard}>
             <View style={styles.groupActionHeader}>
@@ -540,7 +546,44 @@ export function FriendsScreen() {
               );
             })}
           </View>
+        </>
+      ) : (
+        <>
+          <View style={styles.listHeader}>
+            <Text style={styles.listTitle}>그룹 친구</Text>
+            <Text style={styles.listSubtitle}>선택한 그룹의 친구만 보여요.</Text>
+          </View>
 
+          {groupFriends.length ? (
+            <View style={styles.friendGallery}>
+              {groupFriends.map((friend) => {
+                const active = friend.id === selectedFriend?.id;
+                return (
+                  <Pressable
+                    key={friend.id}
+                    onPress={() => setSelectedFriendId(friend.id)}
+                    style={[
+                      styles.friendGalleryCard,
+                      active && styles.friendGalleryCardSelected,
+                      { width: galleryCardWidth },
+                    ]}
+                  >
+                    <View style={styles.friendGalleryScene}>
+                      <FriendPreview character={previewCharacter} state={characterViewState} size={galleryPreviewSize} />
+                    </View>
+                    <View style={styles.friendGalleryCaption}>
+                      <FriendIdentity friend={friend} />
+                      <Text style={styles.friendGridSteps} numberOfLines={1}>
+                        👣 {formatNumber(friend.todaySteps)}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : (
+            <EmptyState />
+          )}
         </>
       )}
 
@@ -578,32 +621,6 @@ export function FriendsScreen() {
                     <StatBlock label="연속" value={`${selectedFriend.streak}일`} />
                     <StatBlock label="상태" value={getLongTermLabel(selectedFriend.longTermState)} />
                   </View>
-
-                  {viewMode === "list" ? (
-                    <View style={styles.modalGroupCard}>
-                      <View style={styles.modalSectionHeader}>
-                        <Text style={styles.modalSectionTitle}>그룹</Text>
-                        <Text style={styles.modalSectionMeta}>{Math.max(0, selectedFriendGroupIds.length - 1)}개</Text>
-                      </View>
-                      <View style={styles.groupChecklist}>
-                        {selectableGroups.map((group) => {
-                          const checked = selectedFriendGroupIds.includes(group.id);
-                          return (
-                            <Pressable
-                              key={group.id}
-                              onPress={() => toggleMembership(selectedFriend.id, group.id)}
-                              style={[styles.checkRow, checked && styles.checkRowChecked]}
-                            >
-                              <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
-                                {checked ? <Text style={styles.checkboxMark}>✓</Text> : null}
-                              </View>
-                              <Text style={styles.checkLabel}>{group.name}</Text>
-                            </Pressable>
-                          );
-                        })}
-                      </View>
-                    </View>
-                  ) : null}
                 </ScrollView>
               </>
             ) : null}
@@ -959,6 +976,19 @@ const styles = StyleSheet.create({
   groupChipLabelActive: {
     color: "#ffffff",
   },
+  groupToolsRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  groupToolCard: {
+    flex: 1,
+    borderRadius: theme.radius.lg,
+    padding: 14,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 10,
+  },
   groupActionCard: {
     borderRadius: theme.radius.lg,
     padding: 14,
@@ -991,6 +1021,20 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     fontWeight: "600",
     fontFamily: theme.fonts.body,
+  },
+  groupButtonRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  groupActionFlexButton: {
+    flex: 1,
+    minHeight: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   groupActionToggle: {
     minHeight: 34,
