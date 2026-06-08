@@ -62,10 +62,13 @@ export function FriendsScreen() {
   const [selectedGroupId, setSelectedGroupId] = useState("all");
   const [showCreateGroup, setShowCreateGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
+  const [newGroupCode, setNewGroupCode] = useState("");
   const [renameGroupName, setRenameGroupName] = useState("");
   const [selectedFriendId, setSelectedFriendId] = useState(null);
   const [friendHandleInput, setFriendHandleInput] = useState("");
   const [friendAddMessage, setFriendAddMessage] = useState("");
+  const [groupJoinCode, setGroupJoinCode] = useState("");
+  const [groupJoinMessage, setGroupJoinMessage] = useState("");
   const [customFriends, setCustomFriends] = useState([]);
 
   const characterViewState = useMemo(
@@ -204,11 +207,31 @@ export function FriendsScreen() {
     const name = newGroupName.trim();
     if (!name) return;
 
+    const code = generateGroupCode(groups);
     const id = makeGroupId(name, groups);
-    setGroups((current) => [...current, { id, name, system: false }]);
+    setGroups((current) => [...current, { id, name, code, system: false }]);
     setSelectedGroupId(id);
     setShowCreateGroup(false);
     setNewGroupName("");
+    setNewGroupCode(code);
+  };
+
+  const joinGroup = () => {
+    const rawCode = String(groupJoinCode ?? "").trim();
+
+    if (!rawCode) {
+      setGroupJoinMessage("그룹 번호를 입력해 주세요.");
+      return;
+    }
+
+    const matchedGroup = groups.find((group) => String(group.code ?? "") === rawCode);
+    if (!matchedGroup) {
+      setGroupJoinMessage("찾을 수 없는 그룹 번호예요.");
+      return;
+    }
+
+    setSelectedGroupId(matchedGroup.id);
+    setGroupJoinMessage(`${matchedGroup.name} 그룹에 들어갔어요.`);
   };
 
   const renameGroup = () => {
@@ -308,7 +331,9 @@ export function FriendsScreen() {
           </View>
           {selectedGroup.system ? <Text style={styles.systemBadge}>SYS</Text> : null}
         </View>
-        <Text style={styles.groupCardMeta}>{groupCounts[selectedGroup.id] ?? 0}명</Text>
+        <Text style={styles.groupCardMeta}>
+          {groupCounts[selectedGroup.id] ?? 0}명{selectedGroup.code ? ` · 번호 ${selectedGroup.code}` : ""}
+        </Text>
 
         <ScrollView
           horizontal
@@ -341,7 +366,7 @@ export function FriendsScreen() {
           <>
             <View style={styles.groupActionCard}>
               <View style={styles.groupActionHeader}>
-                <Text style={styles.groupActionTitle}>그룹 설정</Text>
+                <Text style={styles.groupActionTitle}>그룹 관리</Text>
                 {selectedGroup.system ? <Text style={styles.groupActionHint}>시스템 그룹</Text> : null}
               </View>
               {selectedGroup.system ? (
@@ -365,35 +390,52 @@ export function FriendsScreen() {
                   </Pressable>
                 </>
               )}
+              {selectedGroup.code ? (
+                <Text style={styles.groupActionNote}>그룹 번호 {selectedGroup.code}</Text>
+              ) : null}
             </View>
 
             <View style={styles.groupActionCard}>
               <View style={styles.groupActionHeader}>
-                <Text style={styles.groupActionTitle}>새 그룹 만들기</Text>
-                <Pressable
-                  onPress={() => setShowCreateGroup((current) => !current)}
-                  style={[styles.groupActionToggle, showCreateGroup && styles.groupActionToggleActive]}
-                >
-                  <Text style={[styles.groupActionToggleLabel, showCreateGroup && styles.groupActionToggleLabelActive]}>
-                    {showCreateGroup ? "닫기" : "생성"}
-                  </Text>
+                <Text style={styles.groupActionTitle}>그룹 만들기</Text>
+                <Text style={styles.groupActionHint}>고유 번호 발급</Text>
+              </View>
+              <View style={styles.inlineInputRow}>
+                <TextInput
+                  value={newGroupName}
+                  onChangeText={setNewGroupName}
+                  placeholder="그룹 이름"
+                  placeholderTextColor={theme.colors.inkSoft}
+                  style={styles.textInput}
+                />
+                <Pressable onPress={createGroup} style={styles.primaryButton}>
+                  <Text style={styles.primaryButtonLabel}>생성</Text>
                 </Pressable>
               </View>
+              <Text style={styles.groupActionNote}>
+                만들면 고유 번호가 생겨요. {newGroupCode ? `최근 번호 ${newGroupCode}` : ""}
+              </Text>
+            </View>
 
-              {showCreateGroup ? (
-                <View style={styles.inlineInputRow}>
-                  <TextInput
-                    value={newGroupName}
-                    onChangeText={setNewGroupName}
-                    placeholder="그룹 이름"
-                    placeholderTextColor={theme.colors.inkSoft}
-                    style={styles.textInput}
-                  />
-                  <Pressable onPress={createGroup} style={styles.primaryButton}>
-                    <Text style={styles.primaryButtonLabel}>생성</Text>
-                  </Pressable>
-                </View>
-              ) : null}
+            <View style={styles.groupActionCard}>
+              <View style={styles.groupActionHeader}>
+                <Text style={styles.groupActionTitle}>그룹 들어가기</Text>
+                <Text style={styles.groupActionHint}>번호 입력</Text>
+              </View>
+              <View style={styles.inlineInputRow}>
+                <TextInput
+                  value={groupJoinCode}
+                  onChangeText={setGroupJoinCode}
+                  placeholder="그룹 번호"
+                  placeholderTextColor={theme.colors.inkSoft}
+                  keyboardType="number-pad"
+                  style={styles.textInput}
+                />
+                <Pressable onPress={joinGroup} style={styles.primaryButton}>
+                  <Text style={styles.primaryButtonLabel}>입장</Text>
+                </Pressable>
+              </View>
+              {groupJoinMessage ? <Text style={styles.groupActionNote}>{groupJoinMessage}</Text> : null}
             </View>
           </>
         ) : null}
@@ -698,6 +740,21 @@ function makeGroupId(name, groups) {
   }
 
   return candidate;
+}
+
+function generateGroupCode(groups) {
+  const existing = new Set(groups.map((group) => String(group.code ?? "").trim()).filter(Boolean));
+  let attempts = 0;
+
+  while (attempts < 2000) {
+    const candidate = String(100000 + Math.floor(Math.random() * 900000));
+    if (!existing.has(candidate)) {
+      return candidate;
+    }
+    attempts += 1;
+  }
+
+  return String(Date.now()).slice(-6);
 }
 
 function getModeInfo(friend, rankMode) {
