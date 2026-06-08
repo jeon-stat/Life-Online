@@ -7,10 +7,14 @@ import { useStepData } from "../data/stepDataProvider.js";
 import { CUSTOMIZATION_CATEGORIES, CUSTOMIZATION_ITEMS } from "../data/customizationCatalog.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
 
-const PAGE_SIZE = 9;
-const GRID_COLUMNS = 3;
-const GRID_GAP = 10;
-const GRID_ITEM_HEIGHT = 116;
+const ITEM_PAGE_SIZE = 9;
+const ITEM_GRID_COLUMNS = 3;
+const ITEM_GRID_GAP = 10;
+const ITEM_GRID_HEIGHT = 116;
+const SKIN_TONE_PAGE_SIZE = 14;
+const SKIN_TONE_GRID_COLUMNS = 7;
+const SKIN_TONE_GRID_GAP = 6;
+const SKIN_TONE_GRID_HEIGHT = 112;
 const FILTERS = [
   { id: "all", label: "전체" },
   { id: "owned", label: "보유" },
@@ -71,12 +75,14 @@ export function ShopScreen() {
     [allItems, ownedIds, selectedFilterId],
   );
 
-  const totalPages = selectedCategoryId === "skinTone" ? 1 : Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+  const isSkinToneCategory = selectedCategoryId === "skinTone";
+  const gridColumns = isSkinToneCategory ? SKIN_TONE_GRID_COLUMNS : ITEM_GRID_COLUMNS;
+  const gridGap = isSkinToneCategory ? SKIN_TONE_GRID_GAP : ITEM_GRID_GAP;
+  const gridItemHeight = isSkinToneCategory ? SKIN_TONE_GRID_HEIGHT : ITEM_GRID_HEIGHT;
+  const pageSize = isSkinToneCategory ? SKIN_TONE_PAGE_SIZE : ITEM_PAGE_SIZE;
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
   const currentPage = Math.min(pageByCategory[selectedCategoryId] ?? 0, totalPages - 1);
-  const visibleItems =
-    selectedCategoryId === "skinTone"
-      ? filteredItems
-      : filteredItems.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
+  const visibleItems = filteredItems.slice(currentPage * pageSize, currentPage * pageSize + pageSize);
 
   const selectedItemId = previewSelectionByCategory[selectedCategoryId] ?? null;
   const currentSelection = allItems.find((item) => item.id === selectedItemId) ?? visibleItems[0] ?? null;
@@ -126,16 +132,13 @@ export function ShopScreen() {
   };
 
   const gridWidthForLayout = gridWidth || Math.max(0, windowWidth - theme.spacing.md * 4);
-  const gridTileWidth =
-    selectedCategoryId === "skinTone"
-      ? 0
-      : Math.max(0, Math.floor((gridWidthForLayout - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS));
-  const gridRows = selectedCategoryId === "skinTone" ? 0 : Math.max(1, Math.ceil(visibleItems.length / GRID_COLUMNS));
-  const gridHeight = gridRows * GRID_ITEM_HEIGHT + Math.max(0, gridRows - 1) * GRID_GAP;
+  const gridTileWidth = Math.max(0, Math.floor((gridWidthForLayout - gridGap * (gridColumns - 1)) / gridColumns));
+  const gridRows = Math.max(1, Math.ceil(visibleItems.length / gridColumns));
+  const gridHeight = gridRows * gridItemHeight + Math.max(0, gridRows - 1) * gridGap;
 
   const getGridPosition = (index) => ({
-    x: (index % GRID_COLUMNS) * (gridTileWidth + GRID_GAP),
-    y: Math.floor(index / GRID_COLUMNS) * (GRID_ITEM_HEIGHT + GRID_GAP),
+    x: (index % gridColumns) * (gridTileWidth + gridGap),
+    y: Math.floor(index / gridColumns) * (gridItemHeight + gridGap),
   });
 
   const getAnimatedPosition = (itemId, index) => {
@@ -151,7 +154,7 @@ export function ShopScreen() {
   };
 
   useEffect(() => {
-    if (selectedCategoryId === "skinTone" || gridTileWidth <= 0) {
+    if (gridTileWidth <= 0) {
       return;
     }
 
@@ -181,7 +184,7 @@ export function ShopScreen() {
         itemPositionMapRef.current.delete(itemId);
       }
     }
-  }, [gridTileWidth, selectedCategoryId, visibleItems]);
+  }, [gridColumns, gridTileWidth, visibleItems, gridGap, gridItemHeight]);
 
   return (
     <View style={styles.screen}>
@@ -263,25 +266,6 @@ export function ShopScreen() {
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>현재 필터에 맞는 아이템이 없어요.</Text>
           </View>
-        ) : selectedCategoryId === "skinTone" ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.skinToneRow}>
-            {visibleItems.map((item) => {
-              const selected = selectedItemId === item.id;
-              const owned = ownedIds.includes(item.id);
-
-              return (
-                <Pressable
-                  key={item.id}
-                  onPress={() => handleSelectItem(item)}
-                  style={[styles.skinToneChip, selected && styles.skinToneChipSelected]}
-                >
-                  <View style={[styles.skinToneSwatch, { backgroundColor: item.color }]} />
-                  <Text style={styles.skinToneLabel}>{item.label}</Text>
-                  <Text style={styles.skinToneMeta}>{owned ? "보유중" : formatPrice(item.price)}</Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
         ) : (
           <>
             <View style={styles.itemsGridStage} onLayout={(event) => setGridWidth(Math.round(event.nativeEvent.layout.width))}>
@@ -290,6 +274,7 @@ export function ShopScreen() {
                   const selected = selectedItemId === item.id;
                   const owned = ownedIds.includes(item.id);
                   const { animated } = getAnimatedPosition(item.id, index);
+                  const isSkinTone = selectedCategoryId === "skinTone";
 
                   return (
                     <Animated.View
@@ -298,36 +283,67 @@ export function ShopScreen() {
                         styles.itemTileShell,
                         {
                           width: gridTileWidth,
-                          height: GRID_ITEM_HEIGHT,
+                          height: gridItemHeight,
                           transform: [
                             { translateX: animated.x },
                             { translateY: animated.y },
                           ],
                         },
+                        isSkinTone && styles.skinToneTileShell,
                       ]}
                     >
                       <Pressable
                         onPress={() => handleSelectItem(item)}
-                        style={[styles.itemTile, selected && styles.itemTileSelected]}
+                        style={[
+                          styles.itemTile,
+                          selected && styles.itemTileSelected,
+                          isSkinTone && styles.skinToneTile,
+                        ]}
                       >
-                        <View style={[styles.itemDot, { backgroundColor: selectedCategory.accent }]} />
-                        <Text style={styles.itemLabel} numberOfLines={1}>
-                          {item.label}
-                        </Text>
-
-                        <View style={styles.priceLine}>
-                          <Text style={styles.priceCoin}>◉</Text>
-                          <Text style={styles.priceValue}>{formatPrice(item.price)}</Text>
-                          <Pressable
-                            disabled={owned}
-                            onPress={() => handleBuyItem(item)}
-                            style={[styles.buyButton, owned && styles.buyButtonOwned]}
-                          >
-                            <Text style={[styles.buyButtonLabel, owned && styles.buyButtonLabelOwned]}>
-                              {owned ? "보유중" : "구매"}
+                        {isSkinTone ? (
+                          <>
+                            <View style={[styles.skinToneSwatchLarge, { backgroundColor: item.color }]} />
+                            <Text style={styles.skinToneLabel} numberOfLines={1}>
+                              {item.label}
                             </Text>
-                          </Pressable>
-                        </View>
+
+                            <View style={styles.skinTonePriceRow}>
+                              <Text style={styles.priceCoin}>◉</Text>
+                              <Text style={styles.priceValue}>{formatPrice(item.price)}</Text>
+                            </View>
+
+                            <Pressable
+                              disabled={owned}
+                              onPress={() => handleBuyItem(item)}
+                              style={[styles.buyButton, styles.skinToneBuyButton, owned && styles.buyButtonOwned]}
+                            >
+                              <Text style={[styles.buyButtonLabel, owned && styles.buyButtonLabelOwned]}>
+                                {owned ? "보유중" : "구매"}
+                              </Text>
+                            </Pressable>
+                          </>
+                        ) : (
+                          <>
+                            <View style={[styles.itemDot, { backgroundColor: selectedCategory.accent }]} />
+                            <Text style={styles.itemLabel} numberOfLines={1}>
+                              {item.label}
+                            </Text>
+
+                            <View style={styles.priceLine}>
+                              <Text style={styles.priceCoin}>◉</Text>
+                              <Text style={styles.priceValue}>{formatPrice(item.price)}</Text>
+                              <Pressable
+                                disabled={owned}
+                                onPress={() => handleBuyItem(item)}
+                                style={[styles.buyButton, owned && styles.buyButtonOwned]}
+                              >
+                                <Text style={[styles.buyButtonLabel, owned && styles.buyButtonLabelOwned]}>
+                                  {owned ? "보유중" : "구매"}
+                                </Text>
+                              </Pressable>
+                            </View>
+                          </>
+                        )}
                       </Pressable>
                     </Animated.View>
                   );
@@ -660,6 +676,32 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     textAlign: "center",
     fontFamily: theme.fonts.body,
+  },
+  skinToneTileShell: {},
+  skinToneTile: {
+    paddingHorizontal: 4,
+    paddingVertical: 6,
+    gap: 4,
+  },
+  skinToneSwatchLarge: {
+    width: 20,
+    height: 20,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(0,0,0,0.08)",
+  },
+  skinTonePriceRow: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+  },
+  skinToneBuyButton: {
+    minWidth: 0,
+    width: "100%",
+    paddingHorizontal: 4,
+    paddingVertical: 3,
   },
   priceLine: {
     width: "100%",
