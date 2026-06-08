@@ -178,7 +178,6 @@ export function ShopScreen() {
   return (
     <View style={styles.screen}>
       <View style={styles.coinBadge}>
-        <Text style={styles.coinBadgeLabel}>보유 코인</Text>
         <Text style={styles.coinBadgeValue}>{formatCoin(currentCoin)}</Text>
       </View>
 
@@ -412,7 +411,7 @@ function formatPrice(price = 0) {
 }
 
 function formatCoin(amount = 0) {
-  return `? ${Number(amount ?? 0).toLocaleString("ko-KR")}`;
+  return `◉ ${Number(amount ?? 0).toLocaleString("ko-KR")}`;
 }
 
 const styles = StyleSheet.create({
@@ -428,7 +427,7 @@ const styles = StyleSheet.create({
     top: 10,
     left: 12,
     zIndex: 20,
-    minWidth: 92,
+    minWidth: 68,
     borderRadius: theme.radius.pill,
     paddingHorizontal: 12,
     paddingVertical: 9,
@@ -440,13 +439,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
     elevation: 3,
-    gap: 2,
-  },
-  coinBadgeLabel: {
-    color: theme.colors.inkSoft,
-    fontSize: 10,
-    fontWeight: "800",
-    fontFamily: theme.fonts.body,
   },
   coinBadgeValue: {
     color: theme.colors.ink,
