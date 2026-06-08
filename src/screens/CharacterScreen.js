@@ -114,9 +114,6 @@ export function CharacterScreen() {
       <View style={styles.itemCard}>
         <View style={styles.itemHeader}>
           <Text style={styles.itemTitle}>{selectedCategory.label}</Text>
-          <Text style={styles.itemMeta}>
-            {selectedCategoryId === "skinTone" ? "??以?蹂닿린" : `${ownedCategoryItems.length}媛?蹂댁쑀`}
-          </Text>
         </View>
 
         {selectedCategoryId === "skinTone" ? (

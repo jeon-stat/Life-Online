@@ -113,7 +113,13 @@ export function ShopScreen() {
   };
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <View style={styles.screen}>
+      <View style={styles.coinBadge}>
+        <Text style={styles.coinBadgeLabel}>보유 코인</Text>
+        <Text style={styles.coinBadgeValue}>{formatCoin(currentCoin)}</Text>
+      </View>
+
+      <ScrollView style={styles.scrollArea} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.pageTitleWrap}>
         <Text style={styles.pageTitle}>상점</Text>
       </View>
@@ -268,7 +274,7 @@ export function ShopScreen() {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>구매할까요?</Text>
               <Pressable onPress={() => setPurchaseRequest(null)} style={styles.modalCloseButton}>
-                <Text style={styles.modalCloseLabel}>횞</Text>
+                <Text style={styles.modalCloseLabel}>×</Text>
               </Pressable>
             </View>
 
@@ -293,7 +299,8 @@ export function ShopScreen() {
           </View>
         </View>
       </Modal>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -333,9 +340,43 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.appBackground,
   },
+  scrollArea: {
+    flex: 1,
+  },
+  coinBadge: {
+    position: "absolute",
+    top: 10,
+    left: 12,
+    zIndex: 20,
+    minWidth: 92,
+    borderRadius: theme.radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    backgroundColor: "rgba(255,255,255,0.96)",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    shadowColor: "#000000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+    gap: 2,
+  },
+  coinBadgeLabel: {
+    color: theme.colors.inkSoft,
+    fontSize: 10,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
+  },
+  coinBadgeValue: {
+    color: theme.colors.ink,
+    fontSize: 13,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
   content: {
     paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.lg,
+    paddingTop: 56,
     paddingBottom: theme.spacing.xl,
     gap: theme.spacing.md,
   },
