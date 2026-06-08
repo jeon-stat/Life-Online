@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: theme.spacing.md,
-    paddingTop: 56,
+    paddingTop: theme.spacing.lg,
     paddingBottom: theme.spacing.xl,
     gap: theme.spacing.md,
   },
