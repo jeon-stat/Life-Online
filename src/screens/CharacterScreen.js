@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { CHARACTER_CLASSES, SKIN_TONE_PRESETS } from "../characters.js";
@@ -7,86 +7,23 @@ import { theme } from "../constants/theme.js";
 import { useStepData } from "../data/stepDataProvider.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
 
+const PAGE_SIZE = 9;
+
 const CHARACTER_CATEGORIES = [
-  {
-    id: "top",
-    label: "상의",
-    previewMode: "character",
-    accent: "#d89a4a",
-  },
-  {
-    id: "bottom",
-    label: "하의",
-    previewMode: "character",
-    accent: "#8fbe70",
-  },
-  {
-    id: "expression",
-    label: "표정",
-    previewMode: "face",
-    accent: "#111111",
-  },
-  {
-    id: "background",
-    label: "배경",
-    previewMode: "background",
-    accent: "#7bb3e5",
-  },
-  {
-    id: "item",
-    label: "아이템",
-    previewMode: "character",
-    accent: "#7d87ff",
-  },
-  {
-    id: "skinTone",
-    label: "피부톤",
-    previewMode: "character",
-    accent: "#d6b09b",
-  },
+  { id: "top", label: "상의", mode: "character", accent: "#d89a4a" },
+  { id: "bottom", label: "하의", mode: "character", accent: "#8fbe70" },
+  { id: "expression", label: "표정", mode: "face", accent: "#111111" },
+  { id: "background", label: "배경", mode: "background", accent: "#7bb3e5" },
+  { id: "item", label: "아이템", mode: "character", accent: "#7d87ff" },
+  { id: "skinTone", label: "피부톤", mode: "character", accent: "#d6b09b" },
 ];
 
 const OWNED_ITEMS = {
-  top: [
-    { id: "top-1", label: "티셔츠" },
-    { id: "top-2", label: "셔츠" },
-    { id: "top-3", label: "니트" },
-    { id: "top-4", label: "후드" },
-    { id: "top-5", label: "재킷" },
-    { id: "top-6", label: "코트" },
-  ],
-  bottom: [
-    { id: "bottom-1", label: "바지" },
-    { id: "bottom-2", label: "청바지" },
-    { id: "bottom-3", label: "조거" },
-    { id: "bottom-4", label: "슬랙스" },
-    { id: "bottom-5", label: "반바지" },
-    { id: "bottom-6", label: "치마" },
-  ],
-  expression: [
-    { id: "expression-1", label: "무표정" },
-    { id: "expression-2", label: "웃음" },
-    { id: "expression-3", label: "졸림" },
-    { id: "expression-4", label: "장난" },
-    { id: "expression-5", label: "반짝" },
-    { id: "expression-6", label: "놀람" },
-  ],
-  background: [
-    { id: "background-1", label: "하늘" },
-    { id: "background-2", label: "저녁" },
-    { id: "background-3", label: "밤" },
-    { id: "background-4", label: "구름" },
-    { id: "background-5", label: "숲" },
-    { id: "background-6", label: "바다" },
-  ],
-  item: [
-    { id: "item-1", label: "모자" },
-    { id: "item-2", label: "가방" },
-    { id: "item-3", label: "선글라스" },
-    { id: "item-4", label: "리본" },
-    { id: "item-5", label: "핀" },
-    { id: "item-6", label: "키링" },
-  ],
+  top: buildOwnedItems("상의", ["티셔츠", "셔츠", "니트", "후드", "재킷", "코트", "원피스", "블라우스", "스웨터", "조끼", "맨투맨", "가디건"]),
+  bottom: buildOwnedItems("하의", ["바지", "청바지", "조거", "슬랙스", "반바지", "치마", "레깅스", "숏팬츠", "와이드", "스커트", "슬림", "트레이닝"]),
+  expression: buildOwnedItems("표정", ["무표정", "웃음", "졸림", "장난", "반짝", "놀람", "수줍", "뿌듯", "화남", "하트", "멍함", "윙크"]),
+  background: buildOwnedItems("배경", ["하늘", "저녁", "밤", "구름", "숲", "바다", "봄", "눈", "비", "별", "노을", "새벽"]),
+  item: buildOwnedItems("아이템", ["모자", "가방", "선글라스", "리본", "핀", "키링", "배지", "꽃", "반지", "스티커", "목걸이", "양말"]),
   skinTone: SKIN_TONE_PRESETS.map((tone, index) => ({
     id: tone.id ?? `skin-${index + 1}`,
     label: tone.label ?? `톤 ${index + 1}`,
@@ -94,7 +31,7 @@ const OWNED_ITEMS = {
   })),
 };
 
-const INITIAL_SELECTIONS = {
+const DEFAULT_SELECTIONS = {
   top: OWNED_ITEMS.top[0]?.id ?? null,
   bottom: OWNED_ITEMS.bottom[0]?.id ?? null,
   expression: OWNED_ITEMS.expression[0]?.id ?? null,
@@ -106,46 +43,76 @@ const INITIAL_SELECTIONS = {
 export function CharacterScreen() {
   const { today, history, goal, admin } = useStepData();
   const [selectedCategoryId, setSelectedCategoryId] = useState("top");
-  const [selectedItems, setSelectedItems] = useState(INITIAL_SELECTIONS);
+  const [selectedItems, setSelectedItems] = useState(() => ({
+    ...DEFAULT_SELECTIONS,
+    skinTone: admin?.skinToneId ?? DEFAULT_SELECTIONS.skinTone,
+  }));
+  const [pageByCategory, setPageByCategory] = useState({});
+
+  useEffect(() => {
+    if (!admin?.skinToneId) return;
+    setSelectedItems((current) =>
+      current.skinTone === admin.skinToneId ? current : { ...current, skinTone: admin.skinToneId },
+    );
+  }, [admin?.skinToneId]);
+
+  const selectedCategory =
+    CHARACTER_CATEGORIES.find((category) => category.id === selectedCategoryId) ?? CHARACTER_CATEGORIES[0];
+  const selectedCategoryItems = OWNED_ITEMS[selectedCategoryId] ?? [];
+
+  const activeSkinTone = useMemo(
+    () =>
+      OWNED_ITEMS.skinTone.find((tone) => tone.id === selectedItems.skinTone) ??
+      OWNED_ITEMS.skinTone[0] ??
+      null,
+    [selectedItems.skinTone],
+  );
 
   const previewCharacter = useMemo(() => {
     const baseCharacter = CHARACTER_CLASSES[0];
-    const selectedSkinTone = OWNED_ITEMS.skinTone.find((tone) => tone.id === selectedItems.skinTone);
-
-    if (!selectedSkinTone) {
-      return baseCharacter;
-    }
+    if (!activeSkinTone) return baseCharacter;
 
     return {
       ...baseCharacter,
       palette: {
         ...baseCharacter.palette,
-        skin: selectedSkinTone.color,
+        skin: activeSkinTone.color,
       },
-      skinTone: selectedSkinTone.color,
+      skinTone: activeSkinTone.color,
     };
-  }, [selectedItems.skinTone]);
+  }, [activeSkinTone]);
 
   const characterViewState = useMemo(
     () => buildCharacterViewModel({ todayRecord: today, history, goal, admin }),
     [admin, goal, history, today],
   );
 
-  const selectedCategory = CHARACTER_CATEGORIES.find((category) => category.id === selectedCategoryId) ?? CHARACTER_CATEGORIES[0];
-  const ownedItems = OWNED_ITEMS[selectedCategory.id] ?? [];
-  const currentSelection = ownedItems.find((item) => item.id === selectedItems[selectedCategory.id]) ?? ownedItems[0] ?? null;
+  const previewMode = selectedCategory.mode;
+  const currentSelection =
+    selectedCategoryId === "skinTone"
+      ? activeSkinTone
+      : selectedCategoryItems.find((item) => item.id === selectedItems[selectedCategoryId]) ?? selectedCategoryItems[0];
 
-  const previewMode = selectedCategory.previewMode;
+  const totalPages = Math.max(1, Math.ceil(selectedCategoryItems.length / PAGE_SIZE));
+  const currentPage = Math.min(pageByCategory[selectedCategoryId] ?? 0, totalPages - 1);
+  const visibleItems =
+    selectedCategoryId === "skinTone"
+      ? selectedCategoryItems
+      : selectedCategoryItems.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
 
-  const handleSelectItem = (itemId) => {
-    setSelectedItems((current) => ({
-      ...current,
-      [selectedCategory.id]: itemId,
-    }));
+  const handleSelectItem = (item) => {
+    setSelectedItems((current) => ({ ...current, [selectedCategoryId]: item.id }));
 
-    if (selectedCategory.id === "skinTone") {
-      admin?.setSkinTone?.(itemId);
+    if (selectedCategoryId === "skinTone") {
+      admin?.setSkinTone?.(item.id);
     }
+  };
+
+  const setPage = (nextPage) => {
+    setPageByCategory((current) => ({
+      ...current,
+      [selectedCategoryId]: nextPage,
+    }));
   };
 
   return (
@@ -162,12 +129,12 @@ export function CharacterScreen() {
             character={previewCharacter}
             state={characterViewState}
             presentation="full"
-            scale={0.9}
-            characterScale={previewMode === "face" ? 0.98 : 0.78}
+            scale={0.88}
+            characterScale={previewMode === "face" ? 0.96 : 0.78}
             cameraPosition={previewMode === "face" ? [0, 2.16, 4.8] : null}
             fov={previewMode === "face" ? 18 : null}
             showMiniWorld={previewMode !== "face"}
-            interactionEnabled={true}
+            interactionEnabled={false}
           />
         )}
 
@@ -199,33 +166,63 @@ export function CharacterScreen() {
       <View style={styles.itemCard}>
         <View style={styles.itemHeader}>
           <Text style={styles.itemTitle}>{selectedCategory.label}</Text>
-          <Text style={styles.itemMeta}>{previewMode === "background" ? "배경만 보기" : "선택 가능"}</Text>
+          <Text style={styles.itemMeta}>
+            {selectedCategoryId === "background" ? "배경만 보기" : selectedCategoryId === "skinTone" ? "원형 10개" : "9개씩 보기"}
+          </Text>
         </View>
 
-        <View style={styles.itemGrid}>
-          {ownedItems.map((item) => {
-            const selected = selectedItems[selectedCategory.id] === item.id;
-            const chipStyle =
-              selectedCategory.id === "skinTone"
-                ? { backgroundColor: item.color, borderColor: selected ? theme.colors.ink : theme.colors.border }
-                : null;
+        {selectedCategoryId === "skinTone" ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.skinToneRow}>
+            {visibleItems.map((item) => {
+              const selected = selectedItems.skinTone === item.id;
+              return (
+                <Pressable
+                  key={item.id}
+                  onPress={() => handleSelectItem(item)}
+                  style={[styles.skinToneChip, selected && styles.skinToneChipSelected]}
+                >
+                  <View style={[styles.skinToneSwatch, { backgroundColor: item.color }]} />
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        ) : (
+          <>
+            <View style={styles.itemGrid}>
+              {visibleItems.map((item) => {
+                const selected = selectedItems[selectedCategoryId] === item.id;
+                return (
+                  <Pressable
+                    key={item.id}
+                    onPress={() => handleSelectItem(item)}
+                    style={[styles.itemTile, selected && styles.itemTileSelected]}
+                  >
+                    <View style={[styles.itemDot, { backgroundColor: selectedCategory.accent }]} />
+                    <Text style={styles.itemLabel} numberOfLines={1}>
+                      {item.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
 
-            return (
-              <Pressable
-                key={item.id}
-                onPress={() => handleSelectItem(item.id)}
-                style={[styles.itemTile, selected && styles.itemTileSelected, chipStyle]}
-              >
-                {selectedCategory.id === "skinTone" ? null : (
-                  <View style={[styles.itemDot, { backgroundColor: selectedCategory.accent }]} />
-                )}
-                <Text style={styles.itemLabel} numberOfLines={1}>
-                  {item.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+            {totalPages > 1 ? (
+              <View style={styles.paginationRow}>
+                {Array.from({ length: totalPages }, (_, index) => (
+                  <Pressable
+                    key={`${selectedCategoryId}-page-${index + 1}`}
+                    onPress={() => setPage(index)}
+                    style={[styles.pageChip, currentPage === index && styles.pageChipActive]}
+                  >
+                    <Text style={[styles.pageChipLabel, currentPage === index && styles.pageChipLabelActive]}>
+                      {index + 1}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+          </>
+        )}
       </View>
     </ScrollView>
   );
@@ -242,6 +239,13 @@ function BackgroundScene() {
       <View style={styles.bgPath} />
     </View>
   );
+}
+
+function buildOwnedItems(prefix, labels) {
+  return labels.map((label, index) => ({
+    id: `${prefix}-${index + 1}`,
+    label,
+  }));
 }
 
 const styles = StyleSheet.create({
@@ -406,7 +410,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    gap: 10,
+    gap: 12,
   },
   itemHeader: {
     flexDirection: "row",
@@ -461,5 +465,59 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     textAlign: "center",
     fontFamily: theme.fonts.body,
+  },
+  skinToneRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 4,
+  },
+  skinToneChip: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surfaceMuted,
+  },
+  skinToneChipSelected: {
+    borderColor: theme.colors.ink,
+    borderWidth: 2,
+  },
+  skinToneSwatch: {
+    width: 22,
+    height: 22,
+    borderRadius: 999,
+  },
+  paginationRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    paddingTop: 2,
+  },
+  pageChip: {
+    minWidth: 34,
+    height: 34,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surfaceMuted,
+  },
+  pageChipActive: {
+    backgroundColor: "#111111",
+    borderColor: "#111111",
+  },
+  pageChipLabel: {
+    color: theme.colors.inkSoft,
+    fontSize: 12,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  pageChipLabelActive: {
+    color: "#ffffff",
   },
 });
