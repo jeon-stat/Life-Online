@@ -1,5 +1,5 @@
-﻿import { useMemo, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+﻿import { useEffect, useMemo, useRef, useState, useWindowDimensions } from "react";
+import { Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { CHARACTER_CLASSES } from "../characters.js";
 import { CharacterStage } from "../components/CharacterStage";
@@ -9,6 +9,9 @@ import { CUSTOMIZATION_CATEGORIES, CUSTOMIZATION_ITEMS } from "../data/customiza
 import { buildCharacterViewModel } from "../game/characterState.js";
 
 const PAGE_SIZE = 9;
+const GRID_COLUMNS = 3;
+const GRID_GAP = 10;
+const GRID_ITEM_HEIGHT = 116;
 const FILTERS = [
   { id: "all", label: "전체" },
   { id: "owned", label: "보유" },
@@ -22,6 +25,9 @@ export function ShopScreen() {
   const [purchaseRequest, setPurchaseRequest] = useState(null);
   const [purchaseError, setPurchaseError] = useState(null);
   const [pageByCategory, setPageByCategory] = useState({});
+  const [gridWidth, setGridWidth] = useState(0);
+  const itemPositionMapRef = useRef(new Map());
+  const { width: windowWidth } = useWindowDimensions();
 
   const selectedCategory =
     CUSTOMIZATION_CATEGORIES.find((category) => category.id === selectedCategoryId) ?? CUSTOMIZATION_CATEGORIES[0];
@@ -111,6 +117,64 @@ export function ShopScreen() {
       [selectedCategoryId]: nextPage,
     }));
   };
+
+  const gridWidthForLayout = gridWidth || Math.max(0, windowWidth - theme.spacing.md * 4);
+  const gridTileWidth =
+    selectedCategoryId === "skinTone"
+      ? 0
+      : Math.max(0, Math.floor((gridWidthForLayout - GRID_GAP * (GRID_COLUMNS - 1)) / GRID_COLUMNS));
+  const gridRows = selectedCategoryId === "skinTone" ? 0 : Math.max(1, Math.ceil(visibleItems.length / GRID_COLUMNS));
+  const gridHeight = gridRows * GRID_ITEM_HEIGHT + Math.max(0, gridRows - 1) * GRID_GAP;
+
+  const getGridPosition = (index) => ({
+    x: (index % GRID_COLUMNS) * (gridTileWidth + GRID_GAP),
+    y: Math.floor(index / GRID_COLUMNS) * (GRID_ITEM_HEIGHT + GRID_GAP),
+  });
+
+  const getAnimatedPosition = (itemId, index) => {
+    const target = getGridPosition(index);
+    let animated = itemPositionMapRef.current.get(itemId);
+
+    if (!animated) {
+      animated = new Animated.ValueXY(target);
+      itemPositionMapRef.current.set(itemId, animated);
+    }
+
+    return { animated, target };
+  };
+
+  useEffect(() => {
+    if (selectedCategoryId === "skinTone" || gridTileWidth <= 0) {
+      return;
+    }
+
+    const visibleIds = new Set(visibleItems.map((item) => item.id));
+
+    visibleItems.forEach((item, index) => {
+      const { animated, target } = getAnimatedPosition(item.id, index);
+
+      Animated.parallel([
+        Animated.timing(animated.x, {
+          toValue: target.x,
+          duration: 220,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+        Animated.timing(animated.y, {
+          toValue: target.y,
+          duration: 220,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }),
+      ]).start();
+    });
+
+    for (const [itemId] of itemPositionMapRef.current) {
+      if (!visibleIds.has(itemId)) {
+        itemPositionMapRef.current.delete(itemId);
+      }
+    }
+  }, [gridTileWidth, selectedCategoryId, visibleItems]);
 
   return (
     <View style={styles.screen}>
@@ -214,38 +278,55 @@ export function ShopScreen() {
           </ScrollView>
         ) : (
           <>
-            <View style={styles.itemsGrid}>
-              {visibleItems.map((item) => {
-                const selected = selectedItemId === item.id;
-                const owned = ownedIds.includes(item.id);
+            <View style={styles.itemsGridStage} onLayout={(event) => setGridWidth(Math.round(event.nativeEvent.layout.width))}>
+              <View style={[styles.itemsGridTrack, { height: gridHeight }]}>
+                {visibleItems.map((item, index) => {
+                  const selected = selectedItemId === item.id;
+                  const owned = ownedIds.includes(item.id);
+                  const { animated } = getAnimatedPosition(item.id, index);
 
-                return (
-                  <Pressable
-                    key={item.id}
-                    onPress={() => handleSelectItem(item)}
-                    style={[styles.itemTile, selected && styles.itemTileSelected]}
-                  >
-                    <View style={[styles.itemDot, { backgroundColor: selectedCategory.accent }]} />
-                    <Text style={styles.itemLabel} numberOfLines={1}>
-                      {item.label}
-                    </Text>
-
-                    <View style={styles.priceLine}>
-                      <Text style={styles.priceCoin}>◉</Text>
-                      <Text style={styles.priceValue}>{formatPrice(item.price)}</Text>
+                  return (
+                    <Animated.View
+                      key={item.id}
+                      style={[
+                        styles.itemTileShell,
+                        {
+                          width: gridTileWidth,
+                          height: GRID_ITEM_HEIGHT,
+                          transform: [
+                            { translateX: animated.x },
+                            { translateY: animated.y },
+                          ],
+                        },
+                      ]}
+                    >
                       <Pressable
-                        disabled={owned}
-                        onPress={() => handleBuyItem(item)}
-                        style={[styles.buyButton, owned && styles.buyButtonOwned]}
+                        onPress={() => handleSelectItem(item)}
+                        style={[styles.itemTile, selected && styles.itemTileSelected]}
                       >
-                        <Text style={[styles.buyButtonLabel, owned && styles.buyButtonLabelOwned]}>
-                          {owned ? "보유중" : "구매"}
+                        <View style={[styles.itemDot, { backgroundColor: selectedCategory.accent }]} />
+                        <Text style={styles.itemLabel} numberOfLines={1}>
+                          {item.label}
                         </Text>
+
+                        <View style={styles.priceLine}>
+                          <Text style={styles.priceCoin}>◉</Text>
+                          <Text style={styles.priceValue}>{formatPrice(item.price)}</Text>
+                          <Pressable
+                            disabled={owned}
+                            onPress={() => handleBuyItem(item)}
+                            style={[styles.buyButton, owned && styles.buyButtonOwned]}
+                          >
+                            <Text style={[styles.buyButtonLabel, owned && styles.buyButtonLabelOwned]}>
+                              {owned ? "보유중" : "구매"}
+                            </Text>
+                          </Pressable>
+                        </View>
                       </Pressable>
-                    </View>
-                  </Pressable>
-                );
-              })}
+                    </Animated.View>
+                  );
+                })}
+              </View>
             </View>
 
             {totalPages > 1 ? (
@@ -539,27 +620,30 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
-  itemsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    rowGap: 10,
+  itemsGridStage: {
+    width: "100%",
+  },
+  itemsGridTrack: {
+    position: "relative",
+    width: "100%",
+  },
+  itemTileShell: {
+    position: "absolute",
+    left: 0,
+    top: 0,
   },
   itemTile: {
-    flexBasis: "31%",
-    maxWidth: "31%",
-    flexGrow: 0,
-    flexShrink: 1,
-    minHeight: 116,
+    width: "100%",
+    height: "100%",
     borderRadius: theme.radius.xl,
     paddingHorizontal: 8,
-    paddingVertical: 10,
+    paddingVertical: 9,
     backgroundColor: theme.colors.surfaceSoft,
     borderWidth: 1,
     borderColor: theme.colors.border,
     alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
+    justifyContent: "space-between",
+    gap: 4,
   },
   itemTileSelected: {
     borderColor: theme.colors.ink,
@@ -572,8 +656,8 @@ const styles = StyleSheet.create({
   },
   itemLabel: {
     color: theme.colors.ink,
-    fontSize: 11,
-    lineHeight: 13,
+    fontSize: 10,
+    lineHeight: 12,
     fontWeight: "900",
     textAlign: "center",
     fontFamily: theme.fonts.body,
@@ -600,9 +684,9 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.body,
   },
   buyButton: {
-    minWidth: 42,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
+    minWidth: 36,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
     borderRadius: theme.radius.pill,
     backgroundColor: "#111111",
     alignItems: "center",
@@ -615,7 +699,7 @@ const styles = StyleSheet.create({
   },
   buyButtonLabel: {
     color: "#ffffff",
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
