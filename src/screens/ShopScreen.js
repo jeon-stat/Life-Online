@@ -9,12 +9,19 @@ import { CUSTOMIZATION_CATEGORIES, CUSTOMIZATION_ITEMS } from "../data/customiza
 import { buildCharacterViewModel } from "../game/characterState.js";
 
 const PAGE_SIZE = 9;
+const FILTERS = [
+  { id: "all", label: "\uC804\uCCB4" },
+  { id: "owned", label: "\uBCF4\uC720" },
+  { id: "unowned", label: "\uBBF8\uBCF4\uC720" },
+];
 
 export function ShopScreen() {
   const { today, history, goal, shop } = useStepData();
   const [selectedCategoryId, setSelectedCategoryId] = useState(CUSTOMIZATION_CATEGORIES[0].id);
+  const [selectedFilterId, setSelectedFilterId] = useState("all");
   const [purchaseRequest, setPurchaseRequest] = useState(null);
   const [purchaseError, setPurchaseError] = useState(null);
+  const [pageByCategory, setPageByCategory] = useState({});
 
   const selectedCategory =
     CUSTOMIZATION_CATEGORIES.find((category) => category.id === selectedCategoryId) ?? CUSTOMIZATION_CATEGORIES[0];
@@ -42,11 +49,27 @@ export function ShopScreen() {
     [goal, history, today],
   );
 
-  const selectedItemId = shop.selectedItemIdsByCategory[selectedCategoryId] ?? null;
-  const ownedIds = shop.ownedItemIdsByCategory[selectedCategoryId] ?? [];
   const allItems = CUSTOMIZATION_ITEMS[selectedCategoryId] ?? [];
-  const visibleItems = selectedCategoryId === "skinTone" ? allItems : allItems;
+  const ownedIds = shop.ownedItemIdsByCategory[selectedCategoryId] ?? [];
+  const filteredItems = useMemo(
+    () =>
+      allItems.filter((item) => {
+        const owned = ownedIds.includes(item.id);
+        if (selectedFilterId === "owned") return owned;
+        if (selectedFilterId === "unowned") return !owned;
+        return true;
+      }),
+    [allItems, ownedIds, selectedFilterId],
+  );
 
+  const totalPages = selectedCategoryId === "skinTone" ? 1 : Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
+  const currentPage = Math.min(pageByCategory[selectedCategoryId] ?? 0, totalPages - 1);
+  const visibleItems =
+    selectedCategoryId === "skinTone"
+      ? filteredItems
+      : filteredItems.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
+
+  const selectedItemId = shop.selectedItemIdsByCategory[selectedCategoryId] ?? null;
   const currentSelection = visibleItems.find((item) => item.id === selectedItemId) ?? visibleItems[0] ?? null;
   const currentPrice = purchaseRequest?.item?.price ?? 0;
   const currentCoin = shop.coinBalance ?? 0;
@@ -57,6 +80,7 @@ export function ShopScreen() {
   };
 
   const handleBuyItem = (item) => {
+    if (ownedIds.includes(item.id)) return;
     setPurchaseError(null);
     setPurchaseRequest({ categoryId: selectedCategoryId, item });
   };
@@ -78,6 +102,15 @@ export function ShopScreen() {
     setPurchaseRequest(null);
     setPurchaseError(null);
   };
+
+  const setPage = (nextPage) => {
+    setPageByCategory((current) => ({
+      ...current,
+      [selectedCategoryId]: nextPage,
+    }));
+  };
+
+  const currentFilterCount = getFilterCount(allItems, ownedIds, selectedFilterId);
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -120,18 +153,42 @@ export function ShopScreen() {
         </View>
       </View>
 
+      <View style={styles.filterCard}>
+        <View style={styles.filterRow}>
+          {FILTERS.map((filter) => {
+            const active = filter.id === selectedFilterId;
+            return (
+              <Pressable
+                key={filter.id}
+                onPress={() => setSelectedFilterId(filter.id)}
+                style={[styles.filterChip, active && styles.filterChipActive]}
+              >
+                <Text style={[styles.filterChipLabel, active && styles.filterChipLabelActive]}>
+                  {filter.label} ({currentFilterCount[filter.id] ?? 0})
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
       <View style={styles.itemsCard}>
         <View style={styles.itemsHeader}>
           <Text style={styles.itemsTitle}>{selectedCategory.label}</Text>
           <Text style={styles.itemsMeta}>
-            {selectedCategoryId === "skinTone" ? "\uD1A4 \uC120\uD0DD" : "\uC0C1\uD488 \uC120\uD0DD"}
+            {selectedCategoryId === "skinTone" ? "\uD1A4 \uBAA8\uC544\uBCF4\uAE30" : "\uC120\uD0DD / \uAD6C\uB9E4"}
           </Text>
         </View>
 
-        {selectedCategoryId === "skinTone" ? (
+        {visibleItems.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateText}>\uD604\uC7AC \uD544\uD130\uC5D0 \uB9DE\uB294 \uC544\uC774\uD15C\uC774 \uC5C6\uC5B4\uC694.</Text>
+          </View>
+        ) : selectedCategoryId === "skinTone" ? (
           <View style={styles.skinToneGrid}>
             {visibleItems.map((item) => {
               const selected = selectedItemId === item.id;
+              const owned = ownedIds.includes(item.id);
               return (
                 <Pressable
                   key={item.id}
@@ -140,41 +197,16 @@ export function ShopScreen() {
                 >
                   <View style={[styles.skinToneSwatch, { backgroundColor: item.color }]} />
                   <Text style={styles.skinToneLabel}>{item.label}</Text>
-                  <View style={styles.priceRow}>
+                  <View style={styles.priceLine}>
                     <Text style={styles.priceCoin}>◍</Text>
                     <Text style={styles.priceValue}>{formatPrice(item.price)}</Text>
-                  </View>
-                  <Pressable onPress={() => handleBuyItem(item)} style={styles.buyButton}>
-                    <Text style={styles.buyButtonLabel}>{ownedIds.includes(item.id) ? "\uC120\uD0DD" : "\uAD6C\uB9E4"}</Text>
-                  </Pressable>
-                </Pressable>
-              );
-            })}
-          </View>
-        ) : (
-          <View style={styles.itemsGrid}>
-            {visibleItems.map((item) => {
-              const selected = selectedItemId === item.id;
-              const owned = ownedIds.includes(item.id);
-
-              return (
-                <Pressable
-                  key={item.id}
-                  onPress={() => handleSelectItem(item)}
-                  style={[styles.itemCard, selected && styles.itemCardSelected]}
-                >
-                  <View style={[styles.itemDot, { backgroundColor: selectedCategory.accent }]} />
-                  <Text style={styles.itemLabel} numberOfLines={1}>
-                    {item.label}
-                  </Text>
-                  <View style={styles.itemFooter}>
-                    <View style={styles.priceRow}>
-                      <Text style={styles.priceCoin}>◍</Text>
-                      <Text style={styles.priceValue}>{formatPrice(item.price)}</Text>
-                    </View>
-                    <Pressable onPress={() => handleBuyItem(item)} style={[styles.buyButton, owned && styles.buyButtonOwned]}>
+                    <Pressable
+                      disabled={owned}
+                      onPress={() => handleBuyItem(item)}
+                      style={[styles.buyButton, owned && styles.buyButtonOwned]}
+                    >
                       <Text style={[styles.buyButtonLabel, owned && styles.buyButtonLabelOwned]}>
-                        {owned ? "\uC120\uD0DD" : "\uAD6C\uB9E4"}
+                        {owned ? "\uBCF4\uC720\uC911" : "\uAD6C\uB9E4"}
                       </Text>
                     </Pressable>
                   </View>
@@ -182,6 +214,58 @@ export function ShopScreen() {
               );
             })}
           </View>
+        ) : (
+          <>
+            <View style={styles.itemsGrid}>
+              {visibleItems.map((item) => {
+                const selected = selectedItemId === item.id;
+                const owned = ownedIds.includes(item.id);
+
+                return (
+                  <Pressable
+                    key={item.id}
+                    onPress={() => handleSelectItem(item)}
+                    style={[styles.itemCard, selected && styles.itemCardSelected]}
+                  >
+                    <View style={[styles.itemDot, { backgroundColor: selectedCategory.accent }]} />
+                    <Text style={styles.itemLabel} numberOfLines={1}>
+                      {item.label}
+                    </Text>
+
+                    <View style={styles.priceLine}>
+                      <Text style={styles.priceCoin}>◍</Text>
+                      <Text style={styles.priceValue}>{formatPrice(item.price)}</Text>
+                      <Pressable
+                        disabled={owned}
+                        onPress={() => handleBuyItem(item)}
+                        style={[styles.buyButton, owned && styles.buyButtonOwned]}
+                      >
+                        <Text style={[styles.buyButtonLabel, owned && styles.buyButtonLabelOwned]}>
+                          {owned ? "\uBCF4\uC720\uC911" : "\uAD6C\uB9E4"}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {totalPages > 1 ? (
+              <View style={styles.paginationRow}>
+                {Array.from({ length: totalPages }, (_, index) => (
+                  <Pressable
+                    key={`${selectedCategoryId}-page-${index + 1}`}
+                    onPress={() => setPage(index)}
+                    style={[styles.pageChip, currentPage === index && styles.pageChipActive]}
+                  >
+                    <Text style={[styles.pageChipLabel, currentPage === index && styles.pageChipLabelActive]}>
+                      {index + 1}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+          </>
         )}
       </View>
 
@@ -228,6 +312,23 @@ function SummaryRow({ label, value }) {
       <Text style={styles.summaryValue}>{value}</Text>
     </View>
   );
+}
+
+function getFilterCount(items, ownedIds, filterId) {
+  const counts = { all: items.length, owned: 0, unowned: 0 };
+  for (const item of items) {
+    if (ownedIds.includes(item.id)) {
+      counts.owned += 1;
+    } else {
+      counts.unowned += 1;
+    }
+  }
+
+  if (filterId) {
+    return counts;
+  }
+
+  return counts;
 }
 
 function formatPrice(price = 0) {
@@ -332,6 +433,41 @@ const styles = StyleSheet.create({
   categoryChipLabelActive: {
     color: "#ffffff",
   },
+  filterCard: {
+    borderRadius: theme.radius.xl,
+    padding: 12,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  filterRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  filterChip: {
+    minHeight: 34,
+    paddingHorizontal: 12,
+    borderRadius: theme.radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  filterChipActive: {
+    backgroundColor: "#111111",
+    borderColor: "#111111",
+  },
+  filterChipLabel: {
+    color: theme.colors.inkSoft,
+    fontSize: 11,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  filterChipLabelActive: {
+    color: "#ffffff",
+  },
   itemsCard: {
     borderRadius: theme.radius.xl,
     padding: 16,
@@ -355,6 +491,21 @@ const styles = StyleSheet.create({
   itemsMeta: {
     color: theme.colors.inkSoft,
     fontSize: 11,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
+  },
+  emptyState: {
+    minHeight: 120,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.surfaceSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  emptyStateText: {
+    color: theme.colors.inkSoft,
+    fontSize: 12,
     fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
@@ -400,7 +551,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
-  priceRow: {
+  priceLine: {
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

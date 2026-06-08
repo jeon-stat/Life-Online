@@ -24,11 +24,11 @@ TextInput.defaultProps = TextInput.defaultProps ?? {};
 TextInput.defaultProps.style = [TextInput.defaultProps.style, { fontFamily: theme.fonts.body }];
 
 const TABS = [
-  { id: "home", label: "산책", icon: "⌂" },
-  { id: "history", label: "추억", icon: "◌" },
-  { id: "character", label: "캐릭터", icon: "○" },
-  { id: "friends", label: "친구", icon: "◔" },
-  { id: "shop", label: "상점", icon: "✦" },
+  { id: "home", label: "\uC0B0\uCC45", icon: "\u2302" },
+  { id: "history", label: "\uCD94\uC5B5", icon: "\u25A1" },
+  { id: "character", label: "\uAFBC\uBBF8\uAE30", icon: "\u25CB" },
+  { id: "friends", label: "\uCE5C\uAD6C", icon: "\u263A" },
+  { id: "shop", label: "\uC0C1\uC810", icon: "\u2726" },
 ];
 
 const STEP_DATA_MODE = Platform.OS === "web" ? "mock" : "auto";
@@ -116,7 +116,8 @@ function AppContent() {
 function AppShell({ activeTab, onChangeTab }) {
   const { today, history, goal, admin } = useStepData();
   const { currentUser, signOut } = useAuth();
-  const [menuVisible, setMenuVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+
   const viewState = useMemo(
     () =>
       buildCharacterViewModel({
@@ -151,7 +152,7 @@ function AppShell({ activeTab, onChangeTab }) {
           accessibilityRole="button"
           accessibilityLabel="Open account menu"
         >
-          <Text style={styles.menuToggleLabel}>☰</Text>
+          <Text style={styles.menuToggleLabel}>\u2630</Text>
         </Pressable>
 
         {admin?.visible && admin?.canOverride ? (
@@ -268,24 +269,6 @@ const styles = StyleSheet.create({
   },
   adminToggleLabelActive: {
     color: "#ffffff",
-  },
-  shopToggle: {
-    position: "absolute",
-    top: 14,
-    left: 14,
-    zIndex: 30,
-    width: 38,
-    height: 38,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.9)",
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  shopToggleLabel: {
-    fontSize: 18,
-    lineHeight: 18,
   },
   menuToggle: {
     position: "absolute",
