@@ -7,71 +7,41 @@ import { useStepData } from "../data/stepDataProvider.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
 import { CharacterStage } from "../components/CharacterStage";
 
-const DEFAULT_SKIN_TONES = [
-  { id: "tone-1", label: "톤 1", color: "#f3d8c6" },
-  { id: "tone-2", label: "톤 2", color: "#f0c7ad" },
-  { id: "tone-3", label: "톤 3", color: "#e1b28f" },
-  { id: "tone-4", label: "톤 4", color: "#c88f64" },
-  { id: "tone-5", label: "톤 5", color: "#a86d4b" },
-  { id: "tone-6", label: "톤 6", color: "#8b553a" },
-];
-
 const SHOP_CATEGORIES = [
   {
-    id: "top",
-    label: "상의",
-    note: "상의 꾸미기",
-    previewMode: "character",
+    id: "clothes",
+    label: "의상",
+    note: "옷을 바꿔요",
     accent: "#d89a4a",
     accentSoft: "#f7eadc",
   },
   {
-    id: "bottom",
-    label: "하의",
-    note: "하의 꾸미기",
-    previewMode: "character",
-    accent: "#8fbe70",
-    accentSoft: "#edf5e8",
-  },
-  {
     id: "expression",
     label: "표정",
-    note: "얼굴을 바꿔요",
-    previewMode: "face",
+    note: "표정을 바꿔요",
     accent: "#111111",
     accentSoft: "#f4f4f2",
   },
   {
     id: "background",
     label: "배경",
-    note: "배경만 보여줘요",
-    previewMode: "background",
-    accent: "#7bb3e5",
-    accentSoft: "#eef6fe",
+    note: "배경을 바꿔요",
+    accent: "#8fbe70",
+    accentSoft: "#edf5e8",
   },
   {
     id: "item",
     label: "아이템",
     note: "장식 아이템",
-    previewMode: "character",
     accent: "#7d87ff",
     accentSoft: "#eef0ff",
-  },
-  {
-    id: "skinTone",
-    label: "피부톤",
-    note: "피부색을 바꿔요",
-    previewMode: "character",
-    accent: "#d6b09b",
-    accentSoft: "#f8ede6",
   },
 ];
 
 const SHOP_ITEMS = {
-  top: buildItems("상의", ["티셔츠", "셔츠", "니트", "후드", "재킷", "코트", "원피스", "블라우스", "스웨터", "조끼"]),
-  bottom: buildItems("하의", ["바지", "치마", "반바지", "청바지", "슬랙스", "조거", "레깅스", "스커트", "쇼츠", "팬츠"]),
-  expression: buildItems("표정", ["무표정", "웃음", "졸림", "뿌듯", "놀람", "장난", "수줍", "반짝", "화남", "하트"]),
-  background: buildItems("배경", ["하늘", "저녁", "밤", "비", "눈", "구름", "숲", "바다", "봄", "별"]),
+  clothes: buildItems("의상", ["재킷", "원피스", "티셔츠", "후드", "셔츠", "코트", "니트", "바지", "치마", "신발"]),
+  expression: buildItems("표정", ["무표정", "웃음", "졸림", "반짝", "화남", "뿌듯", "수줍", "장난", "놀람", "하트"]),
+  background: buildItems("배경", ["하늘", "저녁", "눈", "봄", "밤", "비", "구름", "숲", "바다", "별"]),
   item: buildItems("아이템", ["모자", "가방", "선글라스", "리본", "핀", "배지", "꽃", "반지", "스티커", "키링"]),
 };
 
@@ -103,20 +73,7 @@ export function ShopScreen() {
   );
 
   const selectedCategory = SHOP_CATEGORIES.find((category) => category.id === selectedCategoryId) ?? SHOP_CATEGORIES[0];
-  const selectedItems = useMemo(() => {
-    if (selectedCategoryId === "skinTone") {
-      return (admin?.skinTones?.length ? admin.skinTones : DEFAULT_SKIN_TONES).map((tone, index) => ({
-        id: tone.id ?? `tone-${index + 1}`,
-        label: tone.label ?? `톤 ${index + 1}`,
-        note: "피부톤",
-        accent: tone.color ?? DEFAULT_SKIN_TONES[index % DEFAULT_SKIN_TONES.length].color,
-      }));
-    }
-
-    return SHOP_ITEMS[selectedCategoryId] ?? [];
-  }, [admin?.skinTones, selectedCategoryId]);
-
-  const previewMode = selectedCategory.previewMode;
+  const selectedItems = SHOP_ITEMS[selectedCategory.id] ?? [];
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -143,28 +100,14 @@ export function ShopScreen() {
         </View>
       </View>
 
-      <View
-        style={[
-          styles.scenePanel,
-          previewMode === "background" ? styles.scenePanelBackground : styles.scenePanelCharacter,
-          { backgroundColor: previewMode === "background" ? selectedCategory.accentSoft : "#ffffff" },
-        ]}
-      >
-        {previewMode === "background" ? (
-          <BackgroundScene accent={selectedCategory.accent} accentSoft={selectedCategory.accentSoft} />
-        ) : (
-          <CharacterStage
-            character={previewCharacter}
-            state={characterViewState}
-            presentation="full"
-            scale={1}
-            characterScale={previewMode === "face" ? 0.98 : 0.68}
-            cameraPosition={previewMode === "face" ? [0, 2.18, 4.7] : null}
-            fov={previewMode === "face" ? 18 : null}
-            showMiniWorld={previewMode !== "face"}
-            interactionEnabled={false}
-          />
-        )}
+      <View style={styles.scenePanel}>
+        <CharacterStage
+          character={previewCharacter}
+          state={characterViewState}
+          presentation="full"
+          scale={0.88}
+          interactionEnabled={false}
+        />
       </View>
 
       <View style={styles.itemsCard}>
@@ -175,7 +118,7 @@ export function ShopScreen() {
         <View style={styles.itemsGrid}>
           {selectedItems.map((item) => (
             <View key={item.id} style={styles.itemCard}>
-              <View style={[styles.itemDot, { backgroundColor: item.accent ?? selectedCategory.accent }]} />
+              <View style={[styles.itemDot, { backgroundColor: selectedCategory.accent }]} />
               <Text style={styles.itemTitle} numberOfLines={1}>
                 {item.label}
               </Text>
@@ -187,19 +130,6 @@ export function ShopScreen() {
         </View>
       </View>
     </ScrollView>
-  );
-}
-
-function BackgroundScene({ accent, accentSoft }) {
-  return (
-    <View style={[styles.backgroundScene, { backgroundColor: accentSoft }]}>
-      <View style={[styles.bgOrb, { backgroundColor: accent }]} />
-      <View style={styles.bgCloudOne} />
-      <View style={styles.bgCloudTwo} />
-      <View style={[styles.bgHillLeft, { backgroundColor: "#99c06c" }]} />
-      <View style={[styles.bgHillRight, { backgroundColor: "#d19c42" }]} />
-      <View style={[styles.bgHillBase, { backgroundColor: "#99c06c" }]} />
-    </View>
   );
 }
 
@@ -271,88 +201,13 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
   scenePanel: {
-    minHeight: 420,
+    minHeight: 388,
     borderRadius: 0,
     overflow: "hidden",
     position: "relative",
     marginHorizontal: -theme.spacing.md,
     marginTop: -4,
     marginBottom: -2,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  scenePanelBackground: {
-    paddingVertical: 0,
-  },
-  scenePanelCharacter: {
-    paddingVertical: 0,
-  },
-  backgroundScene: {
-    width: "100%",
-    height: "100%",
-    position: "relative",
-    overflow: "hidden",
-  },
-  bgOrb: {
-    position: "absolute",
-    top: 28,
-    right: 28,
-    width: 16,
-    height: 16,
-    borderRadius: 999,
-    opacity: 0.92,
-  },
-  bgCloudOne: {
-    position: "absolute",
-    top: 58,
-    left: 72,
-    width: 60,
-    height: 18,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.84)",
-  },
-  bgCloudTwo: {
-    position: "absolute",
-    top: 88,
-    right: 84,
-    width: 52,
-    height: 16,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.7)",
-  },
-  bgHillLeft: {
-    position: "absolute",
-    bottom: -68,
-    left: -42,
-    width: "78%",
-    height: 220,
-    borderTopLeftRadius: 220,
-    borderTopRightRadius: 220,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    transform: [{ rotate: "-7deg" }],
-  },
-  bgHillRight: {
-    position: "absolute",
-    bottom: -56,
-    right: -54,
-    width: "66%",
-    height: 220,
-    borderTopLeftRadius: 220,
-    borderTopRightRadius: 220,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    transform: [{ rotate: "8deg" }],
-    opacity: 0.96,
-  },
-  bgHillBase: {
-    position: "absolute",
-    bottom: -2,
-    left: "16%",
-    width: "68%",
-    height: 10,
-    borderRadius: 999,
-    opacity: 0.22,
   },
   itemsCard: {
     borderRadius: theme.radius.xl,
