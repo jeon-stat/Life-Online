@@ -76,11 +76,6 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
               purchaseStatus = "owned";
               return {
                 ...current,
-                selectedItemIdsByCategory: {
-                  ...current.selectedItemIdsByCategory,
-                  [categoryId]: itemId,
-                },
-                skinToneId: categoryId === "skinTone" ? itemId : current.skinToneId,
               };
             }
 
@@ -98,11 +93,6 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
                 ...current.ownedItemIdsByCategory,
                 [categoryId]: [...ownedIds, itemId],
               },
-              selectedItemIdsByCategory: {
-                ...current.selectedItemIdsByCategory,
-                [categoryId]: itemId,
-              },
-              skinToneId: categoryId === "skinTone" ? itemId : current.skinToneId,
             };
           });
 

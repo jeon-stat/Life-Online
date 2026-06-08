@@ -21,6 +21,10 @@ export function ShopScreen() {
   const { today, history, goal, shop } = useStepData();
   const [selectedCategoryId, setSelectedCategoryId] = useState(CUSTOMIZATION_CATEGORIES[0].id);
   const [selectedFilterId, setSelectedFilterId] = useState("all");
+  const [previewSelectionByCategory, setPreviewSelectionByCategory] = useState(() => ({
+    ...shop.selectedItemIdsByCategory,
+    skinTone: shop.skinToneId ?? shop.selectedItemIdsByCategory.skinTone ?? null,
+  }));
   const [purchaseRequest, setPurchaseRequest] = useState(null);
   const [purchaseError, setPurchaseError] = useState(null);
   const [pageByCategory, setPageByCategory] = useState({});
@@ -33,7 +37,7 @@ export function ShopScreen() {
 
   const previewCharacter = useMemo(() => {
     const baseCharacter = CHARACTER_CLASSES[0];
-    const selectedSkinTone = CUSTOMIZATION_ITEMS.skinTone.find((tone) => tone.id === shop.skinToneId) ?? null;
+    const selectedSkinTone = CUSTOMIZATION_ITEMS.skinTone.find((tone) => tone.id === previewSelectionByCategory.skinTone) ?? null;
 
     if (!selectedSkinTone) {
       return baseCharacter;
@@ -47,7 +51,7 @@ export function ShopScreen() {
       },
       skinTone: selectedSkinTone.color,
     };
-  }, [shop.skinToneId]);
+  }, [previewSelectionByCategory.skinTone]);
 
   const characterViewState = useMemo(
     () => buildCharacterViewModel({ todayRecord: today, history, goal, admin: null }),
@@ -74,8 +78,8 @@ export function ShopScreen() {
       ? filteredItems
       : filteredItems.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
 
-  const selectedItemId = shop.selectedItemIdsByCategory[selectedCategoryId] ?? null;
-  const currentSelection = visibleItems.find((item) => item.id === selectedItemId) ?? visibleItems[0] ?? null;
+  const selectedItemId = previewSelectionByCategory[selectedCategoryId] ?? null;
+  const currentSelection = allItems.find((item) => item.id === selectedItemId) ?? visibleItems[0] ?? null;
   const currentPrice = purchaseRequest?.item?.price ?? 0;
   const currentCoin = shop.coinBalance ?? 0;
   const remainingCoin = Math.max(0, currentCoin - currentPrice);
@@ -83,7 +87,11 @@ export function ShopScreen() {
   const currentFilterCount = getFilterCount(allItems, ownedIds);
 
   const handleSelectItem = (item) => {
-    shop.selectItem?.(selectedCategoryId, item.id);
+    setPreviewSelectionByCategory((current) => ({
+      ...current,
+      [selectedCategoryId]: item.id,
+      skinTone: selectedCategoryId === "skinTone" ? item.id : current.skinTone,
+    }));
   };
 
   const handleBuyItem = (item) => {

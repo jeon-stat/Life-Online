@@ -91,6 +91,11 @@ export const CUSTOMIZATION_ITEMS = {
 };
 
 export const DEFAULT_SHOP_COIN_BALANCE = 1000;
+const DEFAULT_OWNED_SKIN_TONE_IDS = [
+  CUSTOMIZATION_ITEMS.skinTone[0]?.id,
+  CUSTOMIZATION_ITEMS.skinTone[4]?.id,
+  CUSTOMIZATION_ITEMS.skinTone[7]?.id,
+].filter(Boolean);
 
 export function createDefaultOwnedItemIds() {
   return {
@@ -99,7 +104,7 @@ export function createDefaultOwnedItemIds() {
     expression: CUSTOMIZATION_ITEMS.expression.slice(0, 4).map((item) => item.id),
     background: CUSTOMIZATION_ITEMS.background.slice(0, 4).map((item) => item.id),
     item: CUSTOMIZATION_ITEMS.item.slice(0, 4).map((item) => item.id),
-    skinTone: CUSTOMIZATION_ITEMS.skinTone.map((item) => item.id),
+    skinTone: DEFAULT_OWNED_SKIN_TONE_IDS,
   };
 }
 
