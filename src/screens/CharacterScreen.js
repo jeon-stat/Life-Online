@@ -1,76 +1,32 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { CHARACTER_CLASSES, SKIN_TONE_PRESETS } from "../characters.js";
+import { CHARACTER_CLASSES } from "../characters.js";
 import { CharacterStage } from "../components/CharacterStage";
 import { theme } from "../constants/theme.js";
 import { useStepData } from "../data/stepDataProvider.js";
+import { CUSTOMIZATION_CATEGORIES, CUSTOMIZATION_ITEMS } from "../data/customizationCatalog.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
 
 const PAGE_SIZE = 9;
 
-const CHARACTER_CATEGORIES = [
-  { id: "top", label: "상의", accent: "#d89a4a" },
-  { id: "bottom", label: "하의", accent: "#8fbe70" },
-  { id: "expression", label: "표정", accent: "#111111" },
-  { id: "background", label: "배경", accent: "#7bb3e5" },
-  { id: "item", label: "아이템", accent: "#7d87ff" },
-  { id: "skinTone", label: "피부톤", accent: "#d6b09b" },
-];
-
-const OWNED_ITEMS = {
-  top: buildOwnedItems("상의", ["티셔츠", "셔츠", "니트", "후드", "재킷", "코트", "원피스", "블라우스", "스웨터", "조끼", "맨투맨", "가디건"]),
-  bottom: buildOwnedItems("하의", ["바지", "청바지", "조거", "슬랙스", "반바지", "치마", "레깅스", "숏팬츠", "와이드", "스커트", "슬림", "트레이닝"]),
-  expression: buildOwnedItems("표정", ["무표정", "웃음", "졸림", "장난", "반짝", "놀람", "수줍", "뿌듯", "화남", "하트", "멍함", "윙크"]),
-  background: buildOwnedItems("배경", ["하늘", "저녁", "밤", "구름", "숲", "바다", "봄", "눈", "비", "별", "노을", "새벽"]),
-  item: buildOwnedItems("아이템", ["모자", "가방", "선글라스", "리본", "핀", "키링", "배지", "꽃", "반지", "스티커", "목걸이", "양말"]),
-  skinTone: SKIN_TONE_PRESETS.map((tone, index) => ({
-    id: tone.id ?? `skin-${index + 1}`,
-    label: tone.label ?? `톤 ${index + 1}`,
-    color: tone.color,
-  })),
-};
-
-const DEFAULT_SELECTIONS = {
-  top: OWNED_ITEMS.top[0]?.id ?? null,
-  bottom: OWNED_ITEMS.bottom[0]?.id ?? null,
-  expression: OWNED_ITEMS.expression[0]?.id ?? null,
-  background: OWNED_ITEMS.background[0]?.id ?? null,
-  item: OWNED_ITEMS.item[0]?.id ?? null,
-  skinTone: OWNED_ITEMS.skinTone[0]?.id ?? null,
-};
-
 export function CharacterScreen() {
-  const { today, history, goal, admin } = useStepData();
+  const { today, history, goal, shop } = useStepData();
   const [selectedCategoryId, setSelectedCategoryId] = useState("top");
-  const [selectedItems, setSelectedItems] = useState(() => ({
-    ...DEFAULT_SELECTIONS,
-    skinTone: admin?.skinToneId ?? DEFAULT_SELECTIONS.skinTone,
-  }));
   const [pageByCategory, setPageByCategory] = useState({});
 
-  useEffect(() => {
-    if (!admin?.skinToneId) return;
-    setSelectedItems((current) =>
-      current.skinTone === admin.skinToneId ? current : { ...current, skinTone: admin.skinToneId },
-    );
-  }, [admin?.skinToneId]);
-
   const selectedCategory =
-    CHARACTER_CATEGORIES.find((category) => category.id === selectedCategoryId) ?? CHARACTER_CATEGORIES[0];
-  const selectedCategoryItems = OWNED_ITEMS[selectedCategoryId] ?? [];
+    CUSTOMIZATION_CATEGORIES.find((category) => category.id === selectedCategoryId) ?? CUSTOMIZATION_CATEGORIES[0];
 
-  const activeSkinTone = useMemo(
-    () =>
-      OWNED_ITEMS.skinTone.find((tone) => tone.id === selectedItems.skinTone) ??
-      OWNED_ITEMS.skinTone[0] ??
-      null,
-    [selectedItems.skinTone],
-  );
+  const activeSkinTone =
+    CUSTOMIZATION_ITEMS.skinTone.find((tone) => tone.id === shop.skinToneId) ?? CUSTOMIZATION_ITEMS.skinTone[0] ?? null;
 
   const previewCharacter = useMemo(() => {
     const baseCharacter = CHARACTER_CLASSES[0];
-    if (!activeSkinTone) return baseCharacter;
+
+    if (!activeSkinTone) {
+      return baseCharacter;
+    }
 
     return {
       ...baseCharacter,
@@ -83,28 +39,28 @@ export function CharacterScreen() {
   }, [activeSkinTone]);
 
   const characterViewState = useMemo(
-    () => buildCharacterViewModel({ todayRecord: today, history, goal, admin }),
-    [admin, goal, history, today],
+    () => buildCharacterViewModel({ todayRecord: today, history, goal, admin: null }),
+    [goal, history, today],
   );
 
-  const currentSelection =
-    selectedCategoryId === "skinTone"
-      ? activeSkinTone
-      : selectedCategoryItems.find((item) => item.id === selectedItems[selectedCategoryId]) ?? selectedCategoryItems[0];
+  const allCategoryItems = CUSTOMIZATION_ITEMS[selectedCategoryId] ?? [];
+  const ownedIds = shop.ownedItemIdsByCategory[selectedCategoryId] ?? [];
+  const ownedCategoryItems =
+    selectedCategoryId === "skinTone" ? allCategoryItems : allCategoryItems.filter((item) => ownedIds.includes(item.id));
+  const selectedItemId = shop.selectedItemIdsByCategory[selectedCategoryId] ?? null;
 
-  const totalPages = Math.max(1, Math.ceil(selectedCategoryItems.length / PAGE_SIZE));
+  const currentSelection =
+    ownedCategoryItems.find((item) => item.id === selectedItemId) ?? ownedCategoryItems[0] ?? null;
+
+  const totalPages = Math.max(1, Math.ceil(ownedCategoryItems.length / PAGE_SIZE));
   const currentPage = Math.min(pageByCategory[selectedCategoryId] ?? 0, totalPages - 1);
   const visibleItems =
     selectedCategoryId === "skinTone"
-      ? selectedCategoryItems
-      : selectedCategoryItems.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
+      ? ownedCategoryItems
+      : ownedCategoryItems.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
 
   const handleSelectItem = (item) => {
-    setSelectedItems((current) => ({ ...current, [selectedCategoryId]: item.id }));
-
-    if (selectedCategoryId === "skinTone") {
-      admin?.setSkinTone?.(item.id);
-    }
+    shop.selectItem?.(selectedCategoryId, item.id);
   };
 
   const setPage = (nextPage) => {
@@ -137,7 +93,7 @@ export function CharacterScreen() {
 
       <View style={styles.categoryCard}>
         <View style={styles.categoryRow}>
-          {CHARACTER_CATEGORIES.map((category) => {
+          {CUSTOMIZATION_CATEGORIES.map((category) => {
             const active = category.id === selectedCategoryId;
             return (
               <Pressable
@@ -158,14 +114,14 @@ export function CharacterScreen() {
         <View style={styles.itemHeader}>
           <Text style={styles.itemTitle}>{selectedCategory.label}</Text>
           <Text style={styles.itemMeta}>
-            {selectedCategoryId === "skinTone" ? "한 줄" : "9개씩 보기"}
+            {selectedCategoryId === "skinTone" ? "한 줄 보기" : `${ownedCategoryItems.length}개 보유`}
           </Text>
         </View>
 
         {selectedCategoryId === "skinTone" ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.skinToneRow}>
             {visibleItems.map((item) => {
-              const selected = selectedItems.skinTone === item.id;
+              const selected = selectedItemId === item.id;
               return (
                 <Pressable
                   key={item.id}
@@ -181,7 +137,7 @@ export function CharacterScreen() {
           <>
             <View style={styles.itemGrid}>
               {visibleItems.map((item) => {
-                const selected = selectedItems[selectedCategoryId] === item.id;
+                const selected = selectedItemId === item.id;
                 return (
                   <Pressable
                     key={item.id}
@@ -219,13 +175,6 @@ export function CharacterScreen() {
   );
 }
 
-function buildOwnedItems(prefix, labels) {
-  return labels.map((label, index) => ({
-    id: `${prefix}-${index + 1}`,
-    label,
-  }));
-}
-
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
@@ -233,7 +182,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.md,
+    paddingTop: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl,
     gap: theme.spacing.md,
   },
   pageTitleWrap: {
@@ -245,6 +195,7 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 22,
     fontWeight: "900",
+    textAlign: "center",
     letterSpacing: 0.6,
     fontFamily: theme.fonts.display,
   },

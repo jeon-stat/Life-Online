@@ -1,6 +1,12 @@
 import { createContext, useContext, useMemo, useState } from "react";
 
-import { SKIN_TONE_PRESETS } from "../characters.js";
+import {
+  CUSTOMIZATION_CATEGORIES,
+  CUSTOMIZATION_ITEMS,
+  DEFAULT_SHOP_COIN_BALANCE,
+  createDefaultOwnedItemIds,
+  createDefaultSelectedItemIds,
+} from "./customizationCatalog.js";
 import { DEFAULT_STEP_GOAL } from "../game/stepRules.js";
 import { createMockStepSnapshot } from "./mockStepData.js";
 
@@ -8,8 +14,15 @@ const StepDataContext = createContext(null);
 
 export function StepDataProvider({ children, mode = "mock", adminEnabled = false }) {
   const [mockState, setMockState] = useState(() => createMockStepSnapshot());
-  const [skinToneId, setSkinToneId] = useState(SKIN_TONE_PRESETS[0]?.id ?? null);
   const [adminVisible, setAdminVisible] = useState(false);
+  const defaultOwnedItemIds = useMemo(() => createDefaultOwnedItemIds(), []);
+  const defaultSelectedItemIds = useMemo(() => createDefaultSelectedItemIds(), []);
+  const [shopState, setShopState] = useState(() => ({
+    coinBalance: DEFAULT_SHOP_COIN_BALANCE,
+    ownedItemIdsByCategory: defaultOwnedItemIds,
+    selectedItemIdsByCategory: defaultSelectedItemIds,
+    skinToneId: defaultSelectedItemIds.skinTone,
+  }));
   const [behaviorAdmin, setBehaviorAdmin] = useState(() => ({
     forcedEnergyLevel: null,
     forcedLongTermState: null,
@@ -30,16 +43,99 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
       goal: DEFAULT_STEP_GOAL,
       today,
       history,
+      shop: {
+        coinBalance: shopState.coinBalance,
+        categories: CUSTOMIZATION_CATEGORIES,
+        ownedItemIdsByCategory: shopState.ownedItemIdsByCategory,
+        selectedItemIdsByCategory: shopState.selectedItemIdsByCategory,
+        skinToneId: shopState.skinToneId,
+        isOwnedItem: (categoryId, itemId) =>
+          (shopState.ownedItemIdsByCategory?.[categoryId] ?? []).includes(itemId),
+        selectItem: (categoryId, itemId) => {
+          setShopState((current) => {
+            if (categoryId !== "skinTone" && !(current.ownedItemIdsByCategory?.[categoryId] ?? []).includes(itemId)) {
+              return current;
+            }
+
+            return {
+              ...current,
+              selectedItemIdsByCategory: {
+                ...current.selectedItemIdsByCategory,
+                [categoryId]: itemId,
+              },
+              skinToneId: categoryId === "skinTone" ? itemId : current.skinToneId,
+            };
+          });
+        },
+        purchaseItem: (categoryId, itemId, price = 0) => {
+          let purchaseStatus = "purchased";
+
+          setShopState((current) => {
+            const ownedIds = current.ownedItemIdsByCategory?.[categoryId] ?? [];
+            if (ownedIds.includes(itemId)) {
+              purchaseStatus = "owned";
+              return {
+                ...current,
+                selectedItemIdsByCategory: {
+                  ...current.selectedItemIdsByCategory,
+                  [categoryId]: itemId,
+                },
+                skinToneId: categoryId === "skinTone" ? itemId : current.skinToneId,
+              };
+            }
+
+            const nextCoinBalance = Math.max(0, current.coinBalance - price);
+            if (current.coinBalance < price) {
+              purchaseStatus = "insufficient";
+              return current;
+            }
+
+            purchaseStatus = "purchased";
+            return {
+              ...current,
+              coinBalance: nextCoinBalance,
+              ownedItemIdsByCategory: {
+                ...current.ownedItemIdsByCategory,
+                [categoryId]: [...ownedIds, itemId],
+              },
+              selectedItemIdsByCategory: {
+                ...current.selectedItemIdsByCategory,
+                [categoryId]: itemId,
+              },
+              skinToneId: categoryId === "skinTone" ? itemId : current.skinToneId,
+            };
+          });
+
+          return purchaseStatus;
+        },
+        setSkinTone: (nextSkinToneId) => {
+          setShopState((current) => ({
+            ...current,
+            skinToneId: nextSkinToneId,
+            selectedItemIdsByCategory: {
+              ...current.selectedItemIdsByCategory,
+              skinTone: nextSkinToneId,
+            },
+          }));
+        },
+      },
       admin: {
         visible: adminVisible,
         canOverride: Boolean(adminEnabled && isMockMode),
         source: today.source,
         ...behaviorAdmin,
-        skinTones: SKIN_TONE_PRESETS,
-        skinToneId,
+        skinTones: CUSTOMIZATION_ITEMS.skinTone,
+        skinToneId: shopState.skinToneId,
         setSkinTone: (nextSkinToneId) => {
           if (!adminEnabled) return;
-          setSkinToneId(nextSkinToneId);
+          setShopState((current) => ({
+            ...current,
+            skinToneId: nextSkinToneId,
+            selectedItemIdsByCategory: {
+              ...current.selectedItemIdsByCategory,
+              skinTone: nextSkinToneId,
+            },
+          }));
         },
         toggleVisible: () => {
           if (!adminEnabled) return;
@@ -85,7 +181,7 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
         },
       },
     }),
-    [adminEnabled, adminVisible, behaviorAdmin, history, isMockMode, mode, skinToneId, today],
+    [adminEnabled, adminVisible, behaviorAdmin, history, isMockMode, mode, shopState, today],
   );
 
   return <StepDataContext.Provider value={value}>{children}</StepDataContext.Provider>;
