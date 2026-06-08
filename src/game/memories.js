@@ -1,11 +1,11 @@
-import { DEFAULT_STEP_GOAL } from "./stepRules.js";
+﻿import { DEFAULT_STEP_GOAL } from "./stepRules.js";
 import { getStreak } from "./progression.js";
 
 function formatMemoryDate(date) {
   if (!date) return "";
 
   const value = new Date(date);
-  return `${value.getMonth() + 1}\uC6D4 ${value.getDate()}\uC77C`;
+  return `${value.getMonth() + 1}월 ${value.getDate()}일`;
 }
 
 export function getMemories(history = [], goal = DEFAULT_STEP_GOAL, limit = 2) {
@@ -22,8 +22,8 @@ export function getMemories(history = [], goal = DEFAULT_STEP_GOAL, limit = 2) {
   if (firstGoalReached) {
     memories.push({
       id: "firstGoalReached",
-      title: "\uCCAB \uBAA9\uD45C \uB2EC\uC131",
-      summary: `${formatMemoryDate(firstGoalReached.date)}\uC5D0 \uCC98\uC74C\uC73C\uB85C \uC0B0\uCC45 \uBAA9\uD45C\uB97C \uB118\uACBC\uC5B4\uC694.`,
+      title: "첫 목표 달성",
+      summary: `${formatMemoryDate(firstGoalReached.date)}에 처음으로 산책 목표를 넘겼어요.`,
       date: firstGoalReached.date,
     });
   }
@@ -31,8 +31,8 @@ export function getMemories(history = [], goal = DEFAULT_STEP_GOAL, limit = 2) {
   if (getStreak(history, goal) >= 7) {
     memories.push({
       id: "sevenDayStreak",
-      title: "7\uC77C \uC5F0\uC18D \uC0B0\uCC45",
-      summary: "\uC77C\uC8FC\uC77C \uC5F0\uC18D\uC73C\uB85C \uBAA9\uD45C\uB97C \uC774\uC5B4 \uAC14\uC5B4\uC694.",
+      title: "7일 연속 산책",
+      summary: "일주일 연속으로 목표를 이어 갔어요.",
       date: history[0]?.date ?? null,
     });
   }
@@ -40,11 +40,12 @@ export function getMemories(history = [], goal = DEFAULT_STEP_GOAL, limit = 2) {
   if (bestStepDay && (bestStepDay.steps ?? 0) > 0) {
     memories.push({
       id: "bestStepDay",
-      title: "\uAC00\uC7A5 \uB9CE\uC774 \uAC78\uC740 \uB0A0",
-      summary: `${formatMemoryDate(bestStepDay.date)}\uC5D0 ${bestStepDay.steps.toLocaleString()}\uBCF4\uB97C \uAC78\uC5C8\uC5B4\uC694.`,
+      title: "가장 많이 걸은 날",
+      summary: `${formatMemoryDate(bestStepDay.date)}에 ${bestStepDay.steps.toLocaleString()}보를 걸었어요.`,
       date: bestStepDay.date,
     });
   }
 
   return memories.slice(0, limit);
 }
+

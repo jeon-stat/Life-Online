@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { CHARACTER_CLASSES } from "../characters.js";
@@ -73,7 +73,7 @@ export function CharacterScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.pageTitleWrap}>
-        <Text style={styles.pageTitle}>\uAFB8\uBBF8\uAE30</Text>
+        <Text style={styles.pageTitle}>꾸미기</Text>
       </View>
 
       <View style={styles.previewPanel}>
@@ -115,7 +115,7 @@ export function CharacterScreen() {
         <View style={styles.itemHeader}>
           <Text style={styles.itemTitle}>{selectedCategory.label}</Text>
           <Text style={styles.itemMeta}>
-            {selectedCategoryId === "skinTone" ? "한 줄 보기" : `${ownedCategoryItems.length}개 보유`}
+            {selectedCategoryId === "skinTone" ? "??以?蹂닿린" : `${ownedCategoryItems.length}媛?蹂댁쑀`}
           </Text>
         </View>
 
@@ -387,3 +387,4 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
 });
+

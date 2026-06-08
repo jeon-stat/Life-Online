@@ -1,21 +1,21 @@
-export const STAGE_MODE = "character-only";
+﻿export const STAGE_MODE = "character-only";
 
 export const SKIN_TONE_PRESETS = [
-  { id: "fair-1", label: "\uD1A4 1", color: "#f7d9cf" },
-  { id: "fair-2", label: "\uD1A4 2", color: "#f4cbbb" },
-  { id: "fair-3", label: "\uD1A4 3", color: "#efbda8" },
-  { id: "fair-4", label: "\uD1A4 4", color: "#efb08f" },
-  { id: "deep-1", label: "\uD1A4 5", color: "#f29d6d" },
-  { id: "deep-2", label: "\uD1A4 6", color: "#d77c54" },
-  { id: "deep-3", label: "\uD1A4 7", color: "#af6547" },
-  { id: "deep-4", label: "\uD1A4 8", color: "#8d5543" },
+  { id: "fair-1", label: "톤 1", color: "#f7d9cf" },
+  { id: "fair-2", label: "톤 2", color: "#f4cbbb" },
+  { id: "fair-3", label: "톤 3", color: "#efbda8" },
+  { id: "fair-4", label: "톤 4", color: "#efb08f" },
+  { id: "deep-1", label: "톤 5", color: "#f29d6d" },
+  { id: "deep-2", label: "톤 6", color: "#d77c54" },
+  { id: "deep-3", label: "톤 7", color: "#af6547" },
+  { id: "deep-4", label: "톤 8", color: "#8d5543" },
 ];
 
 export const CHARACTER_CLASSES = [
   {
     id: "custom-chibi",
-    label: "\uB0B4 \uCE90\uB9AD\uD130",
-    blurb: "\uC0B0\uCC45\uC5D0 \uB530\uB77C \uC870\uAE08\uC529 \uC560\uCC29\uC774 \uC313\uC774\uB294 \uB0B4 SD \uCE90\uB9AD\uD130",
+    label: "내 캐릭터",
+    blurb: "산책에 따라 조금씩 애착이 쌓이는 내 SD 캐릭터",
     modelSignature: ["custom-glb", "blender-import"],
     modelUrl: "models/chibi_animated.glb",
     modelScale: [2.72, 2.72, 2.72],
@@ -46,3 +46,4 @@ export const CHARACTER_CLASSES = [
     },
   },
 ];
+

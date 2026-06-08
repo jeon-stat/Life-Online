@@ -1,11 +1,11 @@
-import { DEFAULT_STEP_GOAL } from "../game/stepRules.js";
+﻿import { DEFAULT_STEP_GOAL } from "../game/stepRules.js";
 
 export const ADMIN_STEP_PRESETS = [
-  { id: "rest", label: "0\uBCF4", steps: 0 },
-  { id: "warm", label: "1800\uBCF4", steps: 1800 },
-  { id: "steady", label: "4200\uBCF4", steps: 4200 },
-  { id: "goal", label: `${DEFAULT_STEP_GOAL}\uBCF4`, steps: DEFAULT_STEP_GOAL },
-  { id: "bonus", label: "8600\uBCF4", steps: 8600 },
+  { id: "rest", label: "0보", steps: 0 },
+  { id: "warm", label: "1800보", steps: 1800 },
+  { id: "steady", label: "4200보", steps: 4200 },
+  { id: "goal", label: `${DEFAULT_STEP_GOAL}보`, steps: DEFAULT_STEP_GOAL },
+  { id: "bonus", label: "8600보", steps: 8600 },
 ];
 
 const BASE_PATTERN = [4200, 7100, 5100, 6300, 7900, 3600, 5500];
@@ -43,3 +43,4 @@ export function applyAdminOverride(steps) {
     }),
   };
 }
+

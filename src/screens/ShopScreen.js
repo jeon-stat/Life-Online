@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { CHARACTER_CLASSES } from "../characters.js";
@@ -10,9 +10,9 @@ import { buildCharacterViewModel } from "../game/characterState.js";
 
 const PAGE_SIZE = 9;
 const FILTERS = [
-  { id: "all", label: "\uC804\uCCB4" },
-  { id: "owned", label: "\uBCF4\uC720" },
-  { id: "unowned", label: "\uBBF8\uBCF4\uC720" },
+  { id: "all", label: "전체" },
+  { id: "owned", label: "보유" },
+  { id: "unowned", label: "미보유" },
 ];
 
 export function ShopScreen() {
@@ -97,7 +97,7 @@ export function ShopScreen() {
     );
 
     if (result === "insufficient") {
-      setPurchaseError("\uCF54\uC778\uC774 \uBD80\uC871\uD574\uC694.");
+      setPurchaseError("코인이 부족해요.");
       return;
     }
 
@@ -115,7 +115,7 @@ export function ShopScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.pageTitleWrap}>
-        <Text style={styles.pageTitle}>\uC0C1\uC810</Text>
+        <Text style={styles.pageTitle}>상점</Text>
       </View>
 
       <View style={styles.previewPanel}>
@@ -179,13 +179,13 @@ export function ShopScreen() {
         <View style={styles.itemsHeader}>
           <Text style={styles.itemsTitle}>{selectedCategory.label}</Text>
           <Text style={styles.itemsMeta}>
-            {selectedCategoryId === "skinTone" ? "\uD53C\uBD80\uD1A4 \uBAA8\uC544\uBCF4\uAE30" : "\uC120\uD0DD / \uAD6C\uB9E4"}
+            {selectedCategoryId === "skinTone" ? "피부톤 모아보기" : "선택 / 구매"}
           </Text>
         </View>
 
         {visibleItems.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>\uD604\uC7AC \uD544\uD130\uC5D0 \uB9DE\uB294 \uC544\uC774\uD15C\uC774 \uC5C6\uC5B4\uC694.</Text>
+            <Text style={styles.emptyStateText}>현재 필터에 맞는 아이템이 없어요.</Text>
           </View>
         ) : selectedCategoryId === "skinTone" ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.skinToneRow}>
@@ -201,7 +201,7 @@ export function ShopScreen() {
                 >
                   <View style={[styles.skinToneSwatch, { backgroundColor: item.color }]} />
                   <Text style={styles.skinToneLabel}>{item.label}</Text>
-                  <Text style={styles.skinToneMeta}>{owned ? "\uBCF4\uC720\uC911" : formatPrice(item.price)}</Text>
+                  <Text style={styles.skinToneMeta}>{owned ? "보유중" : formatPrice(item.price)}</Text>
                 </Pressable>
               );
             })}
@@ -225,7 +225,7 @@ export function ShopScreen() {
                     </Text>
 
                     <View style={styles.priceLine}>
-                      <Text style={styles.priceCoin}>\u25C9</Text>
+                      <Text style={styles.priceCoin}>◉</Text>
                       <Text style={styles.priceValue}>{formatPrice(item.price)}</Text>
                       <Pressable
                         disabled={owned}
@@ -233,7 +233,7 @@ export function ShopScreen() {
                         style={[styles.buyButton, owned && styles.buyButtonOwned]}
                       >
                         <Text style={[styles.buyButtonLabel, owned && styles.buyButtonLabelOwned]}>
-                          {owned ? "\uBCF4\uC720\uC911" : "\uAD6C\uB9E4"}
+                          {owned ? "보유중" : "구매"}
                         </Text>
                       </Pressable>
                     </View>
@@ -266,28 +266,28 @@ export function ShopScreen() {
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setPurchaseRequest(null)} />
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>\uAD6C\uB9E4\uD560\uAE4C\uC694?</Text>
+              <Text style={styles.modalTitle}>구매할까요?</Text>
               <Pressable onPress={() => setPurchaseRequest(null)} style={styles.modalCloseButton}>
-                <Text style={styles.modalCloseLabel}>×</Text>
+                <Text style={styles.modalCloseLabel}>횞</Text>
               </Pressable>
             </View>
 
             <Text style={styles.modalItemName}>{purchaseRequest?.item?.label ?? ""}</Text>
 
             <View style={styles.modalSummary}>
-              <SummaryRow label="\uD604\uC7AC \uCF54\uC778" value={formatCoin(currentCoin)} />
-              <SummaryRow label="\uAC00\uACA9" value={formatCoin(currentPrice)} />
-              <SummaryRow label="\uB0A8\uC740 \uCF54\uC778" value={formatCoin(remainingCoin)} />
+              <SummaryRow label="현재 코인" value={formatCoin(currentCoin)} />
+              <SummaryRow label="가격" value={formatCoin(currentPrice)} />
+              <SummaryRow label="남은 코인" value={formatCoin(remainingCoin)} />
             </View>
 
             {purchaseError ? <Text style={styles.modalError}>{purchaseError}</Text> : null}
 
             <View style={styles.modalActions}>
               <Pressable onPress={() => setPurchaseRequest(null)} style={styles.modalButtonSecondary}>
-                <Text style={styles.modalButtonSecondaryLabel}>\uCDE8\uC18C</Text>
+                <Text style={styles.modalButtonSecondaryLabel}>취소</Text>
               </Pressable>
               <Pressable onPress={confirmPurchase} style={styles.modalButtonPrimary}>
-                <Text style={styles.modalButtonPrimaryLabel}>\uAD6C\uB9E4\uD558\uAE30</Text>
+                <Text style={styles.modalButtonPrimaryLabel}>구매하기</Text>
               </Pressable>
             </View>
           </View>
@@ -321,11 +321,11 @@ function getFilterCount(items, ownedIds) {
 }
 
 function formatPrice(price = 0) {
-  return `${Number(price ?? 0).toLocaleString("ko-KR")}\uC6D0`;
+  return `${Number(price ?? 0).toLocaleString("ko-KR")}원`;
 }
 
 function formatCoin(amount = 0) {
-  return `\u25C9 ${Number(amount ?? 0).toLocaleString("ko-KR")}`;
+  return `◉ ${Number(amount ?? 0).toLocaleString("ko-KR")}`;
 }
 
 const styles = StyleSheet.create({
@@ -773,3 +773,4 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.body,
   },
 });
+

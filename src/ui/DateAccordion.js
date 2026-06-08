@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+﻿import { Pressable, StyleSheet, Text, View } from "react-native";
 
 export function DateAccordion({ items, expandedId, onToggle }) {
   const activeItem = items.find((item) => item.id === expandedId) ?? items.at(-1) ?? null;
@@ -19,7 +19,7 @@ export function DateAccordion({ items, expandedId, onToggle }) {
                 {getDayNumber(item.dateLabel)}
               </Text>
               <Text style={[styles.dayMeta, active && styles.dayMetaActive]}>
-                {item.isToday ? "\uC624\uB298" : item.weekdayLabel}
+                {item.isToday ? "오늘" : item.weekdayLabel}
               </Text>
             </Pressable>
           );
@@ -31,21 +31,21 @@ export function DateAccordion({ items, expandedId, onToggle }) {
           <View style={styles.panelHeader}>
             <Text style={styles.panelTitle}>
               {activeItem.dateLabel}{" "}
-              {activeItem.isToday ? "\u00B7 \uC624\uB298" : `\u00B7 ${activeItem.weekdayLabel}`}
+              {activeItem.isToday ? "· 오늘" : `· ${activeItem.weekdayLabel}`}
             </Text>
             <Text style={styles.panelSummary}>{activeItem.summary}</Text>
           </View>
 
           <View style={styles.metricsRow}>
-            <MetricPill label={"\uD68D\uB4DD XP"} value={`${activeItem.xp}`} />
-            <MetricPill label={"\uC644\uB8CC \uC218"} value={`${activeItem.count}\uD68C`} />
-            <MetricPill label={"\uC0C1\uD0DC"} value={activeItem.mood} />
+            <MetricPill label={"획득 XP"} value={`${activeItem.xp}`} />
+            <MetricPill label={"완료 수"} value={`${activeItem.count}회`} />
+            <MetricPill label={"상태"} value={activeItem.mood} />
           </View>
 
           <View style={styles.entryList}>
             {activeItem.entries.length === 0 ? (
               <Text style={styles.emptyText}>
-                {"\uC774 \uB0A0\uC9DC\uC5D0\uB294 \uC544\uC9C1 \uAE30\uB85D\uC774 \uC5C6\uC5B4\uC694."}
+                {"이 날짜에는 아직 기록이 없어요."}
               </Text>
             ) : (
               activeItem.entries.map((entry) => (
@@ -75,7 +75,7 @@ function MetricPill({ label, value }) {
 }
 
 function getDayNumber(dateLabel) {
-  return dateLabel.split("\uC6D4 ")[1]?.replace("\uC77C", "") ?? dateLabel;
+  return dateLabel.split("월 ")[1]?.replace("일", "") ?? dateLabel;
 }
 
 const styles = StyleSheet.create({
@@ -198,3 +198,4 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+

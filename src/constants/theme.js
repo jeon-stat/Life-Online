@@ -1,4 +1,4 @@
-export const theme = {
+﻿export const theme = {
   fonts: {
     body: "Gowun Dodum",
     display: "Jua",
@@ -34,9 +34,9 @@ export const theme = {
   },
   status: {
     LOW_ENERGY: {
-      label: "\uCC28\uBD84",
-      bubble: "\uC624\uB298\uC740 \uCC9C\uCC9C\uD788.",
-      description: "\uC624\uB298\uC740 \uC870\uC6A9\uD558\uACE0 \uD754\uB4E4\uB9AC\uC9C0 \uC54A\uB294 \uB0A0\uC774\uC5D0\uC694.",
+      label: "차분",
+      bubble: "오늘은 천천히.",
+      description: "오늘은 조용하고 흔들리지 않는 날이에요.",
       background: ["#fbfbfa", "#f7f7f5"],
       stage: "#f3f3f1",
       bubbleSurface: "#f5f5f3",
@@ -45,9 +45,9 @@ export const theme = {
       bobAmount: 0.026,
     },
     NORMAL_ENERGY: {
-      label: "\uD3C9\uC628",
-      bubble: "\uB3C4\uB9C8\uC5D0 \uB9DE\uCDB0 \uAC77\uACE0 \uC788\uC5B4.",
-      description: "\uC624\uB298 \uC0C1\uD0DC\uB294 \uC548\uC815\uC801\uC774\uACE0, \uC77C\uBC18\uC801\uC73C\uB85C \uAC78\uC744 \uC218 \uC788\uB294 \uBD84\uC704\uAE30\uC608\uC694.",
+      label: "평온",
+      bubble: "도마에 맞춰 걷고 있어.",
+      description: "오늘 상태는 안정적이고, 일반적으로 걸을 수 있는 분위기예요.",
       background: ["#f9f9f8", "#f1f1ef"],
       stage: "#f4f4f2",
       bubbleSurface: "#f6f6f4",
@@ -56,9 +56,9 @@ export const theme = {
       bobAmount: 0.044,
     },
     HIGH_ENERGY: {
-      label: "\uD65C\uBC1C",
-      bubble: "\uC65C\uCC0D \uB354 \uAC78\uC5B4\uBCF4\uACE0 \uC2F6\uC5B4!",
-      description: "\uC624\uB298 \uC5D0\uB108\uC9C0\uAC00 \uB192\uC544\uC11C \uBC1C\uAC78\uC74C\uACFC \uBD84\uC704\uAE30\uAC00 \uB354 \uC0B4\uC544\uB0B4\uC694.",
+      label: "활발",
+      bubble: "왜찍 더 걸어보고 싶어!",
+      description: "오늘 에너지가 높아서 발걸음과 분위기가 더 살아내요.",
       background: ["#fafafa", "#f3f3f1"],
       stage: "#f4f4f2",
       bubbleSurface: "#f5f5f3",
@@ -69,19 +69,20 @@ export const theme = {
   },
   growth: {
     WEAK: {
-      label: "\uC131\uC7A5 \uCD08\uAE30",
-      bubble: "\uC544\uC9C1 \uAE30\uBCF8\uC774 \uB9CC\uB4E4\uC5B4\uC9C0\uB294 \uC911\uC774\uC5D0\uC694.",
-      description: "\uB204\uC801 \uAC78\uC74C\uC774 \uC544\uC9C1 \uC801\uC5B4\uC11C \uAE30\uBCF8 \uD615\uC0C1\uC774 \uCC9C\uCC9C\uD788 \uC790\uB9AC\uC744 \uB9E1\uC544\uAC00\uB294 \uC0C1\uD0DC\uC608\uC694.",
+      label: "성장 초기",
+      bubble: "아직 기본이 만들어지는 중이에요.",
+      description: "누적 걸음이 아직 적어서 기본 형상이 천천히 자리을 맡아가는 상태예요.",
     },
     HEALTHY: {
-      label: "\uAC74\uAC15",
-      bubble: "\uC11C\uB458\uC774 \uB9E4\uC77C \uB9DE\uC544\uC838\uAC00\uACE0 \uC788\uC5B4.",
-      description: "\uAC78\uC74C\uC774 \uCEE4\uC9C8 \uC218\uB85D \uBAA8\uC2B5\uC774 \uC548\uC815\uC801\uC774\uACE0 \uB2E8\uB2E8\uD574\uC9C0\uB294 \uC0C1\uD0DC\uC608\uC694.",
+      label: "건강",
+      bubble: "서둘이 매일 맞아져가고 있어.",
+      description: "걸음이 커질 수록 모습이 안정적이고 단단해지는 상태예요.",
     },
     ACTIVE: {
-      label: "\uD65C\uB3D9\uC801",
-      bubble: "\uC6D0\uB3D9\uC774 \uAC15\uD558\uAC8C \uC788\uC5B4!",
-      description: "\uC624\uB79C \uC2DC\uAC04 \uAC78\uC74C\uC774 \uC313\uC774\uB294 \uB9CC\uD07C \uB354 \uB450\uD0C8\uD558\uACE0 \uD65C\uBC1C\uD55C \uC0C1\uD0DC\uC608\uC694.",
+      label: "활동적",
+      bubble: "원동이 강하게 있어!",
+      description: "오랜 시간 걸음이 쌓이는 만큼 더 두탈하고 활발한 상태예요.",
     },
   },
 };
+

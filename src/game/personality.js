@@ -1,30 +1,30 @@
-import { DEFAULT_STEP_GOAL } from "./stepRules.js";
+﻿import { DEFAULT_STEP_GOAL } from "./stepRules.js";
 import { getAchievedDays, getStreak } from "./progression.js";
 
 const PERSONALITIES = {
   balanced: {
     type: "balanced",
-    label: "\uADE0\uD615\uD615",
-    description: "\uCC9C\uCC9C\uD788 \uB9AC\uB4EC\uC744 \uB9DE\uCD94\uBA70 \uC548\uC815\uC801\uC73C\uB85C \uAC77\uB294 \uC131\uD5A5\uC774\uC5D0\uC694.",
-    bubbleTone: "\uC624\uB298\uB3C4 \uB0B4 \uD398\uC774\uC2A4\uB97C \uC798 \uC9C0\uD0A4\uACE0 \uC788\uC5B4.",
+    label: "균형형",
+    description: "천천히 리듬을 맞추며 안정적으로 걷는 성향이에요.",
+    bubbleTone: "오늘도 내 페이스를 잘 지키고 있어.",
   },
   energetic: {
     type: "energetic",
-    label: "\uD65C\uBC1C\uD615",
-    description: "\uBAA9\uD45C\uB97C \uC2DC\uC6D0\uD558\uAC8C \uB118\uAE30\uB294 \uB0A0\uC774 \uC790\uC8FC \uC313\uC774\uB294 \uC131\uD5A5\uC774\uC5D0\uC694.",
-    bubbleTone: "\uBAB8\uC774 \uBA3C\uC800 \uC55E\uC73C\uB85C \uB098\uAC00\uACE0 \uC2F6\uC740 \uAE30\uBD84\uC774\uC57C.",
+    label: "활발형",
+    description: "목표를 시원하게 넘기는 날이 자주 쌓이는 성향이에요.",
+    bubbleTone: "몸이 먼저 앞으로 나가고 싶은 기분이야.",
   },
   steady: {
     type: "steady",
-    label: "\uAFB8\uC900\uD615",
-    description: "\uD558\uB8E8\uD558\uB8E8 \uBB34\uB108\uC9C0\uC9C0 \uC54A\uACE0 \uCC28\uBD84\uD558\uAC8C \uC774\uC5B4 \uAC00\uB294 \uC131\uD5A5\uC774\uC5D0\uC694.",
-    bubbleTone: "\uC870\uC6A9\uD788 \uC313\uC774\uB294 \uD798\uC774 \uC81C\uC77C \uC624\uB798\uAC00.",
+    label: "꾸준형",
+    description: "하루하루 무너지지 않고 차분하게 이어 가는 성향이에요.",
+    bubbleTone: "조용히 쌓이는 힘이 제일 오래가.",
   },
   nightOwl: {
     type: "nightOwl",
-    label: "\uBC24\uC0B0\uCC45\uD615",
-    description: "\uB2A6\uC740 \uC2DC\uAC04\uC758 \uC0B0\uCC45 \uB9AC\uB4EC\uACFC \uC798 \uB9DE\uB294 \uC131\uD5A5\uC774\uC5D0\uC694.",
-    bubbleTone: "\uC870\uC6A9\uD55C \uBC24 \uACF5\uAE30\uC5D0\uC11C \uB354 \uD3B8\uC548\uD574\uC838.",
+    label: "밤산책형",
+    description: "늦은 시간의 산책 리듬과 잘 맞는 성향이에요.",
+    bubbleTone: "조용한 밤 공기에서 더 편안해져.",
   },
 };
 
@@ -46,3 +46,4 @@ export function getPersonality(history = [], goal = DEFAULT_STEP_GOAL) {
 
   return PERSONALITIES.balanced;
 }
+

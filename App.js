@@ -1,4 +1,4 @@
-import { Platform, SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
+﻿import { Platform, SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, TextInput } from "react-native";
@@ -24,11 +24,11 @@ TextInput.defaultProps = TextInput.defaultProps ?? {};
 TextInput.defaultProps.style = [TextInput.defaultProps.style, { fontFamily: theme.fonts.body }];
 
 const TABS = [
-  { id: "home", label: "\uC0B0\uCC45", icon: "\u2302" },
-  { id: "history", label: "\uCD94\uC5B5", icon: "\u25A1" },
-  { id: "character", label: "\uAFB8\uBBF8\uAE30", icon: "\u25CB" },
-  { id: "friends", label: "\uCE5C\uAD6C", icon: "\u263A" },
-  { id: "shop", label: "\uC0C1\uC810", icon: "\u2726" },
+  { id: "home", label: "산책", icon: "⌂" },
+  { id: "history", label: "추억", icon: "□" },
+  { id: "character", label: "꾸미기", icon: "○" },
+  { id: "friends", label: "친구", icon: "☺" },
+  { id: "shop", label: "상점", icon: "✦" },
 ];
 
 const STEP_DATA_MODE = Platform.OS === "web" ? "mock" : "auto";
@@ -152,7 +152,7 @@ function AppShell({ activeTab, onChangeTab }) {
           accessibilityRole="button"
           accessibilityLabel="Open account menu"
         >
-          <Text style={styles.menuToggleLabel}>\u2630</Text>
+          <Text style={styles.menuToggleLabel}>☰</Text>
         </Pressable>
 
         {admin?.visible && admin?.canOverride ? (
@@ -291,3 +291,4 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 });
+
