@@ -105,8 +105,8 @@ export function ShopScreen() {
           character={previewCharacter}
           state={characterViewState}
           presentation="full"
-          scale={0.88}
-          interactionEnabled={false}
+          scale={0.76}
+          interactionEnabled={true}
         />
       </View>
 
@@ -201,13 +201,13 @@ const styles = StyleSheet.create({
     color: "#ffffff",
   },
   scenePanel: {
-    minHeight: 388,
+    minHeight: 320,
     borderRadius: 0,
     overflow: "hidden",
     position: "relative",
     marginHorizontal: -theme.spacing.md,
-    marginTop: -4,
-    marginBottom: -2,
+    marginTop: -6,
+    marginBottom: -6,
   },
   itemsCard: {
     borderRadius: theme.radius.xl,
@@ -241,10 +241,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   itemCard: {
-    flexBasis: "18.4%",
-    maxWidth: "18.4%",
+    flexBasis: "32.2%",
+    maxWidth: "32.2%",
     aspectRatio: 0.9,
-    minHeight: 74,
+    minHeight: 84,
     borderRadius: theme.radius.lg,
     paddingHorizontal: 6,
     paddingVertical: 8,
