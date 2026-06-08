@@ -1,12 +1,6 @@
 import { SKIN_TONE_PRESETS } from "../characters.js";
 
-export const DEFAULT_FRIEND_GROUPS = [
-  { id: "all", name: "전체", system: true },
-  { id: "workout", name: "운동친구", system: false },
-  { id: "school", name: "학교", system: false },
-  { id: "company", name: "회사", system: false },
-  { id: "family", name: "가족", system: false },
-];
+export const DEFAULT_FRIEND_GROUPS = [];
 
 export const FRIEND_GROUPS = DEFAULT_FRIEND_GROUPS;
 
@@ -22,7 +16,7 @@ const BASE_FRIENDS = [
     energyLevel: 6,
     longTermState: "ACTIVE",
     skinTone: SKIN_TONE_PRESETS[2]?.color ?? "#efbda8",
-    groupIds: ["all", "workout", "school"],
+    groupIds: [],
   },
   {
     id: "friend-jun",
@@ -35,7 +29,7 @@ const BASE_FRIENDS = [
     energyLevel: 5,
     longTermState: "HEALTHY",
     skinTone: SKIN_TONE_PRESETS[4]?.color ?? "#f29d6d",
-    groupIds: ["all", "workout", "company"],
+    groupIds: [],
   },
   {
     id: "friend-soo",
@@ -48,7 +42,7 @@ const BASE_FRIENDS = [
     energyLevel: 5,
     longTermState: "ACTIVE",
     skinTone: SKIN_TONE_PRESETS[0]?.color ?? "#f7d9cf",
-    groupIds: ["all", "school", "family"],
+    groupIds: [],
   },
   {
     id: "friend-hana",
@@ -61,7 +55,7 @@ const BASE_FRIENDS = [
     energyLevel: 4,
     longTermState: "HEALTHY",
     skinTone: SKIN_TONE_PRESETS[1]?.color ?? "#f4cbbb",
-    groupIds: ["all", "workout", "family"],
+    groupIds: [],
   },
   {
     id: "friend-minho",
@@ -74,7 +68,7 @@ const BASE_FRIENDS = [
     energyLevel: 4,
     longTermState: "HEALTHY",
     skinTone: SKIN_TONE_PRESETS[5]?.color ?? "#d77c54",
-    groupIds: ["all", "company"],
+    groupIds: [],
   },
 ];
 
@@ -91,7 +85,7 @@ const FRIEND_DIRECTORY = [
     energyLevel: 4,
     longTermState: "HEALTHY",
     skinTone: SKIN_TONE_PRESETS[3]?.color ?? "#f0b79b",
-    groupIds: ["all"],
+    groupIds: [],
   },
   {
     id: "friend-ji",
@@ -104,7 +98,7 @@ const FRIEND_DIRECTORY = [
     energyLevel: 5,
     longTermState: "ACTIVE",
     skinTone: SKIN_TONE_PRESETS[6]?.color ?? "#cb7a53",
-    groupIds: ["all"],
+    groupIds: [],
   },
   {
     id: "friend-doyun",
@@ -117,7 +111,7 @@ const FRIEND_DIRECTORY = [
     energyLevel: 3,
     longTermState: "HEALTHY",
     skinTone: SKIN_TONE_PRESETS[1]?.color ?? "#f4cbbb",
-    groupIds: ["all"],
+    groupIds: [],
   },
 ];
 
@@ -146,7 +140,7 @@ export function buildFriendRankingData({
     energyLevel,
     longTermState,
     skinTone: meSkinTone,
-    groupIds: ["all"],
+    groupIds: [],
     isMe: true,
   };
 
@@ -187,31 +181,28 @@ export function createFriendGroupState(friends = []) {
 }
 
 export function getFriendGroupIds(friend, groupState = {}) {
-  return normalizeGroupIds(groupState?.[friend.id] ?? friend?.groupIds ?? ["all"]);
+  return normalizeGroupIds(groupState?.[friend.id] ?? friend?.groupIds ?? []);
 }
 
 export function getFriendGroupNames(friend, groupState = {}, groups = DEFAULT_FRIEND_GROUPS) {
   const groupIds = getFriendGroupIds(friend, groupState);
-  return groups
-    .filter((group) => groupIds.includes(group.id) && !group.system)
-    .map((group) => group.name)
-    .join(", ") || "없음";
+  return groups.filter((group) => groupIds.includes(group.id)).map((group) => group.name).join(", ") || "없음";
 }
 
 export function filterFriendsByGroup(friends, groupId) {
-  if (groupId === "all") {
-    return [...friends];
+  if (!groupId) {
+    return [];
   }
 
   return friends.filter((friend) => getFriendGroupIds(friend).includes(groupId));
 }
 
 export function toggleFriendGroupMembership(groupState, friendId, groupId) {
-  if (!friendId || !groupId || groupId === "all") {
+  if (!friendId || !groupId) {
     return groupState;
   }
 
-  const currentIds = normalizeGroupIds(groupState?.[friendId] ?? ["all"]);
+  const currentIds = normalizeGroupIds(groupState?.[friendId] ?? []);
   const nextIds = new Set(currentIds);
 
   if (nextIds.has(groupId)) {
@@ -219,8 +210,6 @@ export function toggleFriendGroupMembership(groupState, friendId, groupId) {
   } else {
     nextIds.add(groupId);
   }
-
-  nextIds.add("all");
 
   return {
     ...groupState,
@@ -255,15 +244,12 @@ export function getFriendSortLabel(mode) {
 
 function normalizeGroupIds(groupIds) {
   const normalized = new Set(Array.isArray(groupIds) ? groupIds.filter(Boolean) : []);
-  normalized.add("all");
   return Array.from(normalized);
 }
 
 function normalizeHandle(handle) {
-  return String(handle ?? "")
-    .trim()
-    .replace(/^@+/, "")
-    .toLowerCase();
+  const text = String(handle ?? "").trim().toLowerCase();
+  return text.startsWith("@") ? text.slice(1) : text;
 }
 
 function getSortKey(mode) {

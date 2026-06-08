@@ -59,11 +59,12 @@ export function FriendsScreen() {
   const [rankMode, setRankMode] = useState("daily");
   const [groups, setGroups] = useState(() => DEFAULT_FRIEND_GROUPS.map((group) => ({ ...group })));
   const [friendGroupState, setFriendGroupState] = useState(() => ({}));
-  const [selectedGroupId, setSelectedGroupId] = useState("all");
+  const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupCode, setNewGroupCode] = useState("");
   const [renameGroupName, setRenameGroupName] = useState("");
   const [showGroupRename, setShowGroupRename] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedFriendId, setSelectedFriendId] = useState(null);
   const [friendHandleInput, setFriendHandleInput] = useState("");
   const [friendAddMessage, setFriendAddMessage] = useState("");
@@ -135,7 +136,7 @@ export function FriendsScreen() {
 
   const groupCounts = useMemo(() => buildGroupCounts(groups, mergedFriends), [groups, mergedFriends]);
   const selectedGroup = useMemo(
-    () => groups.find((group) => group.id === selectedGroupId) ?? groups[0] ?? DEFAULT_FRIEND_GROUPS[0],
+    () => groups.find((group) => group.id === selectedGroupId) ?? null,
     [groups, selectedGroupId],
   );
 
@@ -157,10 +158,12 @@ export function FriendsScreen() {
 
   const groupFriends = useMemo(
     () =>
-      [...selectedGroupFriends].sort((a, b) =>
-        String(a.nickname ?? "").localeCompare(String(b.nickname ?? ""), "ko-KR"),
-      ),
-    [selectedGroupFriends],
+      [...selectedGroupFriends].sort((a, b) => {
+        if (selectedGroup?.leaderId === a.id) return -1;
+        if (selectedGroup?.leaderId === b.id) return 1;
+        return String(a.nickname ?? "").localeCompare(String(b.nickname ?? ""), "ko-KR");
+      }),
+    [selectedGroup?.leaderId, selectedGroupFriends],
   );
 
   const rankedFriends = useMemo(
@@ -212,7 +215,11 @@ export function FriendsScreen() {
 
     const code = generateGroupCode(groups);
     const id = makeGroupId(name, groups);
-    setGroups((current) => [...current, { id, name, code, system: false }]);
+    setGroups((current) => [...current, { id, name, code, system: false, leaderId: "friend-me" }]);
+    setFriendGroupState((current) => ({
+      ...current,
+      "friend-me": Array.from(new Set([...(current["friend-me"] ?? []), id])),
+    }));
     setSelectedGroupId(id);
     setNewGroupName("");
     setNewGroupCode(code);
@@ -234,6 +241,10 @@ export function FriendsScreen() {
     }
 
     setSelectedGroupId(matchedGroup.id);
+    setFriendGroupState((current) => ({
+      ...current,
+      "friend-me": Array.from(new Set([...(current["friend-me"] ?? []), matchedGroup.id])),
+    }));
     setGroupJoinMessage(`${matchedGroup.name} 그룹에 들어갔어요.`);
   };
 
@@ -250,8 +261,9 @@ export function FriendsScreen() {
 
     setGroups((current) => current.filter((group) => group.id !== selectedGroup.id));
     setFriendGroupState((current) => removeGroupFromAllFriends(current, selectedGroup.id));
-    setSelectedGroupId("all");
+    setSelectedGroupId(null);
     setShowGroupRename(false);
+    setShowDeleteConfirm(false);
   };
 
   const addFriendFromHandle = () => {
@@ -323,50 +335,52 @@ export function FriendsScreen() {
       </View>
 
       {viewMode === "groups" ? (
-        <View style={styles.groupToolsRow}>
-          <View style={styles.groupToolCard}>
-            <View style={styles.groupActionHeader}>
-              <Text style={styles.groupActionTitle}>그룹 만들기</Text>
-              <Text style={styles.groupActionHint}>고유 번호</Text>
+        <>
+          <View style={styles.groupToolStack}>
+            <View style={styles.groupToolCard}>
+              <View style={styles.groupActionHeader}>
+                <Text style={styles.groupActionTitle}>그룹 만들기</Text>
+                <Text style={styles.groupActionHint}>고유 번호</Text>
+              </View>
+              <View style={styles.inlineInputRow}>
+                <TextInput
+                  value={newGroupName}
+                  onChangeText={setNewGroupName}
+                  placeholder="그룹 이름"
+                  placeholderTextColor={theme.colors.inkSoft}
+                  style={styles.textInput}
+                />
+                <Pressable onPress={createGroup} style={styles.primaryButton}>
+                  <Text style={styles.primaryButtonLabel}>생성</Text>
+                </Pressable>
+              </View>
+              <Text style={styles.groupActionNote}>
+                만들면 고유 번호가 생겨요. {newGroupCode ? `최근 번호 ${newGroupCode}` : ""}
+              </Text>
             </View>
-            <View style={styles.inlineInputRow}>
-              <TextInput
-                value={newGroupName}
-                onChangeText={setNewGroupName}
-                placeholder="그룹 이름"
-                placeholderTextColor={theme.colors.inkSoft}
-                style={styles.textInput}
-              />
-              <Pressable onPress={createGroup} style={styles.primaryButton}>
-                <Text style={styles.primaryButtonLabel}>생성</Text>
-              </Pressable>
-            </View>
-            <Text style={styles.groupActionNote}>
-              만들면 고유 번호가 생겨요. {newGroupCode ? `최근 번호 ${newGroupCode}` : ""}
-            </Text>
-          </View>
 
-          <View style={styles.groupToolCard}>
-            <View style={styles.groupActionHeader}>
-              <Text style={styles.groupActionTitle}>그룹 들어가기</Text>
-              <Text style={styles.groupActionHint}>번호 입력</Text>
+            <View style={styles.groupToolCard}>
+              <View style={styles.groupActionHeader}>
+                <Text style={styles.groupActionTitle}>그룹 들어가기</Text>
+                <Text style={styles.groupActionHint}>번호 입력</Text>
+              </View>
+              <View style={styles.inlineInputRow}>
+                <TextInput
+                  value={groupJoinCode}
+                  onChangeText={setGroupJoinCode}
+                  placeholder="그룹 번호"
+                  placeholderTextColor={theme.colors.inkSoft}
+                  keyboardType="number-pad"
+                  style={styles.textInput}
+                />
+                <Pressable onPress={joinGroup} style={styles.primaryButton}>
+                  <Text style={styles.primaryButtonLabel}>입장</Text>
+                </Pressable>
+              </View>
+              {groupJoinMessage ? <Text style={styles.groupActionNote}>{groupJoinMessage}</Text> : null}
             </View>
-            <View style={styles.inlineInputRow}>
-              <TextInput
-                value={groupJoinCode}
-                onChangeText={setGroupJoinCode}
-                placeholder="그룹 번호"
-                placeholderTextColor={theme.colors.inkSoft}
-                keyboardType="number-pad"
-                style={styles.textInput}
-              />
-              <Pressable onPress={joinGroup} style={styles.primaryButton}>
-                <Text style={styles.primaryButtonLabel}>입장</Text>
-              </Pressable>
-            </View>
-            {groupJoinMessage ? <Text style={styles.groupActionNote}>{groupJoinMessage}</Text> : null}
           </View>
-        </View>
+        </>
       ) : null}
 
       {viewMode !== "friends" ? (
@@ -374,44 +388,45 @@ export function FriendsScreen() {
           <View style={styles.groupCardTop}>
             <View>
               <Text style={styles.groupCardLabel}>그룹</Text>
-              <Text style={styles.groupCardTitle}>{selectedGroup.name}</Text>
+              <Text style={styles.groupCardTitle}>{selectedGroup?.name ?? "아직 그룹이 없어요"}</Text>
             </View>
-            {selectedGroup.system ? <Text style={styles.systemBadge}>SYS</Text> : null}
+            {selectedGroup ? <Text style={styles.systemBadge}>번호 {selectedGroup.code}</Text> : null}
           </View>
           <Text style={styles.groupCardMeta}>
-            {groupCounts[selectedGroup.id] ?? 0}명{selectedGroup.code ? ` · 번호 ${selectedGroup.code}` : ""}
+            {selectedGroup ? `${groupCounts[selectedGroup.id] ?? 0}명` : "새 그룹을 만들거나 들어가세요."}
+            {selectedGroup?.leaderId ? ` · 그룹장 ${mergedFriends.find((friend) => friend.id === selectedGroup.leaderId)?.nickname ?? "나"}` : ""}
           </Text>
 
-          <ScrollView
-            horizontal
-            nestedScrollEnabled
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.groupChipRow}
-            style={styles.groupChipScroller}
-          >
-            {groups.map((group) => {
-              const active = group.id === selectedGroupId;
-              const count = groupCounts[group.id] ?? 0;
-              return (
-                <Pressable
-                  key={group.id}
-                  onPress={() => setSelectedGroupId(group.id)}
-                  style={[styles.groupChip, active && styles.groupChipActive]}
-                >
-                  <Text style={[styles.groupChipLabel, active && styles.groupChipLabelActive]}>
-                    {group.name} ({count})
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+          {groups.length ? (
+            <ScrollView
+              horizontal
+              nestedScrollEnabled
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.groupChipRow}
+              style={styles.groupChipScroller}
+            >
+              {groups.map((group) => {
+                const active = group.id === selectedGroupId;
+                const count = groupCounts[group.id] ?? 0;
+                return (
+                  <Pressable
+                    key={group.id}
+                    onPress={() => setSelectedGroupId(group.id)}
+                    style={[styles.groupChip, active && styles.groupChipActive]}
+                  >
+                    <Text style={[styles.groupChipLabel, active && styles.groupChipLabelActive]}>
+                      {group.name} ({count})
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          ) : null}
 
           {viewMode === "groups" ? (
             <>
               <View style={styles.groupButtonRow}>
-                {selectedGroup.system ? (
-                  <Text style={styles.groupActionNote}>전체 그룹은 관리할 수 없어요.</Text>
-                ) : (
+                {selectedGroup ? (
                   <>
                     <Pressable
                       onPress={() => setShowGroupRename((current) => !current)}
@@ -419,14 +434,16 @@ export function FriendsScreen() {
                     >
                       <Text style={styles.secondaryButtonLabel}>그룹 관리</Text>
                     </Pressable>
-                    <Pressable onPress={deleteGroup} style={styles.dangerButton}>
+                    <Pressable onPress={() => setShowDeleteConfirm(true)} style={styles.dangerButton}>
                       <Text style={styles.dangerButtonLabel}>그룹 삭제</Text>
                     </Pressable>
                   </>
+                ) : (
+                  <Text style={styles.groupActionNote}>그룹을 하나 만들거나 번호를 입력해 들어가세요.</Text>
                 )}
               </View>
 
-              {!selectedGroup.system && showGroupRename ? (
+              {selectedGroup && showGroupRename ? (
                 <View style={styles.inlineInputRow}>
                   <TextInput
                     value={renameGroupName}
@@ -440,8 +457,6 @@ export function FriendsScreen() {
                   </Pressable>
                 </View>
               ) : null}
-
-              {selectedGroup.code ? <Text style={styles.groupActionNote}>그룹 번호 {selectedGroup.code}</Text> : null}
             </>
           ) : null}
         </View>
@@ -467,7 +482,7 @@ export function FriendsScreen() {
           </View>
 
           <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>{getRankingTitle(rankMode, selectedGroup.name)}</Text>
+            <Text style={styles.listTitle}>{getRankingTitle(rankMode, selectedGroup?.name ?? "")}</Text>
             <Text style={styles.listSubtitle}>{getRankingDetails(rankMode)}</Text>
           </View>
 
@@ -558,6 +573,7 @@ export function FriendsScreen() {
             <View style={styles.friendGallery}>
               {groupFriends.map((friend) => {
                 const active = friend.id === selectedFriend?.id;
+                const isLeader = selectedGroup?.leaderId === friend.id;
                 return (
                   <Pressable
                     key={friend.id}
@@ -573,6 +589,7 @@ export function FriendsScreen() {
                     </View>
                     <View style={styles.friendGalleryCaption}>
                       <FriendIdentity friend={friend} />
+                      {isLeader ? <Text style={styles.friendLeaderBadge}>그룹장</Text> : null}
                       <Text style={styles.friendGridSteps} numberOfLines={1}>
                         👣 {formatNumber(friend.todaySteps)}
                       </Text>
@@ -624,6 +641,33 @@ export function FriendsScreen() {
                 </ScrollView>
               </>
             ) : null}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal
+        visible={showDeleteConfirm}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDeleteConfirm(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setShowDeleteConfirm(false)}>
+          <Pressable style={styles.deleteConfirmCard} onPress={() => null}>
+            <Text style={styles.deleteConfirmTitle}>정말 삭제할까요?</Text>
+            <Text style={styles.deleteConfirmText}>그룹 정보와 멤버가 삭제될 수 있어요.</Text>
+            <View style={styles.deleteConfirmRow}>
+              <Pressable onPress={() => setShowDeleteConfirm(false)} style={styles.secondaryButton}>
+                <Text style={styles.secondaryButtonLabel}>취소</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  deleteGroup();
+                }}
+                style={styles.dangerButton}
+              >
+                <Text style={styles.dangerButtonLabel}>삭제</Text>
+              </Pressable>
+            </View>
           </Pressable>
         </Pressable>
       </Modal>
@@ -735,7 +779,7 @@ function removeGroupFromAllFriends(groupState, groupId) {
   const next = {};
 
   for (const [friendId, groupIds] of Object.entries(groupState)) {
-    next[friendId] = Array.from(new Set((groupIds ?? []).filter((id) => id !== groupId).concat("all")));
+    next[friendId] = Array.from(new Set((groupIds ?? []).filter((id) => id !== groupId)));
   }
 
   return next;
@@ -976,12 +1020,10 @@ const styles = StyleSheet.create({
   groupChipLabelActive: {
     color: "#ffffff",
   },
-  groupToolsRow: {
-    flexDirection: "row",
+  groupToolStack: {
     gap: 10,
   },
   groupToolCard: {
-    flex: 1,
     borderRadius: theme.radius.lg,
     padding: 14,
     backgroundColor: "#ffffff",
@@ -1107,6 +1149,7 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.body,
   },
   dangerButton: {
+    flex: 1,
     minHeight: 42,
     alignItems: "center",
     justifyContent: "center",
@@ -1299,6 +1342,20 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: theme.fonts.body,
   },
+  friendLeaderBadge: {
+    alignSelf: "center",
+    marginTop: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: theme.radius.pill,
+    backgroundColor: "#f5f5f3",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    color: "#111111",
+    fontSize: 10,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
   friendGridSteps: {
     color: theme.colors.inkSoft,
     fontSize: 12,
@@ -1332,6 +1389,31 @@ const styles = StyleSheet.create({
   modalScrollContent: {
     gap: 14,
     paddingBottom: 10,
+  },
+  deleteConfirmCard: {
+    borderRadius: theme.radius.xl,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    padding: 16,
+    gap: 10,
+  },
+  deleteConfirmTitle: {
+    color: theme.colors.ink,
+    fontSize: 16,
+    fontWeight: "900",
+    fontFamily: theme.fonts.display,
+  },
+  deleteConfirmText: {
+    color: theme.colors.inkSoft,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "600",
+    fontFamily: theme.fonts.body,
+  },
+  deleteConfirmRow: {
+    flexDirection: "row",
+    gap: 8,
   },
   modalHeader: {
     flexDirection: "row",
