@@ -14,7 +14,6 @@ import { useAuth } from "../auth/AuthProvider.js";
 import { CHARACTER_CLASSES } from "../characters.js";
 import { useStepData } from "../data/stepDataProvider.js";
 import {
-  DEFAULT_FRIEND_GROUPS,
   buildFriendRankingData,
   filterFriendsByGroup,
   findFriendByHandle,
@@ -50,6 +49,12 @@ const LONG_TERM_META = {
   ACTIVE: { label: "활발" },
 };
 
+const FRIEND_GROUP_STORE = {
+  groups: [],
+  friendGroupState: {},
+  customFriends: [],
+};
+
 export function FriendsScreen() {
   const { currentUser } = useAuth();
   const { today, history, goal, admin } = useStepData();
@@ -57,8 +62,8 @@ export function FriendsScreen() {
 
   const [viewMode, setViewMode] = useState("ranking");
   const [rankMode, setRankMode] = useState("daily");
-  const [groups, setGroups] = useState(() => DEFAULT_FRIEND_GROUPS.map((group) => ({ ...group })));
-  const [friendGroupState, setFriendGroupState] = useState(() => ({}));
+  const [groups, setGroups] = useState(() => FRIEND_GROUP_STORE.groups.map((group) => ({ ...group })));
+  const [friendGroupState, setFriendGroupState] = useState(() => ({ ...FRIEND_GROUP_STORE.friendGroupState }));
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupCode, setNewGroupCode] = useState("");
@@ -70,7 +75,7 @@ export function FriendsScreen() {
   const [friendAddMessage, setFriendAddMessage] = useState("");
   const [groupJoinCode, setGroupJoinCode] = useState("");
   const [groupJoinMessage, setGroupJoinMessage] = useState("");
-  const [customFriends, setCustomFriends] = useState([]);
+  const [customFriends, setCustomFriends] = useState(() => FRIEND_GROUP_STORE.customFriends.map((friend) => ({ ...friend })));
 
   const characterViewState = useMemo(
     () => buildCharacterViewModel({ todayRecord: today, history, goal, admin }),
@@ -144,6 +149,20 @@ export function FriendsScreen() {
     setRenameGroupName(selectedGroup && !selectedGroup.system ? selectedGroup.name : "");
     setShowGroupRename(false);
   }, [selectedGroup]);
+
+  useEffect(() => {
+    FRIEND_GROUP_STORE.groups = groups.map((group) => ({ ...group }));
+  }, [groups]);
+
+  useEffect(() => {
+    FRIEND_GROUP_STORE.friendGroupState = Object.fromEntries(
+      Object.entries(friendGroupState ?? {}).map(([friendId, groupIds]) => [friendId, [...(groupIds ?? [])]]),
+    );
+  }, [friendGroupState]);
+
+  useEffect(() => {
+    FRIEND_GROUP_STORE.customFriends = customFriends.map((friend) => ({ ...friend }));
+  }, [customFriends]);
 
   useEffect(() => {
     if (selectedFriendId && mergedFriends.every((friend) => friend.id !== selectedFriendId)) {
