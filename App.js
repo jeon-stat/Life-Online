@@ -26,7 +26,7 @@ TextInput.defaultProps.style = [TextInput.defaultProps.style, { fontFamily: them
 const TABS = [
   { id: "home", label: "\uC0B0\uCC45", icon: "\u2302" },
   { id: "history", label: "\uCD94\uC5B5", icon: "\u25A1" },
-  { id: "character", label: "\uAFBC\uBBF8\uAE30", icon: "\u25CB" },
+  { id: "character", label: "\uAFB8\uBBF8\uAE30", icon: "\u25CB" },
   { id: "friends", label: "\uCE5C\uAD6C", icon: "\u263A" },
   { id: "shop", label: "\uC0C1\uC810", icon: "\u2726" },
 ];

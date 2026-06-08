@@ -75,6 +75,8 @@ export function ShopScreen() {
   const currentCoin = shop.coinBalance ?? 0;
   const remainingCoin = Math.max(0, currentCoin - currentPrice);
 
+  const currentFilterCount = getFilterCount(allItems, ownedIds);
+
   const handleSelectItem = (item) => {
     shop.selectItem?.(selectedCategoryId, item.id);
   };
@@ -110,8 +112,6 @@ export function ShopScreen() {
     }));
   };
 
-  const currentFilterCount = getFilterCount(allItems, ownedIds, selectedFilterId);
-
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.pageTitleWrap}>
@@ -141,7 +141,10 @@ export function ShopScreen() {
             return (
               <Pressable
                 key={category.id}
-                onPress={() => setSelectedCategoryId(category.id)}
+                onPress={() => {
+                  setSelectedCategoryId(category.id);
+                  setSelectedFilterId("all");
+                }}
                 style={[styles.categoryChip, active && styles.categoryChipActive]}
               >
                 <Text style={[styles.categoryChipLabel, active && styles.categoryChipLabelActive]}>
@@ -176,7 +179,7 @@ export function ShopScreen() {
         <View style={styles.itemsHeader}>
           <Text style={styles.itemsTitle}>{selectedCategory.label}</Text>
           <Text style={styles.itemsMeta}>
-            {selectedCategoryId === "skinTone" ? "\uD1A4 \uBAA8\uC544\uBCF4\uAE30" : "\uC120\uD0DD / \uAD6C\uB9E4"}
+            {selectedCategoryId === "skinTone" ? "\uD53C\uBD80\uD1A4 \uBAA8\uC544\uBCF4\uAE30" : "\uC120\uD0DD / \uAD6C\uB9E4"}
           </Text>
         </View>
 
@@ -185,35 +188,24 @@ export function ShopScreen() {
             <Text style={styles.emptyStateText}>\uD604\uC7AC \uD544\uD130\uC5D0 \uB9DE\uB294 \uC544\uC774\uD15C\uC774 \uC5C6\uC5B4\uC694.</Text>
           </View>
         ) : selectedCategoryId === "skinTone" ? (
-          <View style={styles.skinToneGrid}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.skinToneRow}>
             {visibleItems.map((item) => {
               const selected = selectedItemId === item.id;
               const owned = ownedIds.includes(item.id);
+
               return (
                 <Pressable
                   key={item.id}
                   onPress={() => handleSelectItem(item)}
-                  style={[styles.skinToneTile, selected && styles.skinToneTileSelected]}
+                  style={[styles.skinToneChip, selected && styles.skinToneChipSelected]}
                 >
                   <View style={[styles.skinToneSwatch, { backgroundColor: item.color }]} />
                   <Text style={styles.skinToneLabel}>{item.label}</Text>
-                  <View style={styles.priceLine}>
-                    <Text style={styles.priceCoin}>◍</Text>
-                    <Text style={styles.priceValue}>{formatPrice(item.price)}</Text>
-                    <Pressable
-                      disabled={owned}
-                      onPress={() => handleBuyItem(item)}
-                      style={[styles.buyButton, owned && styles.buyButtonOwned]}
-                    >
-                      <Text style={[styles.buyButtonLabel, owned && styles.buyButtonLabelOwned]}>
-                        {owned ? "\uBCF4\uC720\uC911" : "\uAD6C\uB9E4"}
-                      </Text>
-                    </Pressable>
-                  </View>
+                  <Text style={styles.skinToneMeta}>{owned ? "\uBCF4\uC720\uC911" : formatPrice(item.price)}</Text>
                 </Pressable>
               );
             })}
-          </View>
+          </ScrollView>
         ) : (
           <>
             <View style={styles.itemsGrid}>
@@ -225,7 +217,7 @@ export function ShopScreen() {
                   <Pressable
                     key={item.id}
                     onPress={() => handleSelectItem(item)}
-                    style={[styles.itemCard, selected && styles.itemCardSelected]}
+                    style={[styles.itemTile, selected && styles.itemTileSelected]}
                   >
                     <View style={[styles.itemDot, { backgroundColor: selectedCategory.accent }]} />
                     <Text style={styles.itemLabel} numberOfLines={1}>
@@ -233,7 +225,7 @@ export function ShopScreen() {
                     </Text>
 
                     <View style={styles.priceLine}>
-                      <Text style={styles.priceCoin}>◍</Text>
+                      <Text style={styles.priceCoin}>\u25C9</Text>
                       <Text style={styles.priceValue}>{formatPrice(item.price)}</Text>
                       <Pressable
                         disabled={owned}
@@ -314,18 +306,15 @@ function SummaryRow({ label, value }) {
   );
 }
 
-function getFilterCount(items, ownedIds, filterId) {
+function getFilterCount(items, ownedIds) {
   const counts = { all: items.length, owned: 0, unowned: 0 };
+
   for (const item of items) {
     if (ownedIds.includes(item.id)) {
       counts.owned += 1;
     } else {
       counts.unowned += 1;
     }
-  }
-
-  if (filterId) {
-    return counts;
   }
 
   return counts;
@@ -336,7 +325,7 @@ function formatPrice(price = 0) {
 }
 
 function formatCoin(amount = 0) {
-  return `◍ ${Number(amount ?? 0).toLocaleString("ko-KR")}`;
+  return `\u25C9 ${Number(amount ?? 0).toLocaleString("ko-KR")}`;
 }
 
 const styles = StyleSheet.create({
@@ -515,21 +504,23 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     rowGap: 10,
   },
-  itemCard: {
-    width: "31%",
+  itemTile: {
+    flexBasis: "31%",
+    maxWidth: "31%",
+    flexGrow: 0,
+    flexShrink: 1,
     minHeight: 116,
-    borderRadius: theme.radius.lg,
-    paddingHorizontal: 6,
-    paddingTop: 8,
-    paddingBottom: 10,
+    borderRadius: theme.radius.xl,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
     backgroundColor: theme.colors.surfaceSoft,
     borderWidth: 1,
     borderColor: theme.colors.border,
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 4,
+    justifyContent: "center",
+    gap: 6,
   },
-  itemCardSelected: {
+  itemTileSelected: {
     borderColor: theme.colors.ink,
     backgroundColor: theme.colors.surface,
   },
@@ -540,47 +531,46 @@ const styles = StyleSheet.create({
   },
   itemLabel: {
     color: theme.colors.ink,
-    fontSize: 10,
-    lineHeight: 12,
+    fontSize: 11,
+    lineHeight: 13,
     fontWeight: "900",
     textAlign: "center",
     fontFamily: theme.fonts.body,
-  },
-  itemFooter: {
-    width: "100%",
-    alignItems: "center",
-    gap: 6,
   },
   priceLine: {
     width: "100%",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
+    justifyContent: "space-between",
+    gap: 6,
   },
   priceCoin: {
-    color: theme.colors.inkSoft,
-    fontSize: 10,
-    fontWeight: "900",
-    fontFamily: theme.fonts.body,
-  },
-  priceValue: {
     color: theme.colors.ink,
     fontSize: 10,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
+  priceValue: {
+    flex: 1,
+    color: theme.colors.ink,
+    fontSize: 10,
+    fontWeight: "900",
+    textAlign: "center",
+    fontFamily: theme.fonts.body,
+  },
   buyButton: {
-    minWidth: 46,
-    minHeight: 24,
+    minWidth: 42,
     paddingHorizontal: 8,
+    paddingVertical: 5,
     borderRadius: theme.radius.pill,
+    backgroundColor: "#111111",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#111111",
   },
   buyButtonOwned: {
     backgroundColor: theme.colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   buyButtonLabel: {
     color: "#ffffff",
@@ -589,46 +579,88 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.body,
   },
   buyButtonLabelOwned: {
-    color: theme.colors.ink,
+    color: theme.colors.inkSoft,
   },
-  skinToneGrid: {
+  skinToneRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    alignItems: "center",
     gap: 8,
+    paddingVertical: 4,
   },
-  skinToneTile: {
-    width: "31%",
-    minHeight: 104,
+  skinToneChip: {
+    width: 54,
+    minHeight: 74,
     borderRadius: theme.radius.lg,
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-    backgroundColor: theme.colors.surfaceSoft,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 6,
+    backgroundColor: theme.colors.surfaceMuted,
+    paddingHorizontal: 6,
+    paddingVertical: 8,
   },
-  skinToneTileSelected: {
+  skinToneChipSelected: {
     borderColor: theme.colors.ink,
-    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
   },
   skinToneSwatch: {
-    width: 28,
-    height: 28,
+    width: 22,
+    height: 22,
     borderRadius: 999,
   },
   skinToneLabel: {
     color: theme.colors.ink,
     fontSize: 10,
+    fontWeight: "800",
+    textAlign: "center",
+    fontFamily: theme.fonts.body,
+  },
+  skinToneMeta: {
+    color: theme.colors.inkSoft,
+    fontSize: 9,
+    fontWeight: "700",
+    textAlign: "center",
+    fontFamily: theme.fonts.body,
+  },
+  paginationRow: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+    flexWrap: "nowrap",
+    gap: 8,
+    paddingTop: 2,
+  },
+  pageChip: {
+    minWidth: 34,
+    height: 34,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surfaceMuted,
+  },
+  pageChipActive: {
+    backgroundColor: "#111111",
+    borderColor: "#111111",
+  },
+  pageChipLabel: {
+    color: theme.colors.inkSoft,
+    fontSize: 12,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
+  pageChipLabelActive: {
+    color: "#ffffff",
+  },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.22)",
+    backgroundColor: "rgba(17, 24, 39, 0.24)",
     justifyContent: "center",
-    paddingHorizontal: 18,
+    padding: theme.spacing.md,
   },
   modalCard: {
     borderRadius: theme.radius.xl,
@@ -648,11 +680,11 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 18,
     fontWeight: "900",
-    fontFamily: theme.fonts.display,
+    fontFamily: theme.fonts.body,
   },
   modalCloseButton: {
-    width: 30,
-    height: 30,
+    width: 34,
+    height: 34,
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
@@ -665,6 +697,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "900",
     lineHeight: 18,
+    fontFamily: theme.fonts.body,
   },
   modalItemName: {
     color: theme.colors.ink,
@@ -677,12 +710,15 @@ const styles = StyleSheet.create({
   },
   summaryRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
     gap: 8,
-    paddingVertical: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.surfaceSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   summaryLabel: {
     color: theme.colors.inkSoft,
@@ -692,47 +728,47 @@ const styles = StyleSheet.create({
   },
   summaryValue: {
     color: theme.colors.ink,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
   modalError: {
-    color: "#ba3b2d",
+    color: "#c0392b",
     fontSize: 12,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
   },
   modalActions: {
     flexDirection: "row",
-    gap: 10,
+    gap: 8,
   },
   modalButtonSecondary: {
     flex: 1,
     minHeight: 44,
+    borderRadius: theme.radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: theme.radius.pill,
     backgroundColor: theme.colors.surfaceMuted,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
   modalButtonSecondaryLabel: {
     color: theme.colors.ink,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
   modalButtonPrimary: {
     flex: 1,
     minHeight: 44,
+    borderRadius: theme.radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: theme.radius.pill,
     backgroundColor: "#111111",
   },
   modalButtonPrimaryLabel: {
     color: "#ffffff",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },

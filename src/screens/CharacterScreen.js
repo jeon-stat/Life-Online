@@ -73,7 +73,7 @@ export function CharacterScreen() {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.pageTitleWrap}>
-        <Text style={styles.pageTitle}>\uAFBC\uBBF8\uAE30</Text>
+        <Text style={styles.pageTitle}>\uAFB8\uBBF8\uAE30</Text>
       </View>
 
       <View style={styles.previewPanel}>
