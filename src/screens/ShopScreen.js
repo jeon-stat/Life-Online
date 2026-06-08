@@ -122,9 +122,10 @@ export function ShopScreen() {
               <Text style={styles.itemTitle} numberOfLines={1}>
                 {item.label}
               </Text>
-              <Text style={styles.itemNote} numberOfLines={1}>
-                {item.note}
-              </Text>
+              <View style={styles.priceRow}>
+                <Text style={styles.priceCoin}>◍</Text>
+                <Text style={styles.priceValue}>0원</Text>
+              </View>
             </View>
           ))}
         </View>
@@ -238,13 +239,13 @@ const styles = StyleSheet.create({
   itemsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 6,
+    justifyContent: "space-between",
+    rowGap: 8,
   },
   itemCard: {
-    flexBasis: "32.2%",
-    maxWidth: "32.2%",
+    width: "31%",
     aspectRatio: 0.9,
-    minHeight: 84,
+    minHeight: 78,
     borderRadius: theme.radius.lg,
     paddingHorizontal: 6,
     paddingVertical: 8,
@@ -253,7 +254,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
+    gap: 3,
   },
   itemDot: {
     width: 12,
@@ -262,18 +263,29 @@ const styles = StyleSheet.create({
   },
   itemTitle: {
     color: theme.colors.ink,
-    fontSize: 10,
-    lineHeight: 12,
+    fontSize: 9,
+    lineHeight: 11,
     fontWeight: "900",
     textAlign: "center",
     fontFamily: theme.fonts.body,
   },
-  itemNote: {
+  priceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    marginTop: 1,
+  },
+  priceCoin: {
     color: theme.colors.inkSoft,
-    fontSize: 9,
-    lineHeight: 11,
-    fontWeight: "700",
-    textAlign: "center",
+    fontSize: 10,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  priceValue: {
+    color: theme.colors.ink,
+    fontSize: 10,
+    fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
 });

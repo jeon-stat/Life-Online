@@ -121,17 +121,13 @@ export function CharacterScreen() {
       </View>
 
       <View style={styles.previewPanel}>
-        {selectedCategoryId === "background" ? (
-          <BackgroundScene />
-        ) : (
-          <CharacterStage
-            character={previewCharacter}
-            state={characterViewState}
-            presentation="full"
-            scale={0.86}
-            interactionEnabled={true}
-          />
-        )}
+        <CharacterStage
+          character={previewCharacter}
+          state={characterViewState}
+          presentation="full"
+          scale={0.86}
+          interactionEnabled={true}
+        />
 
         <View style={styles.previewBadge}>
           <Text style={styles.previewBadgeLabel}>{selectedCategory.label}</Text>
@@ -162,7 +158,7 @@ export function CharacterScreen() {
         <View style={styles.itemHeader}>
           <Text style={styles.itemTitle}>{selectedCategory.label}</Text>
           <Text style={styles.itemMeta}>
-            {selectedCategoryId === "background" ? "배경만 보기" : selectedCategoryId === "skinTone" ? "한 줄" : "9개씩 보기"}
+            {selectedCategoryId === "skinTone" ? "한 줄" : "9개씩 보기"}
           </Text>
         </View>
 
@@ -223,19 +219,6 @@ export function CharacterScreen() {
   );
 }
 
-function BackgroundScene() {
-  return (
-    <View style={styles.backgroundScene}>
-      <View style={styles.bgSun} />
-      <View style={styles.bgCloudLeft} />
-      <View style={styles.bgCloudRight} />
-      <View style={styles.bgHillLeft} />
-      <View style={styles.bgHillRight} />
-      <View style={styles.bgPath} />
-    </View>
-  );
-}
-
 function buildOwnedItems(prefix, labels) {
   return labels.map((label, index) => ({
     id: `${prefix}-${index + 1}`,
@@ -274,70 +257,6 @@ const styles = StyleSheet.create({
     marginTop: -6,
     marginBottom: -4,
     backgroundColor: "#ffffff",
-  },
-  backgroundScene: {
-    flex: 1,
-    position: "relative",
-    overflow: "hidden",
-    backgroundColor: "#edf6e6",
-  },
-  bgSun: {
-    position: "absolute",
-    top: 28,
-    right: 26,
-    width: 16,
-    height: 16,
-    borderRadius: 999,
-    backgroundColor: "#ffc85e",
-  },
-  bgCloudLeft: {
-    position: "absolute",
-    top: 56,
-    left: 66,
-    width: 54,
-    height: 18,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.84)",
-  },
-  bgCloudRight: {
-    position: "absolute",
-    top: 86,
-    right: 76,
-    width: 56,
-    height: 18,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.72)",
-  },
-  bgHillLeft: {
-    position: "absolute",
-    bottom: -44,
-    left: -54,
-    width: "84%",
-    height: 196,
-    borderTopLeftRadius: 220,
-    borderTopRightRadius: 220,
-    backgroundColor: "#99c06c",
-    transform: [{ rotate: "-5deg" }],
-  },
-  bgHillRight: {
-    position: "absolute",
-    bottom: -34,
-    right: -48,
-    width: "70%",
-    height: 196,
-    borderTopLeftRadius: 220,
-    borderTopRightRadius: 220,
-    backgroundColor: "#d19c42",
-    transform: [{ rotate: "7deg" }],
-  },
-  bgPath: {
-    position: "absolute",
-    bottom: -4,
-    left: "17%",
-    width: "66%",
-    height: 12,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.14)",
   },
   previewBadge: {
     position: "absolute",
