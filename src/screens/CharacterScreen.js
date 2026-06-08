@@ -14,12 +14,18 @@ export function CharacterScreen() {
   const { today, history, goal, shop } = useStepData();
   const [selectedCategoryId, setSelectedCategoryId] = useState("top");
   const [pageByCategory, setPageByCategory] = useState({});
+  const [draftSelectionByCategory, setDraftSelectionByCategory] = useState(() => ({
+    ...shop.selectedItemIdsByCategory,
+    skinTone: shop.skinToneId ?? shop.selectedItemIdsByCategory.skinTone ?? null,
+  }));
 
   const selectedCategory =
     CUSTOMIZATION_CATEGORIES.find((category) => category.id === selectedCategoryId) ?? CUSTOMIZATION_CATEGORIES[0];
 
   const activeSkinTone =
-    CUSTOMIZATION_ITEMS.skinTone.find((tone) => tone.id === shop.skinToneId) ?? CUSTOMIZATION_ITEMS.skinTone[0] ?? null;
+    CUSTOMIZATION_ITEMS.skinTone.find((tone) => tone.id === draftSelectionByCategory.skinTone) ??
+    CUSTOMIZATION_ITEMS.skinTone[0] ??
+    null;
 
   const previewCharacter = useMemo(() => {
     const baseCharacter = CHARACTER_CLASSES[0];
@@ -45,12 +51,17 @@ export function CharacterScreen() {
 
   const allCategoryItems = CUSTOMIZATION_ITEMS[selectedCategoryId] ?? [];
   const ownedIds = shop.ownedItemIdsByCategory[selectedCategoryId] ?? [];
-  const ownedCategoryItems =
-    selectedCategoryId === "skinTone" ? allCategoryItems : allCategoryItems.filter((item) => ownedIds.includes(item.id));
-  const selectedItemId = shop.selectedItemIdsByCategory[selectedCategoryId] ?? null;
+  const ownedCategoryItems = allCategoryItems.filter((item) => ownedIds.includes(item.id));
+  const selectedItemId = draftSelectionByCategory[selectedCategoryId] ?? null;
 
   const currentSelection =
     ownedCategoryItems.find((item) => item.id === selectedItemId) ?? ownedCategoryItems[0] ?? null;
+  const hasUnsavedChanges = CUSTOMIZATION_CATEGORIES.some((category) => {
+    const draftId = draftSelectionByCategory[category.id] ?? null;
+    const savedId =
+      category.id === "skinTone" ? shop.skinToneId ?? null : shop.selectedItemIdsByCategory[category.id] ?? null;
+    return draftId !== savedId;
+  });
 
   const totalPages = Math.max(1, Math.ceil(ownedCategoryItems.length / PAGE_SIZE));
   const currentPage = Math.min(pageByCategory[selectedCategoryId] ?? 0, totalPages - 1);
@@ -60,7 +71,30 @@ export function CharacterScreen() {
       : ownedCategoryItems.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
 
   const handleSelectItem = (item) => {
-    shop.selectItem?.(selectedCategoryId, item.id);
+    setDraftSelectionByCategory((current) => ({
+      ...current,
+      [selectedCategoryId]: item.id,
+      skinTone: selectedCategoryId === "skinTone" ? item.id : current.skinTone,
+    }));
+  };
+
+  const handleSave = () => {
+    const nextSkinToneId = draftSelectionByCategory.skinTone ?? null;
+    if (nextSkinToneId && nextSkinToneId !== shop.skinToneId) {
+      shop.setSkinTone?.(nextSkinToneId);
+    }
+
+    CUSTOMIZATION_CATEGORIES.forEach((category) => {
+      if (category.id === "skinTone") {
+        return;
+      }
+
+      const nextItemId = draftSelectionByCategory[category.id] ?? null;
+      const savedItemId = shop.selectedItemIdsByCategory?.[category.id] ?? null;
+      if (nextItemId && nextItemId !== savedItemId) {
+        shop.selectItem?.(category.id, nextItemId);
+      }
+    });
   };
 
   const setPage = (nextPage) => {
@@ -168,6 +202,21 @@ export function CharacterScreen() {
             ) : null}
           </>
         )}
+      </View>
+
+      <View style={styles.saveCard}>
+        <View style={styles.saveTextWrap}>
+          <Text style={styles.saveTitle}>{hasUnsavedChanges ? "저장 전" : "저장됨"}</Text>
+          <Text style={styles.saveNote}>
+            {hasUnsavedChanges ? "아래 버튼을 눌러야 적용돼요." : "지금 상태가 캐릭터에 반영돼 있어요."}
+          </Text>
+        </View>
+        <Pressable
+          onPress={handleSave}
+          style={[styles.saveButton, !hasUnsavedChanges && styles.saveButtonDisabled]}
+        >
+          <Text style={[styles.saveButtonLabel, !hasUnsavedChanges && styles.saveButtonLabelDisabled]}>저장</Text>
+        </Pressable>
       </View>
     </ScrollView>
   );
@@ -359,6 +408,56 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     paddingTop: 2,
+  },
+  saveCard: {
+    borderRadius: theme.radius.xl,
+    padding: 16,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  saveTextWrap: {
+    flex: 1,
+    gap: 4,
+  },
+  saveTitle: {
+    color: theme.colors.ink,
+    fontSize: 15,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  saveNote: {
+    color: theme.colors.inkSoft,
+    fontSize: 12,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
+  },
+  saveButton: {
+    minWidth: 76,
+    height: 40,
+    borderRadius: theme.radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#111111",
+    paddingHorizontal: 16,
+  },
+  saveButtonDisabled: {
+    backgroundColor: theme.colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  saveButtonLabel: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  saveButtonLabelDisabled: {
+    color: theme.colors.inkSoft,
   },
   pageChip: {
     minWidth: 34,
