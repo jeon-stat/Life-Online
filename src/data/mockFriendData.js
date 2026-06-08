@@ -78,6 +78,49 @@ const BASE_FRIENDS = [
   },
 ];
 
+const FRIEND_DIRECTORY = [
+  ...BASE_FRIENDS,
+  {
+    id: "friend-seo",
+    nickname: "서연",
+    handle: "seoyeon",
+    avatarCharacterId: "chibi-06",
+    todaySteps: 7890,
+    weeklySteps: 40120,
+    streak: 4,
+    energyLevel: 4,
+    longTermState: "HEALTHY",
+    skinTone: SKIN_TONE_PRESETS[3]?.color ?? "#f0b79b",
+    groupIds: ["all"],
+  },
+  {
+    id: "friend-ji",
+    nickname: "지우",
+    handle: "jiwoo",
+    avatarCharacterId: "chibi-07",
+    todaySteps: 9450,
+    weeklySteps: 46200,
+    streak: 6,
+    energyLevel: 5,
+    longTermState: "ACTIVE",
+    skinTone: SKIN_TONE_PRESETS[6]?.color ?? "#cb7a53",
+    groupIds: ["all"],
+  },
+  {
+    id: "friend-doyun",
+    nickname: "도윤",
+    handle: "doyun",
+    avatarCharacterId: "chibi-08",
+    todaySteps: 5230,
+    weeklySteps: 28900,
+    streak: 2,
+    energyLevel: 3,
+    longTermState: "HEALTHY",
+    skinTone: SKIN_TONE_PRESETS[1]?.color ?? "#f4cbbb",
+    groupIds: ["all"],
+  },
+];
+
 export function buildFriendRankingData({
   currentUser,
   todayRecord,
@@ -121,6 +164,19 @@ export function buildFriendRankingData({
 
   friends.push(me);
   return friends;
+}
+
+export function findFriendByHandle(handle) {
+  const normalized = normalizeHandle(handle);
+  if (!normalized) {
+    return null;
+  }
+
+  return FRIEND_DIRECTORY.find((friend) => friend.handle === normalized) ?? null;
+}
+
+export function getFriendDirectory() {
+  return FRIEND_DIRECTORY.map((friend) => ({ ...friend }));
 }
 
 export function createFriendGroupState(friends = []) {
@@ -201,6 +257,13 @@ function normalizeGroupIds(groupIds) {
   const normalized = new Set(Array.isArray(groupIds) ? groupIds.filter(Boolean) : []);
   normalized.add("all");
   return Array.from(normalized);
+}
+
+function normalizeHandle(handle) {
+  return String(handle ?? "")
+    .trim()
+    .replace(/^@+/, "")
+    .toLowerCase();
 }
 
 function getSortKey(mode) {

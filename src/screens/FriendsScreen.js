@@ -17,6 +17,7 @@ import {
   DEFAULT_FRIEND_GROUPS,
   buildFriendRankingData,
   filterFriendsByGroup,
+  findFriendByHandle,
   getFriendGroupIds,
   sortFriendCards,
   toggleFriendGroupMembership,
@@ -28,7 +29,7 @@ import { FriendCharacterPreview } from "../components/FriendCharacterPreview";
 
 const VIEW_TABS = [
   { id: "ranking", label: "랭킹" },
-  { id: "list", label: "그룹 관리" },
+  { id: "list", label: "친구 관리" },
 ];
 
 const RANK_TABS = [
@@ -63,6 +64,9 @@ export function FriendsScreen() {
   const [newGroupName, setNewGroupName] = useState("");
   const [renameGroupName, setRenameGroupName] = useState("");
   const [selectedFriendId, setSelectedFriendId] = useState(null);
+  const [friendHandleInput, setFriendHandleInput] = useState("");
+  const [friendAddMessage, setFriendAddMessage] = useState("");
+  const [customFriends, setCustomFriends] = useState([]);
 
   const characterViewState = useMemo(
     () => buildCharacterViewModel({ todayRecord: today, history, goal, admin }),
@@ -109,23 +113,22 @@ export function FriendsScreen() {
   useEffect(() => {
     setFriendGroupState((current) => {
       const next = { ...current };
-      for (const friend of friends) {
+      for (const friend of [...friends, ...customFriends]) {
         if (!next[friend.id]) {
           next[friend.id] = getFriendGroupIds(friend);
         }
       }
       return next;
     });
-  }, [friends]);
+  }, [customFriends, friends]);
 
-  const mergedFriends = useMemo(
-    () =>
-      friends.map((friend) => ({
-        ...friend,
-        groupIds: getFriendGroupIds(friend, friendGroupState),
-      })),
-    [friendGroupState, friends],
-  );
+  const mergedFriends = useMemo(() => {
+    const baseFriends = friends.map((friend) => ({
+      ...friend,
+      groupIds: getFriendGroupIds(friend, friendGroupState),
+    }));
+    return dedupeFriends([...baseFriends, ...customFriends]);
+  }, [customFriends, friendGroupState, friends]);
 
   const groupCounts = useMemo(() => buildGroupCounts(groups, mergedFriends), [groups, mergedFriends]);
   const selectedGroup = useMemo(
@@ -229,6 +232,50 @@ export function FriendsScreen() {
 
   const selectedFriendGroupIds = selectedFriend ? getFriendGroupIds(selectedFriend, friendGroupState) : [];
   const selectableGroups = groups.filter((group) => !group.system);
+  const addFriendFromHandle = () => {
+    const raw = String(friendHandleInput ?? "").trim();
+    const normalized = raw.toLowerCase();
+
+    if (!normalized) {
+      setFriendAddMessage("친구 아이디를 입력해 주세요.");
+      return;
+    }
+
+    if (!normalized.startsWith("@")) {
+      setFriendAddMessage("@아이디 형식으로 입력해 주세요.");
+      return;
+    }
+
+    const handle = normalized.slice(1).trim();
+    if (!handle) {
+      setFriendAddMessage("@아이디 형식으로 입력해 주세요.");
+      return;
+    }
+
+    if (mergedFriends.some((friend) => String(friend.handle ?? "").toLowerCase() === handle)) {
+      setFriendAddMessage("이미 추가된 친구예요.");
+      return;
+    }
+
+    const foundFriend = findFriendByHandle(handle);
+    if (!foundFriend) {
+      setFriendAddMessage("친구를 찾을 수 없어요.");
+      return;
+    }
+
+    setCustomFriends((current) => {
+      if (current.some((friend) => friend.handle === foundFriend.handle)) {
+        return current;
+      }
+      return [...current, foundFriend];
+    });
+    setFriendGroupState((current) => ({
+      ...current,
+      [foundFriend.id]: getFriendGroupIds(foundFriend),
+    }));
+    setFriendHandleInput("");
+    setFriendAddMessage(`${foundFriend.nickname}님을 추가했어요.`);
+  };
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -396,8 +443,30 @@ export function FriendsScreen() {
             <EmptyState />
           )}
         </>
-      ) : (
+        ) : (
         <>
+          <View style={styles.groupActionCard}>
+            <View style={styles.groupActionHeader}>
+              <Text style={styles.groupActionTitle}>친구 추가</Text>
+              <Text style={styles.groupActionHint}>@아이디</Text>
+            </View>
+            <View style={styles.inlineInputRow}>
+              <TextInput
+                value={friendHandleInput}
+                onChangeText={setFriendHandleInput}
+                placeholder="@아이디"
+                placeholderTextColor={theme.colors.inkSoft}
+                autoCapitalize="none"
+                autoCorrect={false}
+                style={styles.textInput}
+              />
+              <Pressable onPress={addFriendFromHandle} style={styles.primaryButton}>
+                <Text style={styles.primaryButtonLabel}>추가</Text>
+              </Pressable>
+            </View>
+            {friendAddMessage ? <Text style={styles.groupActionNote}>{friendAddMessage}</Text> : null}
+          </View>
+
           <View style={styles.listHeader}>
             <Text style={styles.listTitle}>친구 목록</Text>
             <Text style={styles.listSubtitle}>캐릭터를 눌러 크게 볼 수 있어요.</Text>
@@ -420,9 +489,7 @@ export function FriendsScreen() {
                     <FriendPreview character={previewCharacter} state={characterViewState} size={galleryPreviewSize} />
                   </View>
                   <View style={styles.friendGalleryCaption}>
-                    <Text style={styles.friendGridName} numberOfLines={1}>
-                      {friend.nickname}
-                    </Text>
+                    <FriendIdentity friend={friend} />
                     <Text style={styles.friendGridSteps} numberOfLines={1}>
                       👣 {formatNumber(friend.todaySteps)}
                     </Text>
@@ -525,14 +592,25 @@ function FriendGalleryCard({
       </View>
 
       <View style={styles.friendGalleryCaption}>
-        <Text style={styles.friendGridName} numberOfLines={1}>
-          {friend.nickname}
-        </Text>
+        <FriendIdentity friend={friend} />
         <Text style={styles.friendGridSteps} numberOfLines={1}>
           {caption}
         </Text>
       </View>
     </Pressable>
+  );
+}
+
+function FriendIdentity({ friend }) {
+  return (
+    <View style={styles.friendIdentity}>
+      <Text style={styles.friendGridName} numberOfLines={1}>
+        {friend.nickname}
+      </Text>
+      <Text style={styles.friendGridHandle} numberOfLines={1}>
+        @{friend.handle}
+      </Text>
+    </View>
   );
 }
 
@@ -558,6 +636,23 @@ function EmptyState() {
       <Text style={styles.emptyText}>친구 목록에서 이 그룹에 친구를 추가해보세요.</Text>
     </View>
   );
+}
+
+function dedupeFriends(friends) {
+  const seen = new Set();
+  const result = [];
+
+  for (const friend of friends) {
+    const key = String(friend?.id ?? friend?.handle ?? "").trim();
+    if (!key || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    result.push(friend);
+  }
+
+  return result;
 }
 
 function buildGroupCounts(groups, friends) {
@@ -1083,10 +1178,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     paddingBottom: 2,
   },
+  friendIdentity: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 1,
+  },
   friendGridName: {
     color: theme.colors.ink,
     fontSize: 13,
     fontWeight: "900",
+    textAlign: "center",
+    fontFamily: theme.fonts.body,
+  },
+  friendGridHandle: {
+    color: theme.colors.inkSoft,
+    fontSize: 10,
+    lineHeight: 12,
+    fontWeight: "700",
     textAlign: "center",
     fontFamily: theme.fonts.body,
   },
