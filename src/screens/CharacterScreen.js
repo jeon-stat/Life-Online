@@ -10,12 +10,12 @@ import { buildCharacterViewModel } from "../game/characterState.js";
 const PAGE_SIZE = 9;
 
 const CHARACTER_CATEGORIES = [
-  { id: "top", label: "상의", mode: "character", accent: "#d89a4a" },
-  { id: "bottom", label: "하의", mode: "character", accent: "#8fbe70" },
-  { id: "expression", label: "표정", mode: "face", accent: "#111111" },
-  { id: "background", label: "배경", mode: "background", accent: "#7bb3e5" },
-  { id: "item", label: "아이템", mode: "character", accent: "#7d87ff" },
-  { id: "skinTone", label: "피부톤", mode: "character", accent: "#d6b09b" },
+  { id: "top", label: "상의", accent: "#d89a4a" },
+  { id: "bottom", label: "하의", accent: "#8fbe70" },
+  { id: "expression", label: "표정", accent: "#111111" },
+  { id: "background", label: "배경", accent: "#7bb3e5" },
+  { id: "item", label: "아이템", accent: "#7d87ff" },
+  { id: "skinTone", label: "피부톤", accent: "#d6b09b" },
 ];
 
 const OWNED_ITEMS = {
@@ -87,7 +87,6 @@ export function CharacterScreen() {
     [admin, goal, history, today],
   );
 
-  const previewMode = selectedCategory.mode;
   const currentSelection =
     selectedCategoryId === "skinTone"
       ? activeSkinTone
@@ -122,19 +121,15 @@ export function CharacterScreen() {
       </View>
 
       <View style={styles.previewPanel}>
-        {previewMode === "background" ? (
+        {selectedCategoryId === "background" ? (
           <BackgroundScene />
         ) : (
           <CharacterStage
             character={previewCharacter}
             state={characterViewState}
             presentation="full"
-            scale={0.88}
-            characterScale={previewMode === "face" ? 0.96 : 0.78}
-            cameraPosition={previewMode === "face" ? [0, 2.16, 4.8] : null}
-            fov={previewMode === "face" ? 18 : null}
-            showMiniWorld={previewMode !== "face"}
-            interactionEnabled={false}
+            scale={0.86}
+            interactionEnabled={true}
           />
         )}
 
@@ -167,7 +162,7 @@ export function CharacterScreen() {
         <View style={styles.itemHeader}>
           <Text style={styles.itemTitle}>{selectedCategory.label}</Text>
           <Text style={styles.itemMeta}>
-            {selectedCategoryId === "background" ? "배경만 보기" : selectedCategoryId === "skinTone" ? "원형 10개" : "9개씩 보기"}
+            {selectedCategoryId === "background" ? "배경만 보기" : selectedCategoryId === "skinTone" ? "한 줄" : "9개씩 보기"}
           </Text>
         </View>
 
@@ -433,12 +428,12 @@ const styles = StyleSheet.create({
   itemGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    justifyContent: "space-between",
+    rowGap: 8,
   },
   itemTile: {
-    flexBasis: "32.2%",
-    maxWidth: "32.2%",
-    minHeight: 84,
+    width: "31%",
+    minHeight: 72,
     borderRadius: theme.radius.lg,
     paddingHorizontal: 8,
     paddingVertical: 10,
