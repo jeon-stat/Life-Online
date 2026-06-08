@@ -5,7 +5,7 @@ const DEFAULT_PRICE = 0;
 export const CUSTOMIZATION_CATEGORIES = [
   { id: "top", label: "상의", accent: "#d89a4a" },
   { id: "bottom", label: "하의", accent: "#8fbe70" },
-  { id: "expression", label: "표정", accent: "#111111" },
+  { id: "expression", label: "얼굴", accent: "#111111" },
   { id: "background", label: "배경", accent: "#7bb3e5" },
   { id: "item", label: "아이템", accent: "#7d87ff" },
   { id: "skinTone", label: "피부톤", accent: "#d6b09b" },
@@ -94,11 +94,11 @@ export const DEFAULT_SHOP_COIN_BALANCE = 1000;
 
 export function createDefaultOwnedItemIds() {
   return {
-    top: CUSTOMIZATION_ITEMS.top.slice(0, 9).map((item) => item.id),
-    bottom: CUSTOMIZATION_ITEMS.bottom.slice(0, 9).map((item) => item.id),
-    expression: CUSTOMIZATION_ITEMS.expression.slice(0, 9).map((item) => item.id),
-    background: CUSTOMIZATION_ITEMS.background.slice(0, 9).map((item) => item.id),
-    item: CUSTOMIZATION_ITEMS.item.slice(0, 9).map((item) => item.id),
+    top: CUSTOMIZATION_ITEMS.top.slice(0, 4).map((item) => item.id),
+    bottom: CUSTOMIZATION_ITEMS.bottom.slice(0, 4).map((item) => item.id),
+    expression: CUSTOMIZATION_ITEMS.expression.slice(0, 4).map((item) => item.id),
+    background: CUSTOMIZATION_ITEMS.background.slice(0, 4).map((item) => item.id),
+    item: CUSTOMIZATION_ITEMS.item.slice(0, 4).map((item) => item.id),
     skinTone: CUSTOMIZATION_ITEMS.skinTone.map((item) => item.id),
   };
 }

@@ -4,7 +4,7 @@ import { theme } from "../constants/theme.js";
 
 const SHOP_SECTIONS = [
   { title: "의상", note: "준비 중" },
-  { title: "표정", note: "준비 중" },
+  { title: "얼굴", note: "준비 중" },
   { title: "배경", note: "준비 중" },
   { title: "아이템", note: "준비 중" },
 ];
