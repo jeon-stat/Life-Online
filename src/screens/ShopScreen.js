@@ -472,8 +472,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: theme.spacing.md,
-    paddingTop: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
+    paddingVertical: theme.spacing.md,
     gap: theme.spacing.md,
   },
   pageTitleWrap: {
