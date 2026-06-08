@@ -121,6 +121,7 @@ export function CharacterStage({
   fov: fovOverride = null,
   miniWorld: miniWorldOverride = null,
   interactionEnabled: interactionEnabledOverride = null,
+  showGlowBack = true,
 }) {
   const preset = PRESENTATION_PRESETS[presentation] ?? PRESENTATION_PRESETS.full;
   const stageHeight = heightOverride ?? Math.round(preset.stageHeight * scale);
@@ -182,18 +183,20 @@ export function CharacterStage({
 
   return (
     <View style={[styles.shell, { height: stageHeight }]}>
-      <View
-        style={[
-          styles.glowBack,
-          {
-            top: glowBackTop,
-            width: glowBackSize,
-            height: glowBackSize,
-            marginLeft: -glowBackHalf,
-            backgroundColor: state.background?.[0] ?? "rgba(255,255,255,0.48)",
-          },
-        ]}
-      />
+      {showGlowBack ? (
+        <View
+          style={[
+            styles.glowBack,
+            {
+              top: glowBackTop,
+              width: glowBackSize,
+              height: glowBackSize,
+              marginLeft: -glowBackHalf,
+              backgroundColor: state.background?.[0] ?? "rgba(255,255,255,0.48)",
+            },
+          ]}
+        />
+      ) : null}
       <View style={styles.effectWrap} pointerEvents="none">
         <StageEffect effect={state.effect} mood={state.sceneMood} />
       </View>

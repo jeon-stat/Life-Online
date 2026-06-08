@@ -25,6 +25,7 @@ export function FriendCharacterPreview({ character, state, size = 112, variant =
         scale={scale}
         miniWorldOverride={isDetail ? DETAIL_MINI_WORLD : undefined}
         onInteractionChange={undefined}
+        showGlowBack={false}
       />
     </View>
   );

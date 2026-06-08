@@ -92,6 +92,7 @@ export function ShopScreen() {
           presentation="full"
           scale={0.86}
           interactionEnabled={true}
+          showGlowBack={false}
         />
 
         <View style={styles.previewBadge}>
