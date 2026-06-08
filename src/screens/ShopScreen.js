@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+ï»¿import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { CHARACTER_CLASSES } from "../characters.js";
 import { CharacterStage } from "../components/CharacterStage";
@@ -12,9 +12,9 @@ const GRID_COLUMNS = 3;
 const GRID_GAP = 10;
 const GRID_ITEM_HEIGHT = 116;
 const FILTERS = [
-  { id: "all", label: "ÀüÃ¼" },
-  { id: "owned", label: "º¸À¯" },
-  { id: "unowned", label: "¹Ìº¸À¯" },
+  { id: "all", label: "ì „ì²´" },
+  { id: "owned", label: "ë³´ìœ " },
+  { id: "unowned", label: "ë¯¸ë³´ìœ " },
 ];
 
 export function ShopScreen() {
@@ -102,7 +102,7 @@ export function ShopScreen() {
     );
 
     if (result === "insufficient") {
-      setPurchaseError("ÄÚÀÎÀÌ ºÎÁ·ÇØ¿ä.");
+      setPurchaseError("ì½”ì¸ì´ ë¶€ì¡±í•´ìš”.");
       return;
     }
 
@@ -178,13 +178,13 @@ export function ShopScreen() {
   return (
     <View style={styles.screen}>
       <View style={styles.coinBadge}>
-        <Text style={styles.coinBadgeLabel}>º¸À¯ ÄÚÀÎ</Text>
+        <Text style={styles.coinBadgeLabel}>ë³´ìœ  ì½”ì¸</Text>
         <Text style={styles.coinBadgeValue}>{formatCoin(currentCoin)}</Text>
       </View>
 
       <ScrollView style={styles.scrollArea} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.pageTitleWrap}>
-        <Text style={styles.pageTitle}>»óÁ¡</Text>
+        <Text style={styles.pageTitle}>ìƒì </Text>
       </View>
 
       <View style={styles.previewPanel}>
@@ -248,13 +248,13 @@ export function ShopScreen() {
         <View style={styles.itemsHeader}>
           <Text style={styles.itemsTitle}>{selectedCategory.label}</Text>
           <Text style={styles.itemsMeta}>
-            {selectedCategoryId === "skinTone" ? "ÇÇºÎÅæ ¸ğ¾Æº¸±â" : "¼±ÅÃ / ±¸¸Å"}
+            {selectedCategoryId === "skinTone" ? "í”¼ë¶€í†¤ ëª¨ì•„ë³´ê¸°" : "ì„ íƒ / êµ¬ë§¤"}
           </Text>
         </View>
 
         {visibleItems.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>ÇöÀç ÇÊÅÍ¿¡ ¸Â´Â ¾ÆÀÌÅÛÀÌ ¾ø¾î¿ä.</Text>
+            <Text style={styles.emptyStateText}>í˜„ì¬ í•„í„°ì— ë§ëŠ” ì•„ì´í…œì´ ì—†ì–´ìš”.</Text>
           </View>
         ) : selectedCategoryId === "skinTone" ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.skinToneRow}>
@@ -270,7 +270,7 @@ export function ShopScreen() {
                 >
                   <View style={[styles.skinToneSwatch, { backgroundColor: item.color }]} />
                   <Text style={styles.skinToneLabel}>{item.label}</Text>
-                  <Text style={styles.skinToneMeta}>{owned ? "º¸À¯Áß" : formatPrice(item.price)}</Text>
+                  <Text style={styles.skinToneMeta}>{owned ? "ë³´ìœ ì¤‘" : formatPrice(item.price)}</Text>
                 </Pressable>
               );
             })}
@@ -309,7 +309,7 @@ export function ShopScreen() {
                         </Text>
 
                         <View style={styles.priceLine}>
-                          <Text style={styles.priceCoin}>?</Text>
+                          <Text style={styles.priceCoin}>â—‰</Text>
                           <Text style={styles.priceValue}>{formatPrice(item.price)}</Text>
                           <Pressable
                             disabled={owned}
@@ -317,7 +317,7 @@ export function ShopScreen() {
                             style={[styles.buyButton, owned && styles.buyButtonOwned]}
                           >
                             <Text style={[styles.buyButtonLabel, owned && styles.buyButtonLabelOwned]}>
-                              {owned ? "º¸À¯Áß" : "±¸¸Å"}
+                              {owned ? "ë³´ìœ ì¤‘" : "êµ¬ë§¤"}
                             </Text>
                           </Pressable>
                         </View>
@@ -352,28 +352,28 @@ export function ShopScreen() {
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setPurchaseRequest(null)} />
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>±¸¸ÅÇÒ±î¿ä?</Text>
+              <Text style={styles.modalTitle}>êµ¬ë§¤í• ê¹Œìš”?</Text>
               <Pressable onPress={() => setPurchaseRequest(null)} style={styles.modalCloseButton}>
-                <Text style={styles.modalCloseLabel}>¡¿</Text>
+                <Text style={styles.modalCloseLabel}>Ã—</Text>
               </Pressable>
             </View>
 
             <Text style={styles.modalItemName}>{purchaseRequest?.item?.label ?? ""}</Text>
 
             <View style={styles.modalSummary}>
-              <SummaryRow label="ÇöÀç ÄÚÀÎ" value={formatCoin(currentCoin)} />
-              <SummaryRow label="°¡°İ" value={formatCoin(currentPrice)} />
-              <SummaryRow label="³²Àº ÄÚÀÎ" value={formatCoin(remainingCoin)} />
+              <SummaryRow label="í˜„ì¬ ì½”ì¸" value={formatCoin(currentCoin)} />
+              <SummaryRow label="ê°€ê²©" value={formatCoin(currentPrice)} />
+              <SummaryRow label="ë‚¨ì€ ì½”ì¸" value={formatCoin(remainingCoin)} />
             </View>
 
             {purchaseError ? <Text style={styles.modalError}>{purchaseError}</Text> : null}
 
             <View style={styles.modalActions}>
               <Pressable onPress={() => setPurchaseRequest(null)} style={styles.modalButtonSecondary}>
-                <Text style={styles.modalButtonSecondaryLabel}>Ãë¼Ò</Text>
+                <Text style={styles.modalButtonSecondaryLabel}>ì·¨ì†Œ</Text>
               </Pressable>
               <Pressable onPress={confirmPurchase} style={styles.modalButtonPrimary}>
-                <Text style={styles.modalButtonPrimaryLabel}>±¸¸ÅÇÏ±â</Text>
+                <Text style={styles.modalButtonPrimaryLabel}>êµ¬ë§¤í•˜ê¸°</Text>
               </Pressable>
             </View>
           </View>
@@ -408,7 +408,7 @@ function getFilterCount(items, ownedIds) {
 }
 
 function formatPrice(price = 0) {
-  return `${Number(price ?? 0).toLocaleString("ko-KR")}¿ø`;
+  return `${Number(price ?? 0).toLocaleString("ko-KR")}ì›`;
 }
 
 function formatCoin(amount = 0) {
@@ -897,6 +897,7 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.body,
   },
 });
+
 
 
 
