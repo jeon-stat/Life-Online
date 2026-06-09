@@ -441,7 +441,7 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
   const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
   const paddingBottom = 32;
-  const paddingX = 10;
+  const paddingX = 24;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const maxValue = getTrendAxisMax(Math.max(0, ...records.map((record) => Number(record.steps ?? 0))));
   const plotInnerWidth = Math.max(0, plotWidth - paddingX * 2);
@@ -520,7 +520,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
   const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
   const paddingBottom = 26;
-  const paddingX = 8;
+  const paddingX = 18;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const buckets = buildDistributionData(records);
   const maxCount = getCountAxisMax(periodId, Math.max(1, ...buckets.map((bucket) => bucket.count)));
@@ -581,7 +581,7 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
   const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
   const paddingBottom = 26;
-  const paddingX = 8;
+  const paddingX = 18;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const data = buildAveragePatternData(records, mode);
   const maxValue = getPatternAxisMax(Math.max(0, ...data.map((item) => item.value)));
@@ -650,10 +650,10 @@ function buildLineSegmentStyle(x1, y1, x2, y2) {
 }
 
 function tooltipPosition(x, y, width) {
-  const bubbleWidth = 72;
-  const bubbleHeight = 40;
-  const left = Math.max(2, Math.min(x - bubbleWidth / 2, width - bubbleWidth - 2));
-  const top = Math.max(2, y - bubbleHeight - 10);
+  const bubbleWidth = 56;
+  const bubbleHeight = 34;
+  const left = Math.max(0, Math.min(x - bubbleWidth / 2, width - bubbleWidth));
+  const top = Math.max(0, y - bubbleHeight - 4);
 
   return {
     left,
@@ -845,7 +845,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     color: theme.colors.inkSoft,
-    fontSize: 7,
+    fontSize: 6,
+    lineHeight: 8,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
   },
@@ -877,8 +878,8 @@ const styles = StyleSheet.create({
   },
   pointHitArea: {
     position: "absolute",
-    width: 36,
-    height: 36,
+    width: 32,
+    height: 32,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -919,15 +920,15 @@ const styles = StyleSheet.create({
   },
   tooltipValue: {
     color: theme.colors.ink,
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 10,
+    lineHeight: 12,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
   tooltipLabel: {
     color: theme.colors.inkSoft,
-    fontSize: 9,
-    lineHeight: 12,
+    fontSize: 8,
+    lineHeight: 10,
     fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
@@ -951,14 +952,14 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   histBar: {
-    width: "88%",
+    width: "100%",
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: "#111111",
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
-    borderBottomLeftRadius: 5,
-    borderBottomRightRadius: 5,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    borderBottomLeftRadius: 9,
+    borderBottomRightRadius: 9,
   },
   histTooltip: {
     zIndex: 30,
@@ -986,7 +987,7 @@ const styles = StyleSheet.create({
   },
   missionTitle: {
     color: theme.colors.inkSoft,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
   },
