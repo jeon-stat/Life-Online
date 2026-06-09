@@ -582,7 +582,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
   const buckets = buildDistributionData(records);
   const maxCount = getCountAxisMax(periodId, Math.max(1, ...buckets.map((bucket) => bucket.count)));
   const ticks = getAxisTicks(maxCount);
-  const track = getCenteredTrackLayout(plotWidth, buckets.length, 0.8);
+  const track = getCenteredTrackLayout(plotWidth, buckets.length, 0.68);
   const barSlotWidth = buckets.length > 0 ? track.slotWidth : track.contentWidth;
   const [cursorX, setCursorX] = useState(null);
   const activeBucket = buckets[Math.min(Math.max(activeIndex, 0), Math.max(buckets.length - 1, 0))] ?? null;
@@ -617,7 +617,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
           return (
             <Text key={`distribution-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]}>
-              {formatAxisStepLabel(tickValue)}
+              {formatCountAxisLabel(tickValue)}
             </Text>
           );
         })}
@@ -665,7 +665,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
                     style={[
                       styles.tooltip,
                       styles.histTooltip,
-                      tooltipPositionInsideTrack(centerX, paddingTop + plotHeight - barHeight, track, plotWidth),
+                      tooltipPositionOnLine(activeLineX, paddingTop + plotHeight - barHeight, plotWidth),
                     ]}
                   >
                     <Text style={styles.tooltipValue}>{bucket.count}개</Text>
@@ -693,7 +693,7 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
   const data = buildAveragePatternData(records, mode);
   const maxValue = getPatternAxisMax(Math.max(0, ...data.map((item) => item.value)));
   const ticks = getAxisTicks(maxValue);
-  const track = getCenteredTrackLayout(plotWidth, data.length, 0.8);
+  const track = getCenteredTrackLayout(plotWidth, data.length, 0.68);
   const barSlotWidth = data.length > 0 ? track.slotWidth : track.contentWidth;
   const [cursorX, setCursorX] = useState(null);
   const activeBucket = data[Math.min(Math.max(activeIndex, 0), Math.max(data.length - 1, 0))] ?? null;
@@ -776,7 +776,7 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
                     style={[
                       styles.tooltip,
                       styles.histTooltip,
-                      tooltipPositionInsideTrack(centerX, paddingTop + plotHeight - barHeight, track, plotWidth),
+                      tooltipPositionOnLine(activeLineX, paddingTop + plotHeight - barHeight, plotWidth),
                     ]}
                   >
                     <Text style={styles.tooltipValue}>{formatNumber(item.value)}보</Text>
@@ -821,14 +821,10 @@ function tooltipPosition(x, y, width) {
   };
 }
 
-function tooltipPositionInsideTrack(x, y, track, width) {
+function tooltipPositionOnLine(x, y, width) {
   const bubbleWidth = 56;
   const bubbleHeight = 32;
-  const trackStart = Math.max(0, track?.startX ?? 0);
-  const trackEnd = Math.max(trackStart, Math.min(width, trackStart + (track?.contentWidth ?? width)));
-  const leftBound = trackStart;
-  const rightBound = Math.max(leftBound, trackEnd - bubbleWidth);
-  const left = Math.max(leftBound, Math.min(x - bubbleWidth / 2, rightBound));
+  const left = Math.max(0, Math.min(x - bubbleWidth / 2, width - bubbleWidth));
   const top = Math.max(0, y - bubbleHeight - 10);
 
   return {
@@ -857,6 +853,18 @@ function formatTrendShortLabel(value, isToday) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return isToday ? "오늘" : `${month}/${day}`;
+}
+
+function formatCountAxisLabel(value) {
+  const numeric = Math.max(0, Math.floor(Number(value ?? 0)));
+  if (numeric === 0) {
+    return "0";
+  }
+  if (numeric < 1000) {
+    return String(numeric);
+  }
+  const thousands = Math.floor(numeric / 1000);
+  return `${thousands}천`;
 }
 
 const styles = StyleSheet.create({
