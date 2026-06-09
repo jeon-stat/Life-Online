@@ -434,21 +434,35 @@ function getAxisTicks(maxValue) {
   return TREND_AXIS_TICKS.map((ratio) => Math.round(maxValue * ratio));
 }
 
+function getCenteredTrackLayout(totalWidth, itemCount, fillRatio) {
+  const safeCount = Math.max(1, itemCount);
+  const contentWidth = Math.max(0, totalWidth * fillRatio);
+  const startX = (totalWidth - contentWidth) / 2;
+  const step = safeCount > 1 ? contentWidth / (safeCount - 1) : 0;
+  const slotWidth = safeCount > 0 ? contentWidth / safeCount : contentWidth;
+
+  return {
+    contentWidth,
+    startX,
+    step,
+    slotWidth,
+  };
+}
+
 function TrendLineChart({ records, width: chartWidth = 280 }) {
-  const [activeIndex, setActiveIndex] = useState(null);
+  const [activeIndex, setActiveIndex] = useState(() => Math.max(0, records.length - 1));
+  const [cursorX, setCursorX] = useState(null);
   const axisWidth = 24;
   const height = 176;
   const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
   const paddingBottom = 32;
-  const paddingX = 30;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const maxValue = getTrendAxisMax(Math.max(0, ...records.map((record) => Number(record.steps ?? 0))));
-  const plotInnerWidth = Math.max(0, plotWidth - paddingX * 2);
-  const gap = records.length > 1 ? plotInnerWidth / (records.length - 1) : 0;
+  const track = getCenteredTrackLayout(plotWidth, records.length, 0.46);
   const points = records.map((record, index) => {
     const value = Number(record.steps ?? 0);
-    const x = records.length > 1 ? paddingX + index * gap : plotWidth / 2;
+    const x = records.length > 1 ? track.startX + index * track.step : plotWidth / 2;
     const y = paddingTop + (1 - value / maxValue) * plotHeight;
     return {
       x,
@@ -460,6 +474,35 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
     };
   });
   const ticks = getAxisTicks(maxValue);
+  const activePoint = points[Math.min(Math.max(activeIndex, 0), Math.max(points.length - 1, 0))] ?? null;
+  const activeLineX = cursorX ?? activePoint?.x ?? plotWidth / 2;
+  const bubblePosition = activePoint
+    ? {
+        left: Math.max(0, Math.min(activeLineX - 28, plotWidth - 56)),
+        top: Math.max(0, activePoint.y - 40),
+      }
+    : null;
+
+  const updateCursor = (locationX) => {
+    if (!points.length) {
+      return;
+    }
+
+    const x = Math.max(0, Math.min(plotWidth, locationX));
+    let nearestIndex = 0;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+
+    points.forEach((point, index) => {
+      const distance = Math.abs(point.x - x);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
+      }
+    });
+
+    setActiveIndex(nearestIndex);
+    setCursorX(x);
+  };
 
   return (
     <View style={styles.chartFrame}>
@@ -467,34 +510,52 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
           return (
-              <Text key={`trend-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]}>
-                {formatAxisStepLabel(tickValue)}
-              </Text>
-            );
-          })}
+            <Text key={`trend-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]}>
+              {formatAxisStepLabel(tickValue)}
+            </Text>
+          );
+        })}
       </View>
 
-      <View style={[styles.trendPlot, { width: plotWidth, height }]}>
+      <View
+        style={[styles.trendPlot, { width: plotWidth, height }]}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderGrant={(event) => updateCursor(event.nativeEvent.locationX)}
+        onResponderMove={(event) => updateCursor(event.nativeEvent.locationX)}
+      >
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index;
           return <View key={`trend-grid-${tickValue}-${index}`} style={[styles.gridLine, { top }]} />;
         })}
 
+        {cursorX != null ? (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.trendCursorLine,
+              {
+                left: activeLineX,
+                top: paddingTop,
+                height: plotHeight,
+              },
+            ]}
+          />
+        ) : null}
+
         {points.map((point, index) => {
           const prev = points[index - 1];
+          const isActive = index === activeIndex;
           return (
             <View key={`trend-point-${point.label}-${index}`} style={styles.pointLayer}>
               {prev ? <View style={[styles.lineSegment, buildLineSegmentStyle(prev.x, prev.y, point.x, point.y)]} /> : null}
 
-              <Pressable
-                onPress={() => setActiveIndex(index)}
-                style={[styles.pointHitArea, { left: point.x - 17, top: point.y - 17 }]}
-              >
-                <View style={[styles.pointDot, point.isToday && styles.pointDotToday, activeIndex === index && styles.pointDotActive]} />
-              </Pressable>
+              <View style={[styles.pointHitArea, { left: point.x - 16, top: point.y - 16 }]}>
+                <View style={[styles.pointDot, point.isToday && styles.pointDotToday, isActive && styles.pointDotActive]} />
+              </View>
 
-              {activeIndex === index ? (
-                <View style={[styles.tooltip, styles.trendTooltip, tooltipPosition(point.x, point.y - 8, plotWidth)]}>
+              {isActive && bubblePosition ? (
+                <View style={[styles.tooltip, styles.trendTooltip, bubblePosition]}>
                   <Text style={styles.tooltipValue}>{formatNumber(point.value)}보</Text>
                   <Text style={styles.tooltipLabel}>{point.displayLabel}</Text>
                 </View>
@@ -520,13 +581,12 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
   const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
   const paddingBottom = 26;
-  const paddingX = 24;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const buckets = buildDistributionData(records);
   const maxCount = getCountAxisMax(periodId, Math.max(1, ...buckets.map((bucket) => bucket.count)));
   const ticks = getAxisTicks(maxCount);
-  const plotInnerWidth = Math.max(0, plotWidth - paddingX * 2);
-  const barSlotWidth = buckets.length > 0 ? plotInnerWidth / buckets.length : plotInnerWidth;
+  const track = getCenteredTrackLayout(plotWidth, buckets.length, periodId === "7d" ? 0.40 : 0.46);
+  const barSlotWidth = buckets.length > 0 ? track.slotWidth : track.contentWidth;
 
   return (
     <View style={styles.chartFrame}>
@@ -541,7 +601,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
         })}
       </View>
 
-      <View style={[styles.barPlot, { width: plotWidth, height, paddingHorizontal: paddingX }]}>
+      <View style={[styles.barPlot, { width: plotWidth, height }]}>
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index;
           return <View key={`distribution-grid-${tickValue}-${index}`} style={[styles.gridLine, { top }]} />;
@@ -550,7 +610,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
         {buckets.map((bucket, index) => {
           const barHeight = (bucket.count / maxCount) * plotHeight;
           const isActive = activeIndex === index;
-          const centerX = paddingX + barSlotWidth * index + barSlotWidth / 2;
+          const centerX = track.startX + barSlotWidth * index + barSlotWidth / 2;
           return (
             <Pressable
               key={bucket.label}
@@ -559,7 +619,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
             >
               <View style={styles.histBarArea}>
                 {isActive ? (
-                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition(centerX, paddingTop + plotHeight - barHeight - 8, plotWidth)]}>
+                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition(centerX, paddingTop + plotHeight - barHeight - 14, plotWidth)]}>
                     <Text style={styles.tooltipValue}>{bucket.count}개</Text>
                     <Text style={styles.tooltipLabel}>{bucket.label}</Text>
                   </View>
@@ -581,13 +641,12 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
   const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
   const paddingBottom = 26;
-  const paddingX = 24;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const data = buildAveragePatternData(records, mode);
   const maxValue = getPatternAxisMax(Math.max(0, ...data.map((item) => item.value)));
   const ticks = getAxisTicks(maxValue);
-  const plotInnerWidth = Math.max(0, plotWidth - paddingX * 2);
-  const barSlotWidth = data.length > 0 ? plotInnerWidth / data.length : plotInnerWidth;
+  const track = getCenteredTrackLayout(plotWidth, data.length, 0.40);
+  const barSlotWidth = data.length > 0 ? track.slotWidth : track.contentWidth;
 
   return (
     <View style={styles.chartFrame}>
@@ -602,7 +661,7 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
         })}
       </View>
 
-      <View style={[styles.barPlot, { width: plotWidth, height, paddingHorizontal: paddingX }]}>
+      <View style={[styles.barPlot, { width: plotWidth, height }]}>
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index;
           return <View key={`average-grid-${tickValue}-${index}`} style={[styles.gridLine, { top }]} />;
@@ -611,7 +670,7 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
         {data.map((item, index) => {
           const barHeight = (item.value / maxValue) * plotHeight;
           const isActive = activeIndex === index;
-          const centerX = paddingX + barSlotWidth * index + barSlotWidth / 2;
+          const centerX = track.startX + barSlotWidth * index + barSlotWidth / 2;
           return (
             <Pressable
               key={item.label}
@@ -620,7 +679,7 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
             >
               <View style={styles.histBarArea}>
                 {isActive ? (
-                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition(centerX, paddingTop + plotHeight - barHeight - 8, plotWidth)]}>
+                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition(centerX, paddingTop + plotHeight - barHeight - 14, plotWidth)]}>
                     <Text style={styles.tooltipValue}>{formatNumber(item.value)}보</Text>
                     <Text style={styles.tooltipLabel}>{item.label}</Text>
                   </View>
@@ -653,7 +712,7 @@ function tooltipPosition(x, y, width) {
   const bubbleWidth = 56;
   const bubbleHeight = 32;
   const left = Math.max(0, Math.min(x - bubbleWidth / 2, width - bubbleWidth));
-  const top = Math.max(0, y - bubbleHeight - 8);
+  const top = Math.max(0, y - bubbleHeight - 10);
 
   return {
     left,
@@ -897,6 +956,13 @@ const styles = StyleSheet.create({
   pointDotActive: {
     width: 11,
     height: 11,
+  },
+  trendCursorLine: {
+    position: "absolute",
+    width: 1,
+    backgroundColor: "#111111",
+    opacity: 0.35,
+    zIndex: 10,
   },
   trendDateLabel: {
     position: "absolute",
