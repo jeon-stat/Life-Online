@@ -341,7 +341,7 @@ function buildPeriodRecords(history, days) {
 function buildDistributionData(records) {
   const buckets = Array.from({ length: 16 }, (_, index) => ({
     bucket: index,
-    label: index === 0 ? "0천대" : index + "천대",
+    label: formatDistributionBucketLabel(index * 1000),
     count: 0,
   }));
 
@@ -352,6 +352,20 @@ function buildDistributionData(records) {
   }
 
   return buckets;
+}
+
+function formatDistributionBucketLabel(value) {
+  const numeric = Math.max(0, Math.floor(Number(value ?? 0)));
+  if (numeric < 10000) {
+    return `${Math.floor(numeric / 1000)}천`;
+  }
+
+  const tenThousands = Math.floor(numeric / 10000);
+  const thousands = Math.floor((numeric % 10000) / 1000);
+  if (thousands === 0) {
+    return `${tenThousands}만`;
+  }
+  return `${tenThousands}만 ${thousands}천`;
 }
 
 function buildAveragePatternData(records, mode) {
@@ -585,30 +599,37 @@ function MetricLineChart({
   const [activeIndex, setActiveIndex] = useState(Math.max(0, items.length - 1));
   const [cursorX, setCursorX] = useState(null);
   const axisWidth = 24;
-  const height = 176;
-  const plotWidth = Math.max(180, chartWidth - axisWidth);
+  const height = 186;
+  const plotWidth = Math.max(190, chartWidth - axisWidth);
   const paddingTop = 12;
-  const paddingBottom = 32;
+  const paddingBottom = 28;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const track = getCenteredTrackLayout(plotWidth, items.length, 0.8);
-  const points = items.map((item, index) => {
+  const bars = items.map((item, index) => {
     const value = Number(item.value ?? 0);
-    const x = items.length > 1 ? track.startX + index * track.step : plotWidth / 2;
-    const y = paddingTop + (1 - value / yMax) * plotHeight;
-    return { ...item, x, y, value };
+    const x = items.length > 1 ? track.startX + index * track.slotWidth : plotWidth / 2 - track.slotWidth / 2;
+    const barHeight = (value / yMax) * plotHeight;
+    const centerX = x + track.slotWidth / 2;
+    return {
+      ...item,
+      value,
+      x,
+      centerX,
+      barHeight,
+    };
   });
   const ticks = yTicks;
-  const activePoint = points[Math.min(Math.max(activeIndex, 0), Math.max(points.length - 1, 0))] ?? null;
-  const activeLineX = cursorX ?? activePoint?.x ?? plotWidth / 2;
-  const bubblePosition = activePoint
+  const activeBar = bars[Math.min(Math.max(activeIndex, 0), Math.max(bars.length - 1, 0))] ?? null;
+  const activeLineX = cursorX ?? activeBar?.centerX ?? plotWidth / 2;
+  const tooltipPositionForBar = activeBar
     ? {
-        left: Math.max(0, Math.min(activeLineX - 28, plotWidth - 56)),
-        top: Math.max(0, activePoint.y - 42),
+        left: Math.max(0, Math.min(activeBar.centerX - 28, plotWidth - 56)),
+        top: Math.max(0, paddingTop + plotHeight - activeBar.barHeight - 42),
       }
     : null;
 
   const updateCursor = (locationX) => {
-    if (!points.length) {
+    if (!bars.length) {
       return;
     }
 
@@ -616,8 +637,8 @@ function MetricLineChart({
     let nearestIndex = 0;
     let nearestDistance = Number.POSITIVE_INFINITY;
 
-    points.forEach((point, index) => {
-      const distance = Math.abs(point.x - x);
+    bars.forEach((bar, index) => {
+      const distance = Math.abs(bar.centerX - x);
       if (distance < nearestDistance) {
         nearestDistance = distance;
         nearestIndex = index;
@@ -642,7 +663,7 @@ function MetricLineChart({
       </View>
 
       <View
-        style={[styles.trendPlot, { width: plotWidth, height }]}
+        style={[styles.barPlot, { width: plotWidth, height }]}
         onStartShouldSetResponder={() => true}
         onMoveShouldSetResponder={() => true}
         onResponderGrant={(event) => updateCursor(event.nativeEvent.locationX)}
@@ -667,38 +688,50 @@ function MetricLineChart({
           />
         ) : null}
 
-        {points.map((point, index) => {
-          const prev = points[index - 1];
-          const isActive = index === activeIndex;
-          return (
-            <View key={`metric-point-${point.label}-${index}`} style={styles.pointLayer}>
-              {prev ? <View style={[styles.lineSegment, buildLineSegmentStyle(prev.x, prev.y, point.x, point.y)]} /> : null}
-
-              <View style={[styles.pointHitArea, { left: point.x - 16, top: point.y - 16 }]}>
-                <View style={[styles.pointDot, isActive && styles.pointDotActive]} />
-              </View>
-
-              {isActive && bubblePosition ? (
-                <View style={[styles.tooltip, styles.trendTooltip, bubblePosition]}>
-                  <Text style={styles.tooltipValue}>{formatTooltipValue(point.value)}</Text>
-                  <Text style={styles.tooltipLabel}>{formatTooltipLabel(point.label)}</Text>
+        <View style={[styles.histTrack, { left: track.startX, width: track.contentWidth, height }]}>
+          {bars.map((bar, index) => {
+            const isActive = index === activeIndex;
+            return (
+              <Pressable
+                key={bar.label}
+                onPress={() => {
+                  setActiveIndex(index);
+                  setCursorX(bar.centerX);
+                }}
+                style={[styles.histColumn, { width: track.slotWidth }]}
+              >
+                <View style={styles.histBarArea}>
+                  {isActive && tooltipPositionForBar ? (
+                    <View style={[styles.tooltip, styles.histTooltip, tooltipPositionForBar]}>
+                      <Text style={styles.tooltipValue}>{formatTooltipValue(bar.value)}</Text>
+                      <Text style={styles.tooltipLabel}>{formatTooltipLabel(bar.label)}</Text>
+                    </View>
+                  ) : null}
+                  <View style={[styles.histBar, { height: Math.max(6, bar.barHeight) }]} />
                 </View>
-              ) : null}
+              </Pressable>
+            );
+          })}
+        </View>
 
-              {index % xLabelEvery === 0 || index === points.length - 1 ? (
+        <View style={[styles.histXAxisRow, { marginLeft: track.startX, width: track.contentWidth }]}>
+          {bars.map((bar, index) =>
+            index % xLabelEvery === 0 || index === bars.length - 1 ? (
+              <View key={`metric-axis-label-${bar.label}-${index}`} style={[styles.histColumn, { width: track.slotWidth }]}>
                 <Text
                   style={[
-                    styles.trendDateLabel,
-                    xLabelClassName === "wide" ? styles.trendDateLabelWide : styles.trendDateLabelCompact,
-                    { left: point.x - 16, bottom: 8 },
+                    styles.histXAxisLabel,
+                    xLabelClassName === "wide" ? styles.histXAxisLabelWide : styles.histXAxisLabelCompact,
                   ]}
                 >
-                  {point.label}
+                  {bar.label}
                 </Text>
-              ) : null}
-            </View>
-          );
-        })}
+              </View>
+            ) : (
+              <View key={`metric-axis-gap-${bar.label}-${index}`} style={[styles.histColumn, { width: track.slotWidth }]} />
+            ),
+          )}
+        </View>
       </View>
     </View>
   );
@@ -718,7 +751,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
       yMax={maxCount}
       yTicks={getAxisTicks(maxCount)}
       formatYAxisLabel={formatCountAxisLabel}
-      formatTooltipValue={(value) => `${value}?`}
+      formatTooltipValue={(value) => `${value}개`}
       formatTooltipLabel={(label) => label}
       xLabelClassName="compact"
       xLabelEvery={3}
@@ -737,7 +770,7 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
       yMax={maxValue}
       yTicks={getAxisTicks(maxValue)}
       formatYAxisLabel={formatAxisStepLabel}
-      formatTooltipValue={(value) => `${formatNumber(value)}?`}
+      formatTooltipValue={(value) => `${formatNumber(value)}보`}
       formatTooltipLabel={(label) => label}
       xLabelClassName="wide"
       xLabelEvery={1}
@@ -981,8 +1014,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     color: theme.colors.inkSoft,
-    fontSize: 9,
-    lineHeight: 11,
+    fontSize: 10,
+    lineHeight: 12,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
   },
@@ -1061,8 +1094,8 @@ const styles = StyleSheet.create({
     lineHeight: 11,
   },
   trendDateLabelWide: {
-    fontSize: 8,
-    lineHeight: 10,
+    fontSize: 9,
+    lineHeight: 11,
   },
   trendTooltip: {
     zIndex: 30,
@@ -1141,8 +1174,8 @@ const styles = StyleSheet.create({
   },
   histXAxisLabel: {
     color: theme.colors.inkSoft,
-    fontSize: 9,
-    lineHeight: 11,
+    fontSize: 10,
+    lineHeight: 12,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
     textAlign: "center",
@@ -1152,6 +1185,15 @@ const styles = StyleSheet.create({
     color: theme.colors.inkSoft,
     fontSize: 9,
     lineHeight: 11,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
+    textAlign: "center",
+    includeFontPadding: false,
+  },
+  histXAxisLabelWide: {
+    color: theme.colors.inkSoft,
+    fontSize: 11,
+    lineHeight: 13,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
     textAlign: "center",
