@@ -436,17 +436,19 @@ function getAxisTicks(maxValue) {
 
 function TrendLineChart({ records, width: chartWidth = 280 }) {
   const [activeIndex, setActiveIndex] = useState(null);
-  const axisWidth = 32;
+  const axisWidth = 24;
   const height = 176;
-  const plotWidth = Math.max(180, chartWidth - axisWidth - 2);
+  const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
   const paddingBottom = 32;
+  const paddingX = 10;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const maxValue = getTrendAxisMax(Math.max(0, ...records.map((record) => Number(record.steps ?? 0))));
-  const gap = records.length > 1 ? plotWidth / (records.length - 1) : 0;
+  const plotInnerWidth = Math.max(0, plotWidth - paddingX * 2);
+  const gap = records.length > 1 ? plotInnerWidth / (records.length - 1) : 0;
   const points = records.map((record, index) => {
     const value = Number(record.steps ?? 0);
-    const x = records.length > 1 ? index * gap : plotWidth / 2;
+    const x = records.length > 1 ? paddingX + index * gap : plotWidth / 2;
     const y = paddingTop + (1 - value / maxValue) * plotHeight;
     return {
       x,
@@ -461,7 +463,7 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
 
   return (
     <View style={styles.chartFrame}>
-      <View style={[styles.axisColumn, { width: axisWidth, height }]}>
+      <View style={[styles.axisColumn, styles.tightAxisColumn, { width: axisWidth, height }]}>
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
           return (
@@ -486,13 +488,13 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
 
               <Pressable
                 onPress={() => setActiveIndex(index)}
-                style={[styles.pointHitArea, { left: point.x - 14, top: point.y - 14 }]}
+                style={[styles.pointHitArea, { left: point.x - 17, top: point.y - 17 }]}
               >
                 <View style={[styles.pointDot, point.isToday && styles.pointDotToday, activeIndex === index && styles.pointDotActive]} />
               </Pressable>
 
               {activeIndex === index ? (
-                <View style={[styles.tooltip, tooltipPosition(point.x, point.y, plotWidth)]}>
+                <View style={[styles.tooltip, styles.trendTooltip, tooltipPosition(point.x, point.y, plotWidth)]}>
                   <Text style={styles.tooltipValue}>{formatNumber(point.value)}보</Text>
                   <Text style={styles.tooltipLabel}>{point.displayLabel}</Text>
                 </View>
@@ -513,19 +515,22 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
 
 function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
   const [activeIndex, setActiveIndex] = useState(null);
-  const axisWidth = 32;
+  const axisWidth = 24;
   const height = 176;
-  const plotWidth = Math.max(180, chartWidth - axisWidth - 2);
+  const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
   const paddingBottom = 26;
+  const paddingX = 8;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const buckets = buildDistributionData(records);
   const maxCount = getCountAxisMax(periodId, Math.max(1, ...buckets.map((bucket) => bucket.count)));
   const ticks = getAxisTicks(maxCount);
+  const plotInnerWidth = Math.max(0, plotWidth - paddingX * 2);
+  const barSlotWidth = buckets.length > 0 ? plotInnerWidth / buckets.length : plotInnerWidth;
 
   return (
     <View style={styles.chartFrame}>
-      <View style={[styles.axisColumn, { width: axisWidth, height }]}>
+      <View style={[styles.axisColumn, styles.tightAxisColumn, { width: axisWidth, height }]}>
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
           return (
@@ -536,7 +541,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
         })}
       </View>
 
-      <View style={[styles.barPlot, { width: plotWidth, height }]}>
+      <View style={[styles.barPlot, { width: plotWidth, height, paddingHorizontal: paddingX }]}>
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index;
           return <View key={`distribution-grid-${tickValue}-${index}`} style={[styles.gridLine, { top }]} />;
@@ -545,15 +550,16 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
         {buckets.map((bucket, index) => {
           const barHeight = (bucket.count / maxCount) * plotHeight;
           const isActive = activeIndex === index;
+          const centerX = paddingX + barSlotWidth * index + barSlotWidth / 2;
           return (
             <Pressable
               key={bucket.label}
               onPress={() => setActiveIndex(index)}
-              style={[styles.histColumn, index > 0 && styles.histColumnOverlap]}
+              style={[styles.histColumn, { width: barSlotWidth }]}
             >
               <View style={styles.histBarArea}>
                 {isActive ? (
-                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition((index / Math.max(1, buckets.length - 1)) * plotWidth, paddingTop + plotHeight - barHeight, plotWidth)]}>
+                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition(centerX, paddingTop + plotHeight - barHeight, plotWidth)]}>
                     <Text style={styles.tooltipValue}>{bucket.count}개</Text>
                     <Text style={styles.tooltipLabel}>{bucket.label}</Text>
                   </View>
@@ -570,19 +576,22 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
 
 function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
   const [activeIndex, setActiveIndex] = useState(null);
-  const axisWidth = 32;
+  const axisWidth = 24;
   const height = 176;
-  const plotWidth = Math.max(180, chartWidth - axisWidth - 2);
+  const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
   const paddingBottom = 26;
+  const paddingX = 8;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const data = buildAveragePatternData(records, mode);
   const maxValue = getPatternAxisMax(Math.max(0, ...data.map((item) => item.value)));
   const ticks = getAxisTicks(maxValue);
+  const plotInnerWidth = Math.max(0, plotWidth - paddingX * 2);
+  const barSlotWidth = data.length > 0 ? plotInnerWidth / data.length : plotInnerWidth;
 
   return (
     <View style={styles.chartFrame}>
-      <View style={[styles.axisColumn, { width: axisWidth, height }]}>
+      <View style={[styles.axisColumn, styles.tightAxisColumn, { width: axisWidth, height }]}>
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
           return (
@@ -593,7 +602,7 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
         })}
       </View>
 
-      <View style={[styles.barPlot, { width: plotWidth, height }]}>
+      <View style={[styles.barPlot, { width: plotWidth, height, paddingHorizontal: paddingX }]}>
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index;
           return <View key={`average-grid-${tickValue}-${index}`} style={[styles.gridLine, { top }]} />;
@@ -602,15 +611,16 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
         {data.map((item, index) => {
           const barHeight = (item.value / maxValue) * plotHeight;
           const isActive = activeIndex === index;
+          const centerX = paddingX + barSlotWidth * index + barSlotWidth / 2;
           return (
             <Pressable
               key={item.label}
               onPress={() => setActiveIndex(index)}
-              style={[styles.histColumn, index > 0 && styles.histColumnOverlap]}
+              style={[styles.histColumn, { width: barSlotWidth }]}
             >
               <View style={styles.histBarArea}>
                 {isActive ? (
-                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition((index / Math.max(1, data.length - 1)) * plotWidth, paddingTop + plotHeight - barHeight, plotWidth)]}>
+                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition(centerX, paddingTop + plotHeight - barHeight, plotWidth)]}>
                     <Text style={styles.tooltipValue}>{formatNumber(item.value)}보</Text>
                     <Text style={styles.tooltipLabel}>{item.label}</Text>
                   </View>
@@ -835,7 +845,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     color: theme.colors.inkSoft,
-    fontSize: 8,
+    fontSize: 7,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
   },
@@ -867,8 +877,8 @@ const styles = StyleSheet.create({
   },
   pointHitArea: {
     position: "absolute",
-    width: 28,
-    height: 28,
+    width: 36,
+    height: 36,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -929,29 +939,32 @@ const styles = StyleSheet.create({
     overflow: "visible",
   },
   histColumn: {
-    flex: 1,
     minWidth: 0,
     alignSelf: "stretch",
-  },
-  histColumnOverlap: {
-    marginLeft: -1,
+    alignItems: "center",
   },
   histBarArea: {
     flex: 1,
     justifyContent: "flex-end",
+    alignItems: "center",
+    width: "100%",
+    position: "relative",
   },
   histBar: {
-    width: "100%",
+    width: "88%",
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: "#111111",
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-    borderBottomLeftRadius: 4,
-    borderBottomRightRadius: 4,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    borderBottomLeftRadius: 5,
+    borderBottomRightRadius: 5,
   },
   histTooltip: {
     zIndex: 30,
+  },
+  tightAxisColumn: {
+    paddingRight: 2,
   },
   missionGrid: {
     flexDirection: "row",
