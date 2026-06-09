@@ -441,7 +441,7 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
   const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
   const paddingBottom = 32;
-  const paddingX = 24;
+  const paddingX = 30;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const maxValue = getTrendAxisMax(Math.max(0, ...records.map((record) => Number(record.steps ?? 0))));
   const plotInnerWidth = Math.max(0, plotWidth - paddingX * 2);
@@ -494,7 +494,7 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
               </Pressable>
 
               {activeIndex === index ? (
-                <View style={[styles.tooltip, styles.trendTooltip, tooltipPosition(point.x, point.y, plotWidth)]}>
+                <View style={[styles.tooltip, styles.trendTooltip, tooltipPosition(point.x, point.y - 8, plotWidth)]}>
                   <Text style={styles.tooltipValue}>{formatNumber(point.value)}보</Text>
                   <Text style={styles.tooltipLabel}>{point.displayLabel}</Text>
                 </View>
@@ -520,7 +520,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
   const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
   const paddingBottom = 26;
-  const paddingX = 18;
+  const paddingX = 24;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const buckets = buildDistributionData(records);
   const maxCount = getCountAxisMax(periodId, Math.max(1, ...buckets.map((bucket) => bucket.count)));
@@ -559,7 +559,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
             >
               <View style={styles.histBarArea}>
                 {isActive ? (
-                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition(centerX, paddingTop + plotHeight - barHeight, plotWidth)]}>
+                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition(centerX, paddingTop + plotHeight - barHeight - 8, plotWidth)]}>
                     <Text style={styles.tooltipValue}>{bucket.count}개</Text>
                     <Text style={styles.tooltipLabel}>{bucket.label}</Text>
                   </View>
@@ -581,7 +581,7 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
   const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
   const paddingBottom = 26;
-  const paddingX = 18;
+  const paddingX = 24;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const data = buildAveragePatternData(records, mode);
   const maxValue = getPatternAxisMax(Math.max(0, ...data.map((item) => item.value)));
@@ -620,7 +620,7 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
             >
               <View style={styles.histBarArea}>
                 {isActive ? (
-                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition(centerX, paddingTop + plotHeight - barHeight, plotWidth)]}>
+                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition(centerX, paddingTop + plotHeight - barHeight - 8, plotWidth)]}>
                     <Text style={styles.tooltipValue}>{formatNumber(item.value)}보</Text>
                     <Text style={styles.tooltipLabel}>{item.label}</Text>
                   </View>
@@ -651,9 +651,9 @@ function buildLineSegmentStyle(x1, y1, x2, y2) {
 
 function tooltipPosition(x, y, width) {
   const bubbleWidth = 56;
-  const bubbleHeight = 34;
+  const bubbleHeight = 32;
   const left = Math.max(0, Math.min(x - bubbleWidth / 2, width - bubbleWidth));
-  const top = Math.max(0, y - bubbleHeight - 4);
+  const top = Math.max(0, y - bubbleHeight - 8);
 
   return {
     left,
@@ -958,8 +958,8 @@ const styles = StyleSheet.create({
     borderColor: "#111111",
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
-    borderBottomLeftRadius: 9,
-    borderBottomRightRadius: 9,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
   },
   histTooltip: {
     zIndex: 30,
