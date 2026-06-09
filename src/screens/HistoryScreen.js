@@ -20,6 +20,11 @@ const ACHIEVEMENT_TABS = [
 const TREND_PERIOD_TABS = [
   { id: "7d", label: "7일" },
   { id: "30d", label: "한 달" },
+];
+
+const DISTRIBUTION_PERIOD_TABS = [
+  { id: "7d", label: "7일" },
+  { id: "30d", label: "한 달" },
   { id: "365d", label: "1년" },
 ];
 
@@ -28,9 +33,9 @@ const AVERAGE_PATTERN_TABS = [
   { id: "day", label: "요일별" },
 ];
 
-const TOP_TICK_RATIOS = [1, 0.75, 0.5, 0.25, 0];
-const TIME_BUCKETS = ["새벽", "아침", "점심", "오후", "저녁", "밤"];
+const HOUR_BUCKETS = ["새벽", "아침", "점심", "오후", "저녁", "밤"];
 const DAY_BUCKETS = ["월", "화", "수", "목", "금", "토", "일"];
+const TREND_AXIS_TICKS = [1, 0.75, 0.5, 0.25, 0];
 
 export function HistoryScreen() {
   const { history, goal } = useStepData();
@@ -47,16 +52,13 @@ export function HistoryScreen() {
   const personalOverview = useMemo(() => buildPersonalOverview(history, goal, streak), [history, goal, streak]);
   const trendPeriodConfig = useMemo(() => getPeriodConfig(trendPeriod), [trendPeriod]);
   const distributionPeriodConfig = useMemo(() => getPeriodConfig(distributionPeriod), [distributionPeriod]);
-  const trendRecords = useMemo(
-    () => buildPeriodRecords(history, trendPeriodConfig.days),
-    [history, trendPeriodConfig.days],
-  );
+  const trendRecords = useMemo(() => buildPeriodRecords(history, trendPeriodConfig.days), [history, trendPeriodConfig.days]);
   const distributionRecords = useMemo(
     () => buildPeriodRecords(history, distributionPeriodConfig.days),
     [distributionPeriodConfig.days, history],
   );
   const averagePatternRecords = trendRecords;
-  const chartViewportWidth = Math.max(280, Math.floor(width - theme.spacing.md * 2 - 32));
+  const chartWidth = Math.max(260, Math.floor(width - theme.spacing.md * 2));
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -71,51 +73,34 @@ export function HistoryScreen() {
       {storyTab === "footprints" ? (
         <>
           <Section title="개인 발자국">
-            <View style={styles.sectionIntroCard}>
-              <Text style={styles.sectionIntroTitle}>나만의 걸음 흐름</Text>
-              <Text style={styles.sectionIntroText}>
-                기간별로 걸음 변화와 분포를 살펴보고, 시간대와 요일별 패턴도 볼 수 있어요.
-              </Text>
-
+            <View style={styles.summaryPanel}>
               <View style={styles.summaryGrid}>
                 <SummaryStat icon="👣" label="총 걸음" value={`${formatNumber(personalOverview.totalSteps)}보`} />
                 <SummaryStat icon="📈" label="평균" value={`${formatNumber(personalOverview.averageSteps)}보`} />
                 <SummaryStat icon="🏅" label="최고" value={`${formatNumber(personalOverview.bestSteps)}보`} />
                 <SummaryStat icon="🔥" label="연속" value={`${personalOverview.streak}일`} />
               </View>
-
-              {personalOverview.narrative ? <Text style={styles.sectionNarrative}>{personalOverview.narrative}</Text> : null}
             </View>
 
             <SubSection title="걸음 추이">
               <TabRow tabs={TREND_PERIOD_TABS} activeId={trendPeriod} onChange={setTrendPeriod} />
-              <View style={styles.chartCard}>
-                <TrendLineChart records={trendRecords} width={chartViewportWidth} />
-              </View>
+              <TrendLineChart records={trendRecords} width={chartWidth} />
             </SubSection>
 
             <SubSection title="걸음 분포">
-              <TabRow tabs={TREND_PERIOD_TABS} activeId={distributionPeriod} onChange={setDistributionPeriod} />
-              <View style={styles.chartCard}>
-                <StepDistributionChart periodId={distributionPeriod} records={distributionRecords} width={chartViewportWidth} />
-              </View>
+              <TabRow tabs={DISTRIBUTION_PERIOD_TABS} activeId={distributionPeriod} onChange={setDistributionPeriod} />
+              <StepDistributionChart periodId={distributionPeriod} records={distributionRecords} width={chartWidth} />
             </SubSection>
 
             <SubSection title="평균 패턴">
               <TabRow tabs={AVERAGE_PATTERN_TABS} activeId={averagePatternMode} onChange={setAveragePatternMode} />
-              <View style={styles.chartCard}>
-                <AveragePatternChart mode={averagePatternMode} records={averagePatternRecords} width={chartViewportWidth} />
-              </View>
+              <AveragePatternChart mode={averagePatternMode} records={averagePatternRecords} width={chartWidth} />
             </SubSection>
           </Section>
 
           <Section title="그룹 발자국">
-            <View style={styles.groupFootprintCard}>
-              <Text style={styles.groupFootprintTitle}>함께 걷는 기록</Text>
-              <Text style={styles.groupFootprintText}>
-                그룹에 들어가면 개인 발자국과 따로, 함께 걷는 흐름이 여기에 쌓여요.
-              </Text>
-
+            <View style={styles.groupPanel}>
+              <Text style={styles.groupPanelTitle}>함께 걷는 기록</Text>
               <View style={styles.groupSummaryGrid}>
                 <MiniStat label="그룹 걸음" value="-" />
                 <MiniStat label="그룹 평균" value="-" />
@@ -169,7 +154,6 @@ function TabRow({ tabs, activeId, onChange }) {
     <View style={styles.tabRow}>
       {tabs.map((tab) => {
         const active = tab.id === activeId;
-
         return (
           <Pressable
             key={tab.id}
@@ -217,9 +201,7 @@ function MiniStat({ label, value }) {
   return (
     <View style={styles.miniStat}>
       <Text style={styles.miniStatLabel}>{label}</Text>
-      <Text style={styles.miniStatValue} numberOfLines={1}>
-        {value}
-      </Text>
+      <Text style={styles.miniStatValue}>{value}</Text>
     </View>
   );
 }
@@ -239,21 +221,7 @@ function buildPersonalOverview(history, goal, streak) {
     averageSteps,
     bestSteps: bestRecord?.steps ?? 0,
     streak,
-    narrative: buildPersonalNarrative(history, goal, streak, bestRecord),
   };
-}
-
-function buildPersonalNarrative(history, goal, streak, bestRecord) {
-  if (!history.length) {
-    return "아직 기록이 없어요. 오늘부터 개인 발자국이 쌓여요.";
-  }
-
-  const totalSteps = history.reduce((sum, record) => sum + (record.steps ?? 0), 0);
-  const bestSteps = bestRecord?.steps ?? 0;
-  const latestSteps = history[0]?.steps ?? 0;
-  const goalDays = history.reduce((count, record) => count + ((record?.steps ?? 0) >= goal ? 1 : 0), 0);
-
-  return `이번 기간에는 총 ${formatNumber(totalSteps)}보를 걸었고, 최고 ${formatNumber(bestSteps)}보를 기록했어요. 오늘은 ${formatNumber(latestSteps)}보, 목표 달성은 ${goalDays}일이에요.`;
 }
 
 function buildMissionCards({ history, goal, streak }) {
@@ -354,24 +322,6 @@ function buildPeriodRecords(history, days) {
   });
 }
 
-function buildPeriodSummary(records) {
-  const totalSteps = records.reduce((sum, record) => sum + (record.steps ?? 0), 0);
-  const averageSteps = records.length ? Math.round(totalSteps / records.length) : 0;
-  const bestRecord = records.reduce((best, record) => {
-    if (!best || (record.steps ?? 0) > (best.steps ?? 0)) {
-      return record;
-    }
-    return best;
-  }, null);
-
-  return {
-    totalSteps,
-    averageSteps,
-    bestSteps: bestRecord?.steps ?? 0,
-    bestDate: bestRecord?.date ?? null,
-  };
-}
-
 function buildDistributionData(records) {
   const maxSteps = records.reduce((max, record) => Math.max(max, Number(record.steps ?? 0)), 0);
   const maxBucket = Math.max(0, Math.floor(maxSteps / 1000));
@@ -411,8 +361,8 @@ function buildAveragePatternData(records, mode) {
     }));
   }
 
-  const totals = TIME_BUCKETS.map(() => 0);
-  const weights = TIME_BUCKETS.map(() => 0);
+  const totals = HOUR_BUCKETS.map(() => 0);
+  const weights = HOUR_BUCKETS.map(() => 0);
 
   for (const record of records) {
     const steps = Number(record.steps ?? 0);
@@ -423,7 +373,7 @@ function buildAveragePatternData(records, mode) {
     });
   }
 
-  return TIME_BUCKETS.map((label, index) => ({
+  return HOUR_BUCKETS.map((label, index) => ({
     label,
     value: weights[index] ? Math.round(totals[index] / weights[index]) : 0,
   }));
@@ -433,41 +383,22 @@ function getTimeBucketWeights(steps) {
   if (steps >= 12000) {
     return [0.03, 0.08, 0.16, 0.28, 0.25, 0.2];
   }
-
   if (steps >= 10000) {
     return [0.04, 0.1, 0.18, 0.26, 0.22, 0.2];
   }
-
   if (steps >= 7000) {
     return [0.05, 0.12, 0.2, 0.25, 0.2, 0.18];
   }
-
   if (steps >= 3000) {
     return [0.08, 0.16, 0.2, 0.22, 0.18, 0.16];
   }
-
   return [0.1, 0.18, 0.2, 0.18, 0.18, 0.16];
 }
 
-function formatPeriodValue(periodId, value) {
-  if (periodId === "7d") {
-    return Math.max(5, value);
-  }
-
-  if (periodId === "30d") {
-    return Math.max(20, value);
-  }
-
-  return Math.max(40, value);
-}
-
-function buildTickValues(maxValue, count = 5) {
-  return TOP_TICK_RATIOS.slice(0, count).map((ratio) => Math.round(maxValue * ratio));
-}
-
-function getSteppedAxisMax(maxValue, floor = 15000, step = 1000) {
+function getTrendAxisMax(maxValue) {
+  const floor = 15000;
   const normalized = Math.max(floor, maxValue);
-  return Math.max(step, Math.ceil(normalized / step) * step);
+  return Math.ceil(normalized / 1000) * 1000;
 }
 
 function getCountAxisMax(periodId, maxCount) {
@@ -475,201 +406,215 @@ function getCountAxisMax(periodId, maxCount) {
   if (maxCount <= floor) {
     return floor;
   }
-  if (maxCount <= 10) {
-    return 10;
-  }
-  if (maxCount <= 20) {
-    return 20;
-  }
-  if (maxCount <= 30) {
-    return 30;
-  }
-  return Math.ceil(maxCount / 10) * 10;
+  return Math.max(floor, Math.ceil(maxCount / 5) * 5);
 }
 
-function HorizontalChartScroll({ children }) {
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chartScrollContent}>
-      {children}
-    </ScrollView>
-  );
+function getPatternAxisMax(maxValue) {
+  const normalized = Math.max(1000, Math.round(maxValue * 1.2));
+  return Math.ceil(normalized / 1000) * 1000;
 }
 
-function TrendLineChart({ records, width: chartWidth = 320 }) {
+function getAxisTicks(maxValue) {
+  return TREND_AXIS_TICKS.map((ratio) => Math.round(maxValue * ratio));
+}
+
+function TrendLineChart({ records, width: chartWidth = 280 }) {
   const [activeIndex, setActiveIndex] = useState(null);
-  const height = 240;
-  const axisWidth = 56;
-  const plotPadding = { top: 22, right: 18, bottom: 42, left: 10 };
-  const maxValue = getSteppedAxisMax(Math.max(0, ...records.map((record) => Number(record.steps ?? 0))));
-  const plotHeight = Math.max(1, height - plotPadding.top - plotPadding.bottom);
-  const plotWidth = Math.max(chartWidth, Math.max(320, records.length * 42 + plotPadding.left + plotPadding.right));
-  const gap = records.length > 1 ? (plotWidth - plotPadding.left - plotPadding.right) / (records.length - 1) : 0;
+  const axisWidth = 44;
+  const height = 176;
+  const plotWidth = Math.max(180, chartWidth - axisWidth - 4);
+  const paddingTop = 12;
+  const paddingBottom = 32;
+  const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
+  const maxValue = getTrendAxisMax(Math.max(0, ...records.map((record) => Number(record.steps ?? 0))));
+  const gap = records.length > 1 ? plotWidth / (records.length - 1) : 0;
   const points = records.map((record, index) => {
-    const x = records.length > 1 ? plotPadding.left + index * gap : plotWidth / 2;
     const value = Number(record.steps ?? 0);
-    const y = plotPadding.top + (1 - value / maxValue) * plotHeight;
+    const x = records.length > 1 ? index * gap : plotWidth / 2;
+    const y = paddingTop + (1 - value / maxValue) * plotHeight;
     return {
       x,
       y,
       value,
-      date: record.date,
+      label: record.date,
       isToday: index === records.length - 1,
-      label: formatTrendDateLabel(record.date, index === records.length - 1, records.length),
+      displayLabel: formatTrendShortLabel(record.date, index === records.length - 1),
     };
   });
-  const ticks = buildTickValues(maxValue, 5);
+  const ticks = getAxisTicks(maxValue);
 
   return (
     <View style={styles.chartFrame}>
-      <View style={[styles.chartAxis, { width: axisWidth, height }]}>
+      <View style={[styles.axisColumn, { width: axisWidth, height }]}>
         {ticks.map((tickValue, index) => {
-          const top = plotPadding.top + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
+          const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
           return (
-            <Text key={`${tickValue}-${index}`} style={[styles.chartAxisLabel, { top }]}>
+            <Text key={`trend-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]}>
               {formatNumber(tickValue)}
             </Text>
           );
         })}
       </View>
 
-      <HorizontalChartScroll>
-        <View style={[styles.trendPlot, { width: plotWidth, height }]}>
-          {ticks.map((tickValue, index) => {
-            const top = plotPadding.top + (plotHeight / (ticks.length - 1 || 1)) * index;
-            return <View key={`grid-${tickValue}-${index}`} style={[styles.trendGridLine, { top }]} />;
-          })}
+      <View style={[styles.trendPlot, { width: plotWidth, height }]}>
+        {ticks.map((tickValue, index) => {
+          const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index;
+          return <View key={`trend-grid-${tickValue}-${index}`} style={[styles.gridLine, { top }]} />;
+        })}
 
-          {points.map((point, index) => {
-            const prev = points[index - 1];
-            return (
-              <View key={`${point.date}-${index}`} style={styles.trendPointLayer}>
-                {prev ? <View style={[styles.trendSegment, buildSegmentStyle(prev.x, prev.y, point.x, point.y)]} /> : null}
+        {points.map((point, index) => {
+          const prev = points[index - 1];
+          return (
+            <View key={`trend-point-${point.label}-${index}`} style={styles.pointLayer}>
+              {prev ? <View style={[styles.lineSegment, buildLineSegmentStyle(prev.x, prev.y, point.x, point.y)]} /> : null}
 
-                <Pressable
-                  onPress={() => setActiveIndex(index)}
-                  style={[styles.trendPointHitArea, { left: point.x - 12, top: point.y - 12 }]}
-                >
-                  <View style={[styles.trendPoint, point.isToday && styles.trendPointToday, activeIndex === index && styles.trendPointActive]} />
-                </Pressable>
+              <Pressable
+                onPress={() => setActiveIndex(index)}
+                style={[styles.pointHitArea, { left: point.x - 14, top: point.y - 14 }]}
+              >
+                <View style={[styles.pointDot, point.isToday && styles.pointDotToday, activeIndex === index && styles.pointDotActive]} />
+              </Pressable>
 
-                {activeIndex === index ? (
-                  <View style={[styles.trendTooltip, tooltipPosition(point.x, point.y, plotWidth)]}>
-                    <Text style={styles.trendTooltipValue}>{formatNumber(point.value)}보</Text>
-                    <Text style={styles.trendTooltipLabel}>{point.label}</Text>
-                  </View>
-                ) : null}
+              {activeIndex === index ? (
+                <View style={[styles.tooltip, tooltipPosition(point.x, point.y, plotWidth)]}>
+                  <Text style={styles.tooltipValue}>{formatNumber(point.value)}보</Text>
+                  <Text style={styles.tooltipLabel}>{point.displayLabel}</Text>
+                </View>
+              ) : null}
 
-                {shouldShowTrendLabel(index, points.length) ? (
-                  <Text style={[styles.trendDateLabel, { left: point.x - 14, bottom: 10 }]}>{point.isToday ? "오늘" : formatTrendShortLabel(point.date)}</Text>
-                ) : null}
-              </View>
-            );
-          })}
-        </View>
-      </HorizontalChartScroll>
+              {shouldShowTrendLabel(index, points.length) ? (
+                <Text style={[styles.trendDateLabel, { left: point.x - 10, bottom: 8 }]}>
+                  {point.isToday ? "오늘" : point.displayLabel}
+                </Text>
+              ) : null}
+            </View>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
-function StepDistributionChart({ records, periodId, width: chartWidth = 320 }) {
+function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
+  const [activeIndex, setActiveIndex] = useState(null);
+  const axisWidth = 44;
+  const height = 176;
+  const plotWidth = Math.max(180, chartWidth - axisWidth - 4);
+  const paddingTop = 12;
+  const paddingBottom = 26;
+  const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const buckets = buildDistributionData(records);
   const maxCount = getCountAxisMax(periodId, Math.max(1, ...buckets.map((bucket) => bucket.count)));
-  const height = 220;
-  const axisWidth = 56;
-  const barAreaWidth = Math.max(chartWidth, Math.max(320, buckets.length * 46 + 12));
-  const barTrackHeight = 118;
-  const ticks = buildTickValues(maxCount, 5);
+  const ticks = getAxisTicks(maxCount);
 
   return (
     <View style={styles.chartFrame}>
-      <View style={[styles.chartAxis, { width: axisWidth, height }]}>
+      <View style={[styles.axisColumn, { width: axisWidth, height }]}>
         {ticks.map((tickValue, index) => {
-          const top = 18 + (barTrackHeight / (ticks.length - 1 || 1)) * index - 8;
+          const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
           return (
-            <Text key={`${tickValue}-${index}`} style={[styles.chartAxisLabel, { top }]}>
+            <Text key={`distribution-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]}>
               {formatNumber(tickValue)}
             </Text>
           );
         })}
       </View>
 
-      <HorizontalChartScroll>
-        <View style={[styles.barPlot, { width: barAreaWidth, height }]}>
-          {ticks.map((tickValue, index) => {
-            const top = 18 + (barTrackHeight / (ticks.length - 1 || 1)) * index;
-            return <View key={`bar-grid-${tickValue}-${index}`} style={[styles.barGridLine, { top }]} />;
-          })}
+      <View style={[styles.barPlot, { width: plotWidth, height }]}>
+        {ticks.map((tickValue, index) => {
+          const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index;
+          return <View key={`distribution-grid-${tickValue}-${index}`} style={[styles.gridLine, { top }]} />;
+        })}
 
-          {buckets.map((bucket, index) => {
-            const barHeight = (bucket.count / maxCount) * barTrackHeight;
-            return (
-              <View key={bucket.label} style={styles.barColumn}>
-                <Text style={styles.barValue}>{bucket.count}</Text>
-                <View style={styles.barTrack}>
-                  <View style={[styles.barFill, { height: Math.max(8, barHeight) }]} />
-                </View>
-                <Text style={styles.barLabel}>{bucket.label}</Text>
+        {buckets.map((bucket, index) => {
+          const barHeight = (bucket.count / maxCount) * plotHeight;
+          const isActive = activeIndex === index;
+          return (
+            <Pressable
+              key={bucket.label}
+              onPress={() => setActiveIndex(index)}
+              style={[styles.histColumn, index > 0 && styles.histColumnOverlap]}
+            >
+              <View style={styles.histBarArea}>
+                {isActive ? (
+                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition((index / Math.max(1, buckets.length - 1)) * plotWidth, paddingTop + plotHeight - barHeight, plotWidth)]}>
+                    <Text style={styles.tooltipValue}>{bucket.count}개</Text>
+                    <Text style={styles.tooltipLabel}>{bucket.label}</Text>
+                  </View>
+                ) : null}
+                <View style={[styles.histBar, { height: Math.max(6, barHeight) }]} />
               </View>
-            );
-          })}
-        </View>
-      </HorizontalChartScroll>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
-function AveragePatternChart({ records, mode, width: chartWidth = 320 }) {
+function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
+  const [activeIndex, setActiveIndex] = useState(null);
+  const axisWidth = 44;
+  const height = 176;
+  const plotWidth = Math.max(180, chartWidth - axisWidth - 4);
+  const paddingTop = 12;
+  const paddingBottom = 26;
+  const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const data = buildAveragePatternData(records, mode);
-  const maxValue = getSteppedAxisMax(Math.max(0, ...data.map((item) => item.value)));
-  const height = 220;
-  const axisWidth = 56;
-  const barAreaWidth = Math.max(chartWidth, Math.max(320, data.length * 52 + 12));
-  const barTrackHeight = 118;
-  const ticks = buildTickValues(maxValue, 5);
+  const maxValue = getPatternAxisMax(Math.max(0, ...data.map((item) => item.value)));
+  const ticks = getAxisTicks(maxValue);
 
   return (
     <View style={styles.chartFrame}>
-      <View style={[styles.chartAxis, { width: axisWidth, height }]}>
+      <View style={[styles.axisColumn, { width: axisWidth, height }]}>
         {ticks.map((tickValue, index) => {
-          const top = 18 + (barTrackHeight / (ticks.length - 1 || 1)) * index - 8;
+          const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
           return (
-            <Text key={`${tickValue}-${index}`} style={[styles.chartAxisLabel, { top }]}>
+            <Text key={`average-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]}>
               {formatNumber(tickValue)}
             </Text>
           );
         })}
       </View>
 
-      <HorizontalChartScroll>
-        <View style={[styles.barPlot, { width: barAreaWidth, height }]}>
-          {ticks.map((tickValue, index) => {
-            const top = 18 + (barTrackHeight / (ticks.length - 1 || 1)) * index;
-            return <View key={`avg-grid-${tickValue}-${index}`} style={[styles.barGridLine, { top }]} />;
-          })}
+      <View style={[styles.barPlot, { width: plotWidth, height }]}>
+        {ticks.map((tickValue, index) => {
+          const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index;
+          return <View key={`average-grid-${tickValue}-${index}`} style={[styles.gridLine, { top }]} />;
+        })}
 
-          {data.map((item) => {
-            const barHeight = (item.value / maxValue) * barTrackHeight;
-            return (
-              <View key={item.label} style={styles.barColumn}>
-                <Text style={styles.barValue}>{formatNumber(item.value)}</Text>
-                <View style={styles.barTrack}>
-                  <View style={[styles.patternFill, { height: Math.max(10, barHeight) }]} />
-                </View>
-                <Text style={styles.barLabel}>{item.label}</Text>
+        {data.map((item, index) => {
+          const barHeight = (item.value / maxValue) * plotHeight;
+          const isActive = activeIndex === index;
+          return (
+            <Pressable
+              key={item.label}
+              onPress={() => setActiveIndex(index)}
+              style={[styles.histColumn, index > 0 && styles.histColumnOverlap]}
+            >
+              <View style={styles.histBarArea}>
+                {isActive ? (
+                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition((index / Math.max(1, data.length - 1)) * plotWidth, paddingTop + plotHeight - barHeight, plotWidth)]}>
+                    <Text style={styles.tooltipValue}>{formatNumber(item.value)}보</Text>
+                    <Text style={styles.tooltipLabel}>{item.label}</Text>
+                  </View>
+                ) : null}
+                <View style={[styles.histBar, { height: Math.max(6, barHeight) }]} />
               </View>
-            );
-          })}
-        </View>
-      </HorizontalChartScroll>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
-function buildSegmentStyle(x1, y1, x2, y2) {
+function buildLineSegmentStyle(x1, y1, x2, y2) {
   const dx = x2 - x1;
   const dy = y2 - y1;
   const length = Math.sqrt(dx * dx + dy * dy);
   const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+
   return {
     left: x1 + dx / 2 - length / 2,
     top: y1 + dy / 2 - 1,
@@ -679,10 +624,11 @@ function buildSegmentStyle(x1, y1, x2, y2) {
 }
 
 function tooltipPosition(x, y, width) {
-  const bubbleWidth = 80;
-  const bubbleHeight = 44;
-  const left = Math.max(6, Math.min(x - bubbleWidth / 2, width - bubbleWidth - 6));
-  const top = Math.max(8, y - bubbleHeight - 10);
+  const bubbleWidth = 72;
+  const bubbleHeight = 40;
+  const left = Math.max(2, Math.min(x - bubbleWidth / 2, width - bubbleWidth - 2));
+  const top = Math.max(2, y - bubbleHeight - 10);
+
   return {
     left,
     top,
@@ -692,15 +638,15 @@ function tooltipPosition(x, y, width) {
 }
 
 function shouldShowTrendLabel(index, total) {
-  if (total <= 10) {
+  if (total <= 7) {
     return true;
   }
 
-  const interval = Math.ceil(total / 8);
+  const interval = Math.max(1, Math.ceil(total / 6));
   return index === total - 1 || index % interval === 0;
 }
 
-function formatTrendDateLabel(value, isToday, total) {
+function formatTrendShortLabel(value, isToday) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
     return isToday ? "오늘" : String(value ?? "");
@@ -708,19 +654,7 @@ function formatTrendDateLabel(value, isToday, total) {
 
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-  if (total <= 10) {
-    return isToday ? "오늘" : `${month}/${day}`;
-  }
   return isToday ? "오늘" : `${month}/${day}`;
-}
-
-function formatTrendShortLabel(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return String(value ?? "");
-  }
-
-  return `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
 }
 
 const styles = StyleSheet.create({
@@ -789,7 +723,7 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.display,
   },
   subSection: {
-    gap: 10,
+    gap: 8,
   },
   subSectionTitle: {
     color: theme.colors.ink,
@@ -797,47 +731,23 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     fontFamily: theme.fonts.display,
   },
-  sectionIntroCard: {
-    borderRadius: theme.radius.xl,
-    padding: 14,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    gap: 12,
-  },
-  sectionIntroTitle: {
-    color: theme.colors.ink,
-    fontSize: 17,
-    fontWeight: "900",
-    fontFamily: theme.fonts.display,
-  },
-  sectionIntroText: {
-    color: theme.colors.inkSoft,
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: "700",
-    fontFamily: theme.fonts.body,
-  },
-  sectionNarrative: {
-    color: theme.colors.ink,
-    fontSize: 13,
-    lineHeight: 20,
-    fontWeight: "700",
-    fontFamily: theme.fonts.body,
+  summaryPanel: {
+    gap: 8,
   },
   summaryGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
   },
   summaryStat: {
     width: "48.5%",
-    borderRadius: theme.radius.lg,
-    padding: 14,
-    backgroundColor: theme.colors.surfaceMuted,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    gap: 6,
+    gap: 4,
   },
   summaryStatLabel: {
     color: theme.colors.inkSoft,
@@ -847,219 +757,23 @@ const styles = StyleSheet.create({
   },
   summaryStatValue: {
     color: theme.colors.ink,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
-  chartCard: {
+  groupPanel: {
     borderRadius: theme.radius.xl,
     padding: 12,
-    backgroundColor: "#ffffff",
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
     gap: 10,
   },
-  chartFrame: {
-    flexDirection: "row",
-    alignItems: "stretch",
-    gap: 8,
-    minHeight: 220,
-  },
-  chartAxis: {
-    position: "relative",
-    alignItems: "flex-end",
-    justifyContent: "flex-start",
-    paddingTop: 18,
-    paddingBottom: 22,
-  },
-  chartAxisLabel: {
-    position: "absolute",
-    right: 0,
-    color: theme.colors.inkSoft,
-    fontSize: 10,
-    fontWeight: "800",
-    fontFamily: theme.fonts.body,
-  },
-  trendPlot: {
-    position: "relative",
-    borderRadius: 18,
-    backgroundColor: "#fbfbfa",
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    overflow: "hidden",
-  },
-  trendGridLine: {
-    position: "absolute",
-    left: 10,
-    right: 10,
-    height: 1,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ececea",
-  },
-  trendPointLayer: {
-    position: "absolute",
-    left: 0,
-    top: 0,
-    right: 0,
-    bottom: 0,
-  },
-  trendSegment: {
-    position: "absolute",
-    height: 2,
-    backgroundColor: "#111111",
-    borderRadius: 999,
-    opacity: 0.72,
-  },
-  trendPointHitArea: {
-    position: "absolute",
-    width: 24,
-    height: 24,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  trendPoint: {
-    width: 8,
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: "#ffffff",
-    borderWidth: 2,
-    borderColor: "#111111",
-  },
-  trendPointToday: {
-    backgroundColor: "#111111",
-  },
-  trendPointActive: {
-    width: 12,
-    height: 12,
-    borderWidth: 2,
-    borderColor: "#111111",
-  },
-  trendTooltip: {
-    position: "absolute",
-    borderRadius: 14,
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    shadowColor: "#000000",
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 3,
-    zIndex: 20,
-  },
-  trendTooltipValue: {
+  groupPanelTitle: {
     color: theme.colors.ink,
-    fontSize: 12,
-    fontWeight: "900",
-    fontFamily: theme.fonts.body,
-  },
-  trendTooltipLabel: {
-    color: theme.colors.inkSoft,
-    fontSize: 9,
-    fontWeight: "700",
-    fontFamily: theme.fonts.body,
-  },
-  trendDateLabel: {
-    position: "absolute",
-    color: theme.colors.inkSoft,
-    fontSize: 10,
-    fontWeight: "700",
-    fontFamily: theme.fonts.body,
-  },
-  barPlot: {
-    position: "relative",
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "flex-start",
-    paddingTop: 18,
-    paddingBottom: 12,
-    gap: 0,
-    borderRadius: 18,
-    backgroundColor: "#fbfbfa",
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    overflow: "hidden",
-  },
-  barGridLine: {
-    position: "absolute",
-    left: 10,
-    right: 10,
-    height: 1,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ececea",
-  },
-  barColumn: {
-    flex: 1,
-    minWidth: 24,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 6,
-    paddingHorizontal: 0,
-  },
-  barValue: {
-    color: theme.colors.inkSoft,
-    fontSize: 10,
-    fontWeight: "800",
-    fontFamily: theme.fonts.body,
-  },
-  barTrack: {
-    width: "100%",
-    height: 118,
-    borderRadius: 0,
-    backgroundColor: "transparent",
-    borderWidth: 0,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    paddingVertical: 0,
-    overflow: "hidden",
-  },
-  barFill: {
-    width: "100%",
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
-    backgroundColor: "#111111",
-    minHeight: 8,
-  },
-  patternFill: {
-    width: "100%",
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
-    backgroundColor: "#111111",
-    minHeight: 10,
-  },
-  barLabel: {
-    color: theme.colors.inkSoft,
-    fontSize: 10,
-    fontWeight: "700",
-    fontFamily: theme.fonts.body,
-  },
-  chartScrollContent: {
-    paddingRight: 8,
-  },
-  groupFootprintCard: {
-    borderRadius: theme.radius.xl,
-    padding: 14,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    gap: 12,
-  },
-  groupFootprintTitle: {
-    color: theme.colors.ink,
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: "900",
     fontFamily: theme.fonts.display,
-  },
-  groupFootprintText: {
-    color: theme.colors.inkSoft,
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: "700",
-    fontFamily: theme.fonts.body,
   },
   groupSummaryGrid: {
     flexDirection: "row",
@@ -1067,16 +781,15 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   miniStat: {
-    flex: 1,
-    minWidth: "47%",
-    minHeight: 60,
-    borderRadius: theme.radius.lg,
+    flexBasis: "48.5%",
+    minHeight: 54,
+    borderRadius: theme.radius.md,
     paddingHorizontal: 10,
-    paddingVertical: 10,
+    paddingVertical: 8,
     backgroundColor: theme.colors.surfaceMuted,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    gap: 4,
+    gap: 2,
   },
   miniStatLabel: {
     color: theme.colors.inkSoft,
@@ -1086,10 +799,143 @@ const styles = StyleSheet.create({
   },
   miniStatValue: {
     color: theme.colors.ink,
-    fontSize: 14,
-    lineHeight: 18,
+    fontSize: 13,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
+  },
+  chartFrame: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    gap: 2,
+  },
+  axisColumn: {
+    position: "relative",
+    alignItems: "flex-end",
+    justifyContent: "flex-start",
+    paddingTop: 12,
+    paddingBottom: 26,
+  },
+  axisLabel: {
+    position: "absolute",
+    right: 0,
+    color: theme.colors.inkSoft,
+    fontSize: 10,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
+  },
+  trendPlot: {
+    position: "relative",
+    overflow: "hidden",
+  },
+  gridLine: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ececea",
+  },
+  pointLayer: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+  },
+  lineSegment: {
+    position: "absolute",
+    height: 2,
+    backgroundColor: "#111111",
+    borderRadius: 999,
+    opacity: 0.75,
+  },
+  pointHitArea: {
+    position: "absolute",
+    width: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pointDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: "#ffffff",
+    borderWidth: 2,
+    borderColor: "#111111",
+  },
+  pointDotToday: {
+    backgroundColor: "#111111",
+  },
+  pointDotActive: {
+    width: 11,
+    height: 11,
+  },
+  trendDateLabel: {
+    position: "absolute",
+    color: theme.colors.inkSoft,
+    fontSize: 9,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
+  },
+  tooltip: {
+    position: "absolute",
+    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    zIndex: 20,
+    elevation: 3,
+  },
+  tooltipValue: {
+    color: theme.colors.ink,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  tooltipLabel: {
+    color: theme.colors.inkSoft,
+    fontSize: 9,
+    lineHeight: 12,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
+  },
+  barPlot: {
+    position: "relative",
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "flex-start",
+    overflow: "hidden",
+  },
+  histColumn: {
+    flex: 1,
+    minWidth: 0,
+    alignSelf: "stretch",
+  },
+  histColumnOverlap: {
+    marginLeft: -1,
+  },
+  histBarArea: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  histBar: {
+    width: "100%",
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: "#111111",
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    borderBottomLeftRadius: 4,
+    borderBottomRightRadius: 4,
+  },
+  histTooltip: {
+    zIndex: 30,
   },
   missionGrid: {
     flexDirection: "row",
