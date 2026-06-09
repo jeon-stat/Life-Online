@@ -577,8 +577,8 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
   const height = 196;
   const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
-  const axisLabelHeight = 18;
-  const paddingBottom = 34;
+  const axisLabelHeight = 24;
+  const paddingBottom = 40;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const buckets = buildDistributionData(records);
   const maxCount = getCountAxisMax(periodId, Math.max(1, ...buckets.map((bucket) => bucket.count)));
@@ -682,10 +682,10 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
               </Pressable>
             );
           })}
-          <View style={[styles.histXAxis, { left: track.startX, width: track.contentWidth, bottom: 2, height: axisLabelHeight }]}>
+          <View style={[styles.histXAxis, { left: track.startX, width: track.contentWidth, bottom: 0, height: axisLabelHeight }]}>
             {buckets.map((bucket, index) => (
               <View key={`distribution-axis-label-${bucket.label}-${index}`} style={[styles.histColumn, { width: barSlotWidth }]}>
-                <Text style={styles.histXAxisLabel}>{bucket.label}</Text>
+                <Text style={styles.histXAxisLabelCompact}>{bucket.label}</Text>
               </View>
             ))}
           </View>
@@ -701,8 +701,8 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
   const height = 196;
   const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
-  const axisLabelHeight = 18;
-  const paddingBottom = 34;
+  const axisLabelHeight = 24;
+  const paddingBottom = 40;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const data = buildAveragePatternData(records, mode);
   const maxValue = getPatternAxisMax(Math.max(0, ...data.map((item) => item.value)));
@@ -806,7 +806,7 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
               </Pressable>
             );
           })}
-          <View style={[styles.histXAxis, { left: track.startX, width: track.contentWidth, bottom: 2, height: axisLabelHeight }]}>
+          <View style={[styles.histXAxis, { left: track.startX, width: track.contentWidth, bottom: 0, height: axisLabelHeight }]}>
             {data.map((item, index) => (
               <View key={`average-axis-label-${item.label}-${index}`} style={[styles.histColumn, { width: barSlotWidth }]}>
                 <Text style={styles.histXAxisLabel}>{item.label}</Text>
@@ -1203,11 +1203,21 @@ const styles = StyleSheet.create({
   },
   histXAxisLabel: {
     color: theme.colors.inkSoft,
-    fontSize: 7,
-    lineHeight: 9,
+    fontSize: 6,
+    lineHeight: 7,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
     textAlign: "center",
+    includeFontPadding: false,
+  },
+  histXAxisLabelCompact: {
+    color: theme.colors.inkSoft,
+    fontSize: 5,
+    lineHeight: 6,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
+    textAlign: "center",
+    includeFontPadding: false,
   },
   histTooltip: {
     zIndex: 30,
