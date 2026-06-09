@@ -582,7 +582,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
   const buckets = buildDistributionData(records);
   const maxCount = getCountAxisMax(periodId, Math.max(1, ...buckets.map((bucket) => bucket.count)));
   const ticks = getAxisTicks(maxCount);
-  const track = getCenteredTrackLayout(plotWidth, buckets.length, 0.68);
+  const track = getCenteredTrackLayout(plotWidth, buckets.length, 0.8);
   const barSlotWidth = buckets.length > 0 ? track.slotWidth : track.contentWidth;
   const [cursorX, setCursorX] = useState(null);
   const activeBucket = buckets[Math.min(Math.max(activeIndex, 0), Math.max(buckets.length - 1, 0))] ?? null;
@@ -649,34 +649,39 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
           />
         ) : null}
 
-        {buckets.map((bucket, index) => {
-          const barHeight = (bucket.count / maxCount) * plotHeight;
-          const isActive = activeIndex === index;
-          const centerX = track.startX + barSlotWidth * index + barSlotWidth / 2;
-          return (
-            <Pressable
-              key={bucket.label}
-              onPress={() => setActiveIndex(index)}
-              style={[styles.histColumn, { width: barSlotWidth }]}
-            >
-              <View style={styles.histBarArea}>
-                {isActive ? (
-                  <View
-                    style={[
-                      styles.tooltip,
-                      styles.histTooltip,
-                      tooltipPositionOnLine(activeLineX, paddingTop + plotHeight - barHeight, plotWidth),
-                    ]}
-                  >
-                    <Text style={styles.tooltipValue}>{bucket.count}개</Text>
-                    <Text style={styles.tooltipLabel}>{bucket.label}</Text>
-                  </View>
-                ) : null}
-                <View style={[styles.histBar, { height: Math.max(6, barHeight) }]} />
-              </View>
-            </Pressable>
-          );
-        })}
+        <View style={[styles.histTrack, { left: track.startX, width: track.contentWidth, height }]}>
+          {buckets.map((bucket, index) => {
+            const barHeight = (bucket.count / maxCount) * plotHeight;
+            const isActive = activeIndex === index;
+            const centerX = track.startX + barSlotWidth * index + barSlotWidth / 2;
+            return (
+              <Pressable
+                key={bucket.label}
+                onPress={() => {
+                  setActiveIndex(index);
+                  setCursorX(centerX);
+                }}
+                style={[styles.histColumn, { width: barSlotWidth }]}
+              >
+                <View style={styles.histBarArea}>
+                  {isActive ? (
+                    <View
+                      style={[
+                        styles.tooltip,
+                        styles.histTooltip,
+                        tooltipPositionOnLine(activeLineX, paddingTop + plotHeight - barHeight, plotWidth),
+                      ]}
+                    >
+                      <Text style={styles.tooltipValue}>{bucket.count}개</Text>
+                      <Text style={styles.tooltipLabel}>{bucket.label}</Text>
+                    </View>
+                  ) : null}
+                  <View style={[styles.histBar, { height: Math.max(6, barHeight) }]} />
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
@@ -693,7 +698,7 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
   const data = buildAveragePatternData(records, mode);
   const maxValue = getPatternAxisMax(Math.max(0, ...data.map((item) => item.value)));
   const ticks = getAxisTicks(maxValue);
-  const track = getCenteredTrackLayout(plotWidth, data.length, 0.68);
+  const track = getCenteredTrackLayout(plotWidth, data.length, 0.8);
   const barSlotWidth = data.length > 0 ? track.slotWidth : track.contentWidth;
   const [cursorX, setCursorX] = useState(null);
   const activeBucket = data[Math.min(Math.max(activeIndex, 0), Math.max(data.length - 1, 0))] ?? null;
@@ -760,34 +765,39 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
           />
         ) : null}
 
-        {data.map((item, index) => {
-          const barHeight = (item.value / maxValue) * plotHeight;
-          const isActive = activeIndex === index;
-          const centerX = track.startX + barSlotWidth * index + barSlotWidth / 2;
-          return (
-            <Pressable
-              key={item.label}
-              onPress={() => setActiveIndex(index)}
-              style={[styles.histColumn, { width: barSlotWidth }]}
-            >
-              <View style={styles.histBarArea}>
-                {isActive ? (
-                  <View
-                    style={[
-                      styles.tooltip,
-                      styles.histTooltip,
-                      tooltipPositionOnLine(activeLineX, paddingTop + plotHeight - barHeight, plotWidth),
-                    ]}
-                  >
-                    <Text style={styles.tooltipValue}>{formatNumber(item.value)}보</Text>
-                    <Text style={styles.tooltipLabel}>{item.label}</Text>
-                  </View>
-                ) : null}
-                <View style={[styles.histBar, { height: Math.max(6, barHeight) }]} />
-              </View>
-            </Pressable>
-          );
-        })}
+        <View style={[styles.histTrack, { left: track.startX, width: track.contentWidth, height }]}>
+          {data.map((item, index) => {
+            const barHeight = (item.value / maxValue) * plotHeight;
+            const isActive = activeIndex === index;
+            const centerX = track.startX + barSlotWidth * index + barSlotWidth / 2;
+            return (
+              <Pressable
+                key={item.label}
+                onPress={() => {
+                  setActiveIndex(index);
+                  setCursorX(centerX);
+                }}
+                style={[styles.histColumn, { width: barSlotWidth }]}
+              >
+                <View style={styles.histBarArea}>
+                  {isActive ? (
+                    <View
+                      style={[
+                        styles.tooltip,
+                        styles.histTooltip,
+                        tooltipPositionOnLine(activeLineX, paddingTop + plotHeight - barHeight, plotWidth),
+                      ]}
+                    >
+                      <Text style={styles.tooltipValue}>{formatNumber(item.value)}보</Text>
+                      <Text style={styles.tooltipLabel}>{item.label}</Text>
+                    </View>
+                  ) : null}
+                  <View style={[styles.histBar, { height: Math.max(6, barHeight) }]} />
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
@@ -1132,6 +1142,15 @@ const styles = StyleSheet.create({
   },
   barPlot: {
     position: "relative",
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "flex-start",
+    overflow: "visible",
+  },
+  histTrack: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "flex-start",
