@@ -14,7 +14,7 @@ export const STAGE_LAYOUT = {
     y: -0.42,
   },
   rotationLimit: {
-    x: 0.25,
+    x: 0.5,
     yStep: 0.02,
     xStep: 0.01,
   },

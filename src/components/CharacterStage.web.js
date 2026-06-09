@@ -34,9 +34,9 @@ const PRESENTATION_PRESETS = {
     stageHeight: STAGE_LAYOUT.heroHeight,
     glowBackTop: 32,
     glowBackSize: 276,
-    gestureTop: 6,
+    gestureTop: 128,
     gestureWidth: 292,
-    gestureInset: 16,
+    gestureBottomInset: 128,
     cameraPosition: STAGE_LAYOUT.cameraPosition,
     fov: STAGE_LAYOUT.fov,
     modelBaseY: STAGE_LAYOUT.modelBaseY,
@@ -50,7 +50,7 @@ const PRESENTATION_PRESETS = {
     glowBackSize: 196,
     gestureTop: 0,
     gestureWidth: 0,
-    gestureInset: 0,
+    gestureBottomInset: 0,
     cameraPosition: [0, 1.42, 7.9],
     fov: 25,
     modelBaseY: -0.9,
@@ -134,7 +134,8 @@ export function CharacterStage({
   const gestureTop = Math.round(preset.gestureTop * appliedScale);
   const gestureWidth = Math.round(preset.gestureWidth * appliedScale);
   const gestureLeft = Math.round(-gestureWidth / 2);
-  const gestureHeight = Math.max(0, stageHeight - Math.round(preset.gestureInset * appliedScale));
+  const gestureBottomInset = Math.round((preset.gestureBottomInset ?? preset.gestureInset ?? 0) * appliedScale);
+  const gestureHeight = Math.max(0, stageHeight - gestureTop - gestureBottomInset);
   const [rotation, setRotation] = useState(STAGE_LAYOUT.defaultRotation);
   const rotationRef = useRef(STAGE_LAYOUT.defaultRotation);
   const dragStartRef = useRef(STAGE_LAYOUT.defaultRotation);
