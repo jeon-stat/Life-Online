@@ -580,6 +580,7 @@ function MetricLineChart({
   formatTooltipValue,
   formatTooltipLabel,
   xLabelClassName = "compact",
+  xLabelEvery = 1,
 }) {
   const [activeIndex, setActiveIndex] = useState(Math.max(0, items.length - 1));
   const [cursorX, setCursorX] = useState(null);
@@ -684,15 +685,17 @@ function MetricLineChart({
                 </View>
               ) : null}
 
-              <Text
-                style={[
-                  styles.trendDateLabel,
-                  xLabelClassName === "wide" ? styles.trendDateLabelWide : styles.trendDateLabelCompact,
-                  { left: point.x - 16, bottom: 8 },
-                ]}
-              >
-                {point.label}
-              </Text>
+              {index % xLabelEvery === 0 || index === points.length - 1 ? (
+                <Text
+                  style={[
+                    styles.trendDateLabel,
+                    xLabelClassName === "wide" ? styles.trendDateLabelWide : styles.trendDateLabelCompact,
+                    { left: point.x - 16, bottom: 8 },
+                  ]}
+                >
+                  {point.label}
+                </Text>
+              ) : null}
             </View>
           );
         })}
@@ -718,6 +721,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
       formatTooltipValue={(value) => `${value}?`}
       formatTooltipLabel={(label) => label}
       xLabelClassName="compact"
+      xLabelEvery={3}
     />
   );
 }
@@ -736,6 +740,7 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
       formatTooltipValue={(value) => `${formatNumber(value)}?`}
       formatTooltipLabel={(label) => label}
       xLabelClassName="wide"
+      xLabelEvery={1}
     />
   );
 }
@@ -976,8 +981,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     color: theme.colors.inkSoft,
-    fontSize: 8,
-    lineHeight: 10,
+    fontSize: 9,
+    lineHeight: 11,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
   },
@@ -1046,17 +1051,18 @@ const styles = StyleSheet.create({
   trendDateLabel: {
     position: "absolute",
     color: theme.colors.inkSoft,
-    fontSize: 9,
+    fontSize: 10,
+    lineHeight: 12,
     fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
   trendDateLabelCompact: {
-    fontSize: 8,
-    lineHeight: 10,
+    fontSize: 9,
+    lineHeight: 11,
   },
   trendDateLabelWide: {
-    fontSize: 7,
-    lineHeight: 9,
+    fontSize: 8,
+    lineHeight: 10,
   },
   trendTooltip: {
     zIndex: 30,
@@ -1076,15 +1082,15 @@ const styles = StyleSheet.create({
   },
   tooltipValue: {
     color: theme.colors.ink,
-    fontSize: 10,
-    lineHeight: 12,
+    fontSize: 11,
+    lineHeight: 13,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
   tooltipLabel: {
     color: theme.colors.inkSoft,
-    fontSize: 8,
-    lineHeight: 10,
+    fontSize: 9,
+    lineHeight: 11,
     fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
@@ -1135,8 +1141,8 @@ const styles = StyleSheet.create({
   },
   histXAxisLabel: {
     color: theme.colors.inkSoft,
-    fontSize: 8,
-    lineHeight: 10,
+    fontSize: 9,
+    lineHeight: 11,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
     textAlign: "center",
@@ -1144,8 +1150,8 @@ const styles = StyleSheet.create({
   },
   histXAxisLabelCompact: {
     color: theme.colors.inkSoft,
-    fontSize: 8,
-    lineHeight: 10,
+    fontSize: 9,
+    lineHeight: 11,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
     textAlign: "center",
