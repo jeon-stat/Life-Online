@@ -284,6 +284,22 @@ function formatNumber(value) {
   return Number(value ?? 0).toLocaleString("ko-KR");
 }
 
+function formatAxisStepLabel(value) {
+  const numeric = Math.max(0, Math.floor(Number(value ?? 0)));
+  if (numeric === 0) {
+    return "0";
+  }
+
+  if (numeric >= 10000) {
+    const tenThousands = Math.floor(numeric / 10000);
+    const thousands = Math.floor((numeric % 10000) / 1000);
+    return thousands > 0 ? `${tenThousands}만 ${thousands}천` : `${tenThousands}만`;
+  }
+
+  const thousands = Math.floor(numeric / 1000);
+  return `${thousands}천`;
+}
+
 function getPeriodConfig(periodId) {
   switch (periodId) {
     case "30d":
@@ -420,9 +436,9 @@ function getAxisTicks(maxValue) {
 
 function TrendLineChart({ records, width: chartWidth = 280 }) {
   const [activeIndex, setActiveIndex] = useState(null);
-  const axisWidth = 44;
+  const axisWidth = 32;
   const height = 176;
-  const plotWidth = Math.max(180, chartWidth - axisWidth - 4);
+  const plotWidth = Math.max(180, chartWidth - axisWidth - 2);
   const paddingTop = 12;
   const paddingBottom = 32;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
@@ -449,11 +465,11 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
           return (
-            <Text key={`trend-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]}>
-              {formatNumber(tickValue)}
-            </Text>
-          );
-        })}
+              <Text key={`trend-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]}>
+                {formatAxisStepLabel(tickValue)}
+              </Text>
+            );
+          })}
       </View>
 
       <View style={[styles.trendPlot, { width: plotWidth, height }]}>
@@ -497,9 +513,9 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
 
 function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
   const [activeIndex, setActiveIndex] = useState(null);
-  const axisWidth = 44;
+  const axisWidth = 32;
   const height = 176;
-  const plotWidth = Math.max(180, chartWidth - axisWidth - 4);
+  const plotWidth = Math.max(180, chartWidth - axisWidth - 2);
   const paddingTop = 12;
   const paddingBottom = 26;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
@@ -514,7 +530,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
           return (
             <Text key={`distribution-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]}>
-              {formatNumber(tickValue)}
+              {formatAxisStepLabel(tickValue)}
             </Text>
           );
         })}
@@ -554,9 +570,9 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
 
 function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
   const [activeIndex, setActiveIndex] = useState(null);
-  const axisWidth = 44;
+  const axisWidth = 32;
   const height = 176;
-  const plotWidth = Math.max(180, chartWidth - axisWidth - 4);
+  const plotWidth = Math.max(180, chartWidth - axisWidth - 2);
   const paddingTop = 12;
   const paddingBottom = 26;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
@@ -571,7 +587,7 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
           return (
             <Text key={`average-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]}>
-              {formatNumber(tickValue)}
+              {formatAxisStepLabel(tickValue)}
             </Text>
           );
         })}
@@ -806,7 +822,7 @@ const styles = StyleSheet.create({
   chartFrame: {
     flexDirection: "row",
     alignItems: "stretch",
-    gap: 2,
+    gap: 0,
   },
   axisColumn: {
     position: "relative",
@@ -819,13 +835,13 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     color: theme.colors.inkSoft,
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
   },
   trendPlot: {
     position: "relative",
-    overflow: "hidden",
+    overflow: "visible",
   },
   gridLine: {
     position: "absolute",
@@ -910,7 +926,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "flex-start",
-    overflow: "hidden",
+    overflow: "visible",
   },
   histColumn: {
     flex: 1,
@@ -929,8 +945,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
     borderWidth: 1,
     borderColor: "#111111",
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
     borderBottomLeftRadius: 4,
     borderBottomRightRadius: 4,
   },
