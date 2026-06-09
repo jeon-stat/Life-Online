@@ -498,7 +498,7 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
   const bubblePosition = activePoint
     ? {
         left: Math.max(0, Math.min(activeLineX - 28, plotWidth - 56)),
-        top: Math.max(0, activePoint.y - 42),
+        top: Math.max(0, paddingTop + 2),
       }
     : null;
 
@@ -632,7 +632,7 @@ function MetricLineChart({
   const tooltipPositionForBar = activeBar
     ? {
         left: Math.max(0, Math.min(activeBar.centerX - 28, plotWidth - 56)),
-        top: Math.max(0, paddingTop + plotHeight - activeBar.barHeight - 42),
+        top: Math.max(0, paddingTop + 2),
       }
     : null;
 
@@ -1125,7 +1125,8 @@ const styles = StyleSheet.create({
     lineHeight: 11,
   },
   trendTooltip: {
-    zIndex: 30,
+    zIndex: 100,
+    elevation: 10,
   },
   tooltip: {
     position: "absolute",
@@ -1137,8 +1138,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 6,
     paddingVertical: 4,
-    zIndex: 20,
-    elevation: 3,
+    zIndex: 100,
+    elevation: 10,
   },
   tooltipValue: {
     color: theme.colors.ink,
@@ -1227,7 +1228,8 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
   },
   histTooltip: {
-    zIndex: 30,
+    zIndex: 100,
+    elevation: 10,
   },
   tightAxisColumn: {
     paddingRight: 2,
