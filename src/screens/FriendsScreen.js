@@ -734,10 +734,13 @@ export function FriendsScreen() {
             <Text style={styles.deleteConfirmTitle}>정말 삭제할까요?</Text>
             <Text style={styles.deleteConfirmText}>친구 관계가 삭제되고 목록에서 사라져요.</Text>
             <View style={styles.deleteConfirmRow}>
-              <Pressable onPress={() => setShowFriendDeleteConfirm(false)} style={styles.secondaryButton}>
+              <Pressable
+                onPress={() => setShowFriendDeleteConfirm(false)}
+                style={[styles.secondaryButton, styles.deleteConfirmButton]}
+              >
                 <Text style={styles.secondaryButtonLabel}>취소</Text>
               </Pressable>
-              <Pressable onPress={deleteFriend} style={styles.dangerButton}>
+              <Pressable onPress={deleteFriend} style={[styles.dangerButton, styles.deleteConfirmButton]}>
                 <Text style={styles.dangerButtonLabel}>삭제</Text>
               </Pressable>
             </View>
@@ -1558,6 +1561,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
+  deleteConfirmButton: {
+    flex: 1,
+  },
   modalHeader: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -1635,14 +1641,14 @@ const styles = StyleSheet.create({
     fontFamily: theme.fonts.body,
   },
   friendDeleteButton: {
-    minHeight: 82,
+    minHeight: 54,
     borderRadius: theme.radius.lg,
     borderWidth: 1,
     borderColor: "#f0c3c0",
     backgroundColor: "#fff6f5",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
   },
   friendDeleteButtonPressed: {
     opacity: 0.88,
