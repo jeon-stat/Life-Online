@@ -459,7 +459,7 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
   const paddingBottom = 32;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const maxValue = getTrendAxisMax(Math.max(0, ...records.map((record) => Number(record.steps ?? 0))));
-  const track = getCenteredTrackLayout(plotWidth, records.length, 0.46);
+  const track = getCenteredTrackLayout(plotWidth, records.length, 0.8);
   const points = records.map((record, index) => {
     const value = Number(record.steps ?? 0);
     const x = records.length > 1 ? track.startX + index * track.step : plotWidth / 2;
@@ -479,7 +479,7 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
   const bubblePosition = activePoint
     ? {
         left: Math.max(0, Math.min(activeLineX - 28, plotWidth - 56)),
-        top: Math.max(0, activePoint.y - 40),
+        top: Math.max(0, activePoint.y - 42),
       }
     : null;
 
@@ -529,7 +529,7 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
           return <View key={`trend-grid-${tickValue}-${index}`} style={[styles.gridLine, { top }]} />;
         })}
 
-        {cursorX != null ? (
+        {activePoint ? (
           <View
             pointerEvents="none"
             style={[
@@ -585,8 +585,33 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
   const buckets = buildDistributionData(records);
   const maxCount = getCountAxisMax(periodId, Math.max(1, ...buckets.map((bucket) => bucket.count)));
   const ticks = getAxisTicks(maxCount);
-  const track = getCenteredTrackLayout(plotWidth, buckets.length, periodId === "7d" ? 0.40 : 0.46);
+  const track = getCenteredTrackLayout(plotWidth, buckets.length, periodId === "7d" ? 0.8 : 0.82);
   const barSlotWidth = buckets.length > 0 ? track.slotWidth : track.contentWidth;
+  const [cursorX, setCursorX] = useState(null);
+  const activeBucket = buckets[Math.min(Math.max(activeIndex, 0), Math.max(buckets.length - 1, 0))] ?? null;
+  const activeLineX = cursorX ?? (activeBucket ? track.startX + barSlotWidth * activeIndex + barSlotWidth / 2 : plotWidth / 2);
+
+  const updateCursor = (locationX) => {
+    if (!buckets.length) {
+      return;
+    }
+
+    const x = Math.max(0, Math.min(plotWidth, locationX));
+    let nearestIndex = 0;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+
+    buckets.forEach((bucket, index) => {
+      const centerX = track.startX + barSlotWidth * index + barSlotWidth / 2;
+      const distance = Math.abs(centerX - x);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
+      }
+    });
+
+    setActiveIndex(nearestIndex);
+    setCursorX(x);
+  };
 
   return (
     <View style={styles.chartFrame}>
@@ -601,11 +626,31 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
         })}
       </View>
 
-      <View style={[styles.barPlot, { width: plotWidth, height }]}>
+      <View
+        style={[styles.barPlot, { width: plotWidth, height }]}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderGrant={(event) => updateCursor(event.nativeEvent.locationX)}
+        onResponderMove={(event) => updateCursor(event.nativeEvent.locationX)}
+      >
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index;
           return <View key={`distribution-grid-${tickValue}-${index}`} style={[styles.gridLine, { top }]} />;
         })}
+
+        {cursorX != null ? (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.chartCursorLine,
+              {
+                left: activeLineX,
+                top: paddingTop,
+                height: plotHeight,
+              },
+            ]}
+          />
+        ) : null}
 
         {buckets.map((bucket, index) => {
           const barHeight = (bucket.count / maxCount) * plotHeight;
@@ -619,7 +664,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
             >
               <View style={styles.histBarArea}>
                 {isActive ? (
-                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition(centerX, paddingTop + plotHeight - barHeight - 14, plotWidth)]}>
+                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition(centerX, paddingTop + plotHeight - barHeight, plotWidth)]}>
                     <Text style={styles.tooltipValue}>{bucket.count}개</Text>
                     <Text style={styles.tooltipLabel}>{bucket.label}</Text>
                   </View>
@@ -645,8 +690,33 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
   const data = buildAveragePatternData(records, mode);
   const maxValue = getPatternAxisMax(Math.max(0, ...data.map((item) => item.value)));
   const ticks = getAxisTicks(maxValue);
-  const track = getCenteredTrackLayout(plotWidth, data.length, 0.40);
+  const track = getCenteredTrackLayout(plotWidth, data.length, 0.8);
   const barSlotWidth = data.length > 0 ? track.slotWidth : track.contentWidth;
+  const [cursorX, setCursorX] = useState(null);
+  const activeBucket = data[Math.min(Math.max(activeIndex, 0), Math.max(data.length - 1, 0))] ?? null;
+  const activeLineX = cursorX ?? (activeBucket ? track.startX + barSlotWidth * activeIndex + barSlotWidth / 2 : plotWidth / 2);
+
+  const updateCursor = (locationX) => {
+    if (!data.length) {
+      return;
+    }
+
+    const x = Math.max(0, Math.min(plotWidth, locationX));
+    let nearestIndex = 0;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+
+    data.forEach((item, index) => {
+      const centerX = track.startX + barSlotWidth * index + barSlotWidth / 2;
+      const distance = Math.abs(centerX - x);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
+        nearestIndex = index;
+      }
+    });
+
+    setActiveIndex(nearestIndex);
+    setCursorX(x);
+  };
 
   return (
     <View style={styles.chartFrame}>
@@ -661,11 +731,31 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
         })}
       </View>
 
-      <View style={[styles.barPlot, { width: plotWidth, height }]}>
+      <View
+        style={[styles.barPlot, { width: plotWidth, height }]}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderGrant={(event) => updateCursor(event.nativeEvent.locationX)}
+        onResponderMove={(event) => updateCursor(event.nativeEvent.locationX)}
+      >
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index;
           return <View key={`average-grid-${tickValue}-${index}`} style={[styles.gridLine, { top }]} />;
         })}
+
+        {cursorX != null ? (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.chartCursorLine,
+              {
+                left: activeLineX,
+                top: paddingTop,
+                height: plotHeight,
+              },
+            ]}
+          />
+        ) : null}
 
         {data.map((item, index) => {
           const barHeight = (item.value / maxValue) * plotHeight;
@@ -679,7 +769,7 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
             >
               <View style={styles.histBarArea}>
                 {isActive ? (
-                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition(centerX, paddingTop + plotHeight - barHeight - 14, plotWidth)]}>
+                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition(centerX, paddingTop + plotHeight - barHeight, plotWidth)]}>
                     <Text style={styles.tooltipValue}>{formatNumber(item.value)}보</Text>
                     <Text style={styles.tooltipLabel}>{item.label}</Text>
                   </View>
@@ -960,8 +1050,15 @@ const styles = StyleSheet.create({
   trendCursorLine: {
     position: "absolute",
     width: 1,
-    backgroundColor: "#111111",
-    opacity: 0.35,
+    backgroundColor: "#d6d6d6",
+    opacity: 1,
+    zIndex: 10,
+  },
+  chartCursorLine: {
+    position: "absolute",
+    width: 1,
+    backgroundColor: "#d6d6d6",
+    opacity: 1,
     zIndex: 10,
   },
   trendDateLabel: {
