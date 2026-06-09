@@ -571,26 +571,43 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
   );
 }
 
-function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
-  const [activeIndex, setActiveIndex] = useState(null);
+function MetricLineChart({
+  items,
+  width: chartWidth = 280,
+  yMax,
+  yTicks,
+  formatYAxisLabel,
+  formatTooltipValue,
+  formatTooltipLabel,
+  xLabelClassName = "compact",
+}) {
+  const [activeIndex, setActiveIndex] = useState(Math.max(0, items.length - 1));
+  const [cursorX, setCursorX] = useState(null);
   const axisWidth = 24;
-  const height = 196;
+  const height = 176;
   const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
-  const axisLabelHeight = 24;
-  const paddingBottom = 40;
+  const paddingBottom = 32;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
-  const buckets = buildDistributionData(records);
-  const maxCount = getCountAxisMax(periodId, Math.max(1, ...buckets.map((bucket) => bucket.count)));
-  const ticks = getAxisTicks(maxCount);
-  const track = getCenteredTrackLayout(plotWidth, buckets.length, 0.8);
-  const barSlotWidth = buckets.length > 0 ? track.slotWidth : track.contentWidth;
-  const [cursorX, setCursorX] = useState(null);
-  const activeBucket = buckets[Math.min(Math.max(activeIndex, 0), Math.max(buckets.length - 1, 0))] ?? null;
-  const activeLineX = cursorX ?? (activeBucket ? track.startX + barSlotWidth * activeIndex + barSlotWidth / 2 : plotWidth / 2);
+  const track = getCenteredTrackLayout(plotWidth, items.length, 0.8);
+  const points = items.map((item, index) => {
+    const value = Number(item.value ?? 0);
+    const x = items.length > 1 ? track.startX + index * track.step : plotWidth / 2;
+    const y = paddingTop + (1 - value / yMax) * plotHeight;
+    return { ...item, x, y, value };
+  });
+  const ticks = yTicks;
+  const activePoint = points[Math.min(Math.max(activeIndex, 0), Math.max(points.length - 1, 0))] ?? null;
+  const activeLineX = cursorX ?? activePoint?.x ?? plotWidth / 2;
+  const bubblePosition = activePoint
+    ? {
+        left: Math.max(0, Math.min(activeLineX - 28, plotWidth - 56)),
+        top: Math.max(0, activePoint.y - 42),
+      }
+    : null;
 
   const updateCursor = (locationX) => {
-    if (!buckets.length) {
+    if (!points.length) {
       return;
     }
 
@@ -598,9 +615,8 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
     let nearestIndex = 0;
     let nearestDistance = Number.POSITIVE_INFINITY;
 
-    buckets.forEach((bucket, index) => {
-      const centerX = track.startX + barSlotWidth * index + barSlotWidth / 2;
-      const distance = Math.abs(centerX - x);
+    points.forEach((point, index) => {
+      const distance = Math.abs(point.x - x);
       if (distance < nearestDistance) {
         nearestDistance = distance;
         nearestIndex = index;
@@ -617,15 +633,15 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
           return (
-            <Text key={`distribution-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]}>
-              {formatCountAxisLabel(tickValue)}
+            <Text key={`metric-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]}>
+              {formatYAxisLabel(tickValue)}
             </Text>
           );
         })}
       </View>
 
       <View
-        style={[styles.barPlot, { width: plotWidth, height }]}
+        style={[styles.trendPlot, { width: plotWidth, height }]}
         onStartShouldSetResponder={() => true}
         onMoveShouldSetResponder={() => true}
         onResponderGrant={(event) => updateCursor(event.nativeEvent.locationX)}
@@ -633,189 +649,94 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
       >
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index;
-          return <View key={`distribution-grid-${tickValue}-${index}`} style={[styles.gridLine, { top }]} />;
+          return <View key={`metric-grid-${tickValue}-${index}`} style={[styles.gridLine, { top }]} />;
         })}
 
-          {cursorX != null ? (
-            <View
-              pointerEvents="none"
-              style={[
-                styles.chartCursorLine,
-                {
-                  left: activeLineX,
-                  top: 0,
-                  height: height - axisLabelHeight,
-                },
-              ]}
-            />
-          ) : null}
+        {cursorX != null ? (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.chartCursorLine,
+              {
+                left: activeLineX,
+                top: paddingTop,
+                height: plotHeight,
+              },
+            ]}
+          />
+        ) : null}
 
-          <View style={[styles.histTrack, { left: track.startX, width: track.contentWidth, height }]}>
-          {buckets.map((bucket, index) => {
-            const barHeight = (bucket.count / maxCount) * plotHeight;
-            const isActive = activeIndex === index;
-            const centerX = track.startX + barSlotWidth * index + barSlotWidth / 2;
-            return (
-              <Pressable
-                key={bucket.label}
-                onPress={() => {
-                  setActiveIndex(index);
-                  setCursorX(centerX);
-                }}
-                style={[styles.histColumn, { width: barSlotWidth }]}
-              >
-                <View style={styles.histBarArea}>
-                  {isActive ? (
-                    <View
-                      style={[
-                        styles.tooltip,
-                        styles.histTooltip,
-                        tooltipPositionOnLine(activeLineX, paddingTop + plotHeight - barHeight, plotWidth),
-                      ]}
-                    >
-                      <Text style={styles.tooltipValue}>{bucket.count}개</Text>
-                      <Text style={styles.tooltipLabel}>{bucket.label}</Text>
-                    </View>
-                  ) : null}
-                  <View style={[styles.histBar, { height: Math.max(6, barHeight) }]} />
-                </View>
-              </Pressable>
-            );
-          })}
-          <View style={[styles.histXAxis, { left: track.startX, width: track.contentWidth, bottom: 0, height: axisLabelHeight }]}>
-            {buckets.map((bucket, index) => (
-              <View key={`distribution-axis-label-${bucket.label}-${index}`} style={[styles.histColumn, { width: barSlotWidth }]}>
-                <Text style={styles.histXAxisLabelCompact}>{bucket.label}</Text>
+        {points.map((point, index) => {
+          const prev = points[index - 1];
+          const isActive = index === activeIndex;
+          return (
+            <View key={`metric-point-${point.label}-${index}`} style={styles.pointLayer}>
+              {prev ? <View style={[styles.lineSegment, buildLineSegmentStyle(prev.x, prev.y, point.x, point.y)]} /> : null}
+
+              <View style={[styles.pointHitArea, { left: point.x - 16, top: point.y - 16 }]}>
+                <View style={[styles.pointDot, isActive && styles.pointDotActive]} />
               </View>
-            ))}
-          </View>
-        </View>
+
+              {isActive && bubblePosition ? (
+                <View style={[styles.tooltip, styles.trendTooltip, bubblePosition]}>
+                  <Text style={styles.tooltipValue}>{formatTooltipValue(point.value)}</Text>
+                  <Text style={styles.tooltipLabel}>{formatTooltipLabel(point.label)}</Text>
+                </View>
+              ) : null}
+
+              <Text
+                style={[
+                  styles.trendDateLabel,
+                  xLabelClassName === "wide" ? styles.trendDateLabelWide : styles.trendDateLabelCompact,
+                  { left: point.x - 16, bottom: 8 },
+                ]}
+              >
+                {point.label}
+              </Text>
+            </View>
+          );
+        })}
       </View>
     </View>
   );
 }
 
-function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
-  const [activeIndex, setActiveIndex] = useState(null);
-  const axisWidth = 24;
-  const height = 196;
-  const plotWidth = Math.max(180, chartWidth - axisWidth);
-  const paddingTop = 12;
-  const axisLabelHeight = 24;
-  const paddingBottom = 40;
-  const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
-  const data = buildAveragePatternData(records, mode);
-  const maxValue = getPatternAxisMax(Math.max(0, ...data.map((item) => item.value)));
-  const ticks = getAxisTicks(maxValue);
-  const track = getCenteredTrackLayout(plotWidth, data.length, 0.8);
-  const barSlotWidth = data.length > 0 ? track.slotWidth : track.contentWidth;
-  const [cursorX, setCursorX] = useState(null);
-  const activeBucket = data[Math.min(Math.max(activeIndex, 0), Math.max(data.length - 1, 0))] ?? null;
-  const activeLineX = cursorX ?? (activeBucket ? track.startX + barSlotWidth * activeIndex + barSlotWidth / 2 : plotWidth / 2);
-
-  const updateCursor = (locationX) => {
-    if (!data.length) {
-      return;
-    }
-
-    const x = Math.max(0, Math.min(plotWidth, locationX));
-    let nearestIndex = 0;
-    let nearestDistance = Number.POSITIVE_INFINITY;
-
-    data.forEach((item, index) => {
-      const centerX = track.startX + barSlotWidth * index + barSlotWidth / 2;
-      const distance = Math.abs(centerX - x);
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearestIndex = index;
-      }
-    });
-
-    setActiveIndex(nearestIndex);
-    setCursorX(x);
-  };
+function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
+  const buckets = buildDistributionData(records);
+  const maxCount = getCountAxisMax(periodId, Math.max(1, ...buckets.map((bucket) => bucket.count)));
 
   return (
-    <View style={styles.chartFrame}>
-      <View style={[styles.axisColumn, styles.tightAxisColumn, { width: axisWidth, height }]}>
-        {ticks.map((tickValue, index) => {
-          const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
-          return (
-            <Text key={`average-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]}>
-              {formatAxisStepLabel(tickValue)}
-            </Text>
-          );
-        })}
-      </View>
+    <MetricLineChart
+      items={buckets.map((bucket) => ({
+        label: bucket.label,
+        value: bucket.count,
+      }))}
+      width={chartWidth}
+      yMax={maxCount}
+      yTicks={getAxisTicks(maxCount)}
+      formatYAxisLabel={formatCountAxisLabel}
+      formatTooltipValue={(value) => `${value}?`}
+      formatTooltipLabel={(label) => label}
+      xLabelClassName="compact"
+    />
+  );
+}
 
-      <View
-        style={[styles.barPlot, { width: plotWidth, height }]}
-        onStartShouldSetResponder={() => true}
-        onMoveShouldSetResponder={() => true}
-        onResponderGrant={(event) => updateCursor(event.nativeEvent.locationX)}
-        onResponderMove={(event) => updateCursor(event.nativeEvent.locationX)}
-      >
-        {ticks.map((tickValue, index) => {
-          const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index;
-          return <View key={`average-grid-${tickValue}-${index}`} style={[styles.gridLine, { top }]} />;
-        })}
+function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
+  const data = buildAveragePatternData(records, mode);
+  const maxValue = getPatternAxisMax(Math.max(0, ...data.map((item) => item.value)));
 
-          {cursorX != null ? (
-            <View
-              pointerEvents="none"
-              style={[
-                styles.chartCursorLine,
-                {
-                  left: activeLineX,
-                  top: 0,
-                  height: height - axisLabelHeight,
-                },
-              ]}
-            />
-          ) : null}
-
-        <View style={[styles.histTrack, { left: track.startX, width: track.contentWidth, height }]}>
-          {data.map((item, index) => {
-            const barHeight = (item.value / maxValue) * plotHeight;
-            const isActive = activeIndex === index;
-            const centerX = track.startX + barSlotWidth * index + barSlotWidth / 2;
-            return (
-              <Pressable
-                key={item.label}
-                onPress={() => {
-                  setActiveIndex(index);
-                  setCursorX(centerX);
-                }}
-                style={[styles.histColumn, { width: barSlotWidth }]}
-              >
-                <View style={styles.histBarArea}>
-                  {isActive ? (
-                    <View
-                      style={[
-                        styles.tooltip,
-                        styles.histTooltip,
-                        tooltipPositionOnLine(activeLineX, paddingTop + plotHeight - barHeight, plotWidth),
-                      ]}
-                    >
-                      <Text style={styles.tooltipValue}>{formatNumber(item.value)}보</Text>
-                      <Text style={styles.tooltipLabel}>{item.label}</Text>
-                    </View>
-                  ) : null}
-                  <View style={[styles.histBar, { height: Math.max(6, barHeight) }]} />
-                </View>
-              </Pressable>
-            );
-          })}
-          <View style={[styles.histXAxis, { left: track.startX, width: track.contentWidth, bottom: 0, height: axisLabelHeight }]}>
-            {data.map((item, index) => (
-              <View key={`average-axis-label-${item.label}-${index}`} style={[styles.histColumn, { width: barSlotWidth }]}>
-                <Text style={styles.histXAxisLabel}>{item.label}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-      </View>
-    </View>
+  return (
+    <MetricLineChart
+      items={data}
+      width={chartWidth}
+      yMax={maxValue}
+      yTicks={getAxisTicks(maxValue)}
+      formatYAxisLabel={formatAxisStepLabel}
+      formatTooltipValue={(value) => `${formatNumber(value)}?`}
+      formatTooltipLabel={(label) => label}
+      xLabelClassName="wide"
+    />
   );
 }
 
@@ -1129,6 +1050,17 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
+  trendDateLabelCompact: {
+    fontSize: 8,
+    lineHeight: 10,
+  },
+  trendDateLabelWide: {
+    fontSize: 7,
+    lineHeight: 9,
+  },
+  trendTooltip: {
+    zIndex: 30,
+  },
   tooltip: {
     position: "absolute",
     borderRadius: 12,
@@ -1172,12 +1104,12 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     overflow: "visible",
   },
-  histXAxis: {
-    position: "absolute",
+  histXAxisRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "flex-start",
     overflow: "visible",
+    marginTop: 4,
   },
   histColumn: {
     minWidth: 0,
@@ -1203,8 +1135,8 @@ const styles = StyleSheet.create({
   },
   histXAxisLabel: {
     color: theme.colors.inkSoft,
-    fontSize: 6,
-    lineHeight: 7,
+    fontSize: 8,
+    lineHeight: 10,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
     textAlign: "center",
@@ -1212,8 +1144,8 @@ const styles = StyleSheet.create({
   },
   histXAxisLabelCompact: {
     color: theme.colors.inkSoft,
-    fontSize: 5,
-    lineHeight: 6,
+    fontSize: 8,
+    lineHeight: 10,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
     textAlign: "center",
