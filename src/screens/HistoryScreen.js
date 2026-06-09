@@ -28,15 +28,9 @@ const AVERAGE_PATTERN_TABS = [
   { id: "day", label: "요일별" },
 ];
 
-const ENERGY_META = {
-  0: { label: "완전 휴식", icon: "○", tone: "#787878" },
-  1: { label: "졸린 하루", icon: "◔", tone: "#787878" },
-  2: { label: "숨 고르기", icon: "◑", tone: "#787878" },
-  3: { label: "평온", icon: "◐", tone: "#111111" },
-  4: { label: "산책", icon: "•", tone: "#111111" },
-  5: { label: "달리기", icon: "▸", tone: "#111111" },
-  6: { label: "최고 컨디션", icon: "✦", tone: "#111111" },
-};
+const TOP_TICK_RATIOS = [1, 0.75, 0.5, 0.25, 0];
+const TIME_BUCKETS = ["새벽", "아침", "점심", "오후", "저녁", "밤"];
+const DAY_BUCKETS = ["월", "화", "수", "목", "금", "토", "일"];
 
 export function HistoryScreen() {
   const { history, goal } = useStepData();
@@ -50,18 +44,18 @@ export function HistoryScreen() {
   const streak = useMemo(() => getStreak(history, goal), [history, goal]);
   const achievementCards = useMemo(() => getMemories(history, goal, 3), [goal, history]);
   const missionCards = useMemo(() => buildMissionCards({ history, goal, streak }), [goal, history, streak]);
+  const personalOverview = useMemo(() => buildPersonalOverview(history, goal, streak), [history, goal, streak]);
   const trendPeriodConfig = useMemo(() => getPeriodConfig(trendPeriod), [trendPeriod]);
   const distributionPeriodConfig = useMemo(() => getPeriodConfig(distributionPeriod), [distributionPeriod]);
   const trendRecords = useMemo(
     () => buildPeriodRecords(history, trendPeriodConfig.days),
     [history, trendPeriodConfig.days],
   );
-  const trendSummary = useMemo(() => buildPeriodSummary(trendRecords), [trendRecords]);
   const distributionRecords = useMemo(
     () => buildPeriodRecords(history, distributionPeriodConfig.days),
     [distributionPeriodConfig.days, history],
   );
-  const patternSourceRecords = trendRecords;
+  const averagePatternRecords = trendRecords;
   const chartViewportWidth = Math.max(280, Math.floor(width - theme.spacing.md * 2 - 32));
 
   return (
@@ -76,43 +70,58 @@ export function HistoryScreen() {
 
       {storyTab === "footprints" ? (
         <>
-          <View style={styles.personalFootprintCard}>
-            <Text style={styles.personalFootprintTitle}>개인 발자국</Text>
-            <Text style={styles.personalFootprintSub}>선택한 기간과 패턴을 한 번에 봐요.</Text>
-            <View style={styles.personalFootprintRow}>
-              <MiniStat label="기간" value={getPeriodLabel(trendPeriod)} />
-              <MiniStat label="총 걸음" value={`${formatNumber(trendSummary.totalSteps)}보`} />
-              <MiniStat label="평균" value={`${formatNumber(trendSummary.averageSteps)}보`} />
-            </View>
-          </View>
+          <Section title="개인 발자국">
+            <View style={styles.sectionIntroCard}>
+              <Text style={styles.sectionIntroTitle}>나만의 걸음 흐름</Text>
+              <Text style={styles.sectionIntroText}>
+                기간별로 걸음 변화와 분포를 살펴보고, 시간대와 요일별 패턴도 볼 수 있어요.
+              </Text>
 
-          <Section title="걸음 추이">
-            <TabRow tabs={TREND_PERIOD_TABS} activeId={trendPeriod} onChange={setTrendPeriod} />
-            <View style={styles.chartCard}>
-              <HorizontalChartScroll>
-                <TrendLineChart records={trendRecords} goal={goal} width={chartViewportWidth} />
-              </HorizontalChartScroll>
+              <View style={styles.summaryGrid}>
+                <SummaryStat icon="👣" label="총 걸음" value={`${formatNumber(personalOverview.totalSteps)}보`} />
+                <SummaryStat icon="📈" label="평균" value={`${formatNumber(personalOverview.averageSteps)}보`} />
+                <SummaryStat icon="🏅" label="최고" value={`${formatNumber(personalOverview.bestSteps)}보`} />
+                <SummaryStat icon="🔥" label="연속" value={`${personalOverview.streak}일`} />
+              </View>
+
+              {personalOverview.narrative ? <Text style={styles.sectionNarrative}>{personalOverview.narrative}</Text> : null}
             </View>
+
+            <SubSection title="걸음 추이">
+              <TabRow tabs={TREND_PERIOD_TABS} activeId={trendPeriod} onChange={setTrendPeriod} />
+              <View style={styles.chartCard}>
+                <TrendLineChart records={trendRecords} width={chartViewportWidth} />
+              </View>
+            </SubSection>
+
+            <SubSection title="걸음 분포">
+              <TabRow tabs={TREND_PERIOD_TABS} activeId={distributionPeriod} onChange={setDistributionPeriod} />
+              <View style={styles.chartCard}>
+                <StepDistributionChart periodId={distributionPeriod} records={distributionRecords} width={chartViewportWidth} />
+              </View>
+            </SubSection>
+
+            <SubSection title="평균 패턴">
+              <TabRow tabs={AVERAGE_PATTERN_TABS} activeId={averagePatternMode} onChange={setAveragePatternMode} />
+              <View style={styles.chartCard}>
+                <AveragePatternChart mode={averagePatternMode} records={averagePatternRecords} width={chartViewportWidth} />
+              </View>
+            </SubSection>
           </Section>
 
-          <Section title="걸음 분포">
-            <TabRow tabs={TREND_PERIOD_TABS} activeId={distributionPeriod} onChange={setDistributionPeriod} />
-            <View style={styles.chartCard}>
-              <HorizontalChartScroll>
-                <BarDistributionChart records={distributionRecords} width={chartViewportWidth} />
-              </HorizontalChartScroll>
-            </View>
-          </Section>
+          <Section title="그룹 발자국">
+            <View style={styles.groupFootprintCard}>
+              <Text style={styles.groupFootprintTitle}>함께 걷는 기록</Text>
+              <Text style={styles.groupFootprintText}>
+                그룹에 들어가면 개인 발자국과 따로, 함께 걷는 흐름이 여기에 쌓여요.
+              </Text>
 
-          <Section title="평균 패턴">
-            <TabRow tabs={AVERAGE_PATTERN_TABS} activeId={averagePatternMode} onChange={setAveragePatternMode} />
-            <View style={styles.chartCard}>
-              <PatternAverageChart
-                mode={averagePatternMode}
-                records={patternSourceRecords}
-                goal={goal}
-                width={chartViewportWidth}
-              />
+              <View style={styles.groupSummaryGrid}>
+                <MiniStat label="그룹 걸음" value="-" />
+                <MiniStat label="그룹 평균" value="-" />
+                <MiniStat label="그룹 최고" value="-" />
+                <MiniStat label="내 위치" value="-" />
+              </View>
             </View>
           </Section>
         </>
@@ -175,6 +184,24 @@ function TabRow({ tabs, activeId, onChange }) {
   );
 }
 
+function Section({ title, children }) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {children}
+    </View>
+  );
+}
+
+function SubSection({ title, children }) {
+  return (
+    <View style={styles.subSection}>
+      <Text style={styles.subSectionTitle}>{title}</Text>
+      {children}
+    </View>
+  );
+}
+
 function SummaryStat({ icon, label, value }) {
   return (
     <View style={styles.summaryStat}>
@@ -186,16 +213,18 @@ function SummaryStat({ icon, label, value }) {
   );
 }
 
-function Section({ title, children }) {
+function MiniStat({ label, value }) {
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {children}
+    <View style={styles.miniStat}>
+      <Text style={styles.miniStatLabel}>{label}</Text>
+      <Text style={styles.miniStatValue} numberOfLines={1}>
+        {value}
+      </Text>
     </View>
   );
 }
 
-function buildWeekSummary(history, goal, streak) {
+function buildPersonalOverview(history, goal, streak) {
   const totalSteps = history.reduce((sum, record) => sum + (record.steps ?? 0), 0);
   const averageSteps = history.length ? Math.round(totalSteps / history.length) : 0;
   const bestRecord = history.reduce((best, record) => {
@@ -204,65 +233,27 @@ function buildWeekSummary(history, goal, streak) {
     }
     return best;
   }, null);
-  const energyCounts = countEnergyLevels(history, goal);
-  const walkingDays = (energyCounts[3] ?? 0) + (energyCounts[4] ?? 0);
-  const runningDays = (energyCounts[5] ?? 0) + (energyCounts[6] ?? 0);
 
   return {
     totalSteps,
     averageSteps,
     bestSteps: bestRecord?.steps ?? 0,
-    narrative: buildWeeklyNarrative({ walkingDays, runningDays, streak }),
+    streak,
+    narrative: buildPersonalNarrative(history, goal, streak, bestRecord),
   };
 }
 
-function buildWeeklyNarrative({ walkingDays, runningDays, streak }) {
-  if (!walkingDays && !runningDays) {
-    return streak > 0 ? `이번 주는 쉬면서 연속 ${streak}일을 지켰어요.` : "이번 주는 조용했어요.";
+function buildPersonalNarrative(history, goal, streak, bestRecord) {
+  if (!history.length) {
+    return "아직 기록이 없어요. 오늘부터 개인 발자국이 쌓여요.";
   }
 
-  const parts = [];
-
-  if (walkingDays > 0) {
-    parts.push(`산책 ${walkingDays}일`);
-  }
-
-  if (runningDays > 0) {
-    parts.push(`달리기 ${runningDays}일`);
-  }
-
-  return `이번 주는 ${parts.join(" · ")}이에요.${streak > 0 ? ` 연속 ${streak}일.` : ""}`;
-}
-
-function buildTrailLogs(history, goal) {
-  const latest = history[0] ?? null;
-  const bestRecord = history.reduce((best, record) => {
-    if (!best || (record?.steps ?? 0) > (best?.steps ?? 0)) {
-      return record;
-    }
-    return best;
-  }, null);
-  const latestEnergy = getEnergyLevel(latest?.steps ?? 0, goal);
-  const bestEnergy = getEnergyLevel(bestRecord?.steps ?? 0, goal);
+  const totalSteps = history.reduce((sum, record) => sum + (record.steps ?? 0), 0);
+  const bestSteps = bestRecord?.steps ?? 0;
+  const latestSteps = history[0]?.steps ?? 0;
   const goalDays = history.reduce((count, record) => count + ((record?.steps ?? 0) >= goal ? 1 : 0), 0);
 
-  return [
-    {
-      key: "today",
-      icon: ENERGY_META[latestEnergy]?.icon ?? "•",
-      text: latest ? `오늘 ${formatNumber(latest.steps)}보 · E${latestEnergy}` : "오늘 기록이 없어요.",
-    },
-    {
-      key: "best",
-      icon: ENERGY_META[bestEnergy]?.icon ?? "✦",
-      text: bestRecord ? `최고 ${formatNumber(bestRecord.steps)}보 · ${formatTrailDateLabel(bestRecord.date, bestRecord.id === latest?.id)}` : "최고 기록이 없어요.",
-    },
-    {
-      key: "goal",
-      icon: "◌",
-      text: goalDays > 0 ? `목표 ${goalDays}일` : "목표 달성이 아직 없어요.",
-    },
-  ];
+  return `이번 기간에는 총 ${formatNumber(totalSteps)}보를 걸었고, 최고 ${formatNumber(bestSteps)}보를 기록했어요. 오늘은 ${formatNumber(latestSteps)}보, 목표 달성은 ${goalDays}일이에요.`;
 }
 
 function buildMissionCards({ history, goal, streak }) {
@@ -280,28 +271,28 @@ function buildMissionCards({ history, goal, streak }) {
   return [
     {
       key: "today",
-      icon: "◌",
+      icon: "👣",
       title: "오늘",
       value: latest ? `${formatNumber(latestSteps)}보` : "0보",
       note: latestSteps >= goal ? `E${latestEnergy} 달성` : `${Math.max(goal - latestSteps, 0)}보 남음`,
     },
     {
       key: "week",
-      icon: "•",
-      title: "주간",
+      icon: "🎯",
+      title: "이번 주",
       value: `${goalDays}/7`,
-      note: "목표일",
+      note: "목표 달성 일수",
     },
     {
       key: "streak",
-      icon: "✦",
+      icon: "🔥",
       title: "연속",
       value: `${streak}일`,
-      note: "이어가기",
+      note: "이어가는 중",
     },
     {
       key: "best",
-      icon: "◌",
+      icon: "🏅",
       title: "최고",
       value: `${formatNumber(bestRecord?.steps ?? 0)}보`,
       note: bestRecord ? formatTrailDateLabel(bestRecord.date, bestRecord.id === latest?.id) : "기록 없음",
@@ -309,37 +300,16 @@ function buildMissionCards({ history, goal, streak }) {
   ];
 }
 
-function countEnergyLevels(history, goal) {
-  return history.reduce((acc, record) => {
-    const level = getEnergyLevel(record?.steps ?? 0, goal);
-    acc[level] = (acc[level] ?? 0) + 1;
-    return acc;
-  }, {});
-}
-
 function formatTrailDateLabel(value, isToday) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return isToday ? "오늘" : value;
+    return isToday ? "오늘" : String(value ?? "");
   }
 
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   const weekday = new Intl.DateTimeFormat("ko-KR", { weekday: "short" }).format(date);
   return isToday ? `오늘 · ${month}.${day}` : `${month}.${day} (${weekday})`;
-}
-
-function formatTrailDayLabel(value, isToday) {
-  if (isToday) {
-    return "오늘";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return String(value ?? "");
-  }
-
-  return String(date.getDate()).padStart(2, "0");
 }
 
 function formatNumber(value) {
@@ -355,10 +325,6 @@ function getPeriodConfig(periodId) {
     default:
       return { id: "7d", label: "7일", days: 7 };
   }
-}
-
-function getPeriodLabel(periodId) {
-  return getPeriodConfig(periodId).label;
 }
 
 function buildPeriodRecords(history, days) {
@@ -426,65 +392,99 @@ function buildDistributionData(records) {
   return buckets;
 }
 
-function buildAveragePatternData(records, mode, goal) {
+function buildAveragePatternData(records, mode) {
   if (mode === "day") {
-    const labels = ["월", "화", "수", "목", "금", "토", "일"];
-    const order = [1, 2, 3, 4, 5, 6, 0];
-    const totals = labels.map(() => 0);
-    const counts = labels.map(() => 0);
+    const totals = DAY_BUCKETS.map(() => 0);
+    const counts = DAY_BUCKETS.map(() => 0);
 
     for (const record of records) {
       const date = new Date(record.date);
-      const dayIndex = Number.isNaN(date.getTime()) ? 1 : date.getDay();
-      const mappedIndex = order.indexOf(dayIndex);
-      const targetIndex = mappedIndex >= 0 ? mappedIndex : 0;
+      const weekday = Number.isNaN(date.getTime()) ? 1 : date.getDay();
+      const targetIndex = weekday === 0 ? 6 : weekday - 1;
       totals[targetIndex] += Number(record.steps ?? 0);
       counts[targetIndex] += 1;
     }
 
-    return labels.map((label, index) => ({
+    return DAY_BUCKETS.map((label, index) => ({
       label,
       value: counts[index] ? Math.round(totals[index] / counts[index]) : 0,
     }));
   }
 
-  const labels = ["새벽", "아침", "점심", "오후", "저녁", "밤"];
-  const totals = labels.map(() => 0);
-  const counts = labels.map(() => 0);
+  const totals = TIME_BUCKETS.map(() => 0);
+  const weights = TIME_BUCKETS.map(() => 0);
 
   for (const record of records) {
     const steps = Number(record.steps ?? 0);
-    const weights = getTimeBucketWeights(steps, goal);
-    weights.forEach((weight, index) => {
+    const recordWeights = getTimeBucketWeights(steps);
+    recordWeights.forEach((weight, index) => {
       totals[index] += steps * weight;
-      counts[index] += 1;
+      weights[index] += weight;
     });
   }
 
-  return labels.map((label, index) => ({
+  return TIME_BUCKETS.map((label, index) => ({
     label,
-    value: counts[index] ? Math.round(totals[index] / counts[index]) : 0,
+    value: weights[index] ? Math.round(totals[index] / weights[index]) : 0,
   }));
 }
 
-function getTimeBucketWeights(steps, goal) {
-  if (steps >= goal * 1.2) {
+function getTimeBucketWeights(steps) {
+  if (steps >= 12000) {
     return [0.03, 0.08, 0.16, 0.28, 0.25, 0.2];
   }
 
-  if (steps >= goal) {
+  if (steps >= 10000) {
     return [0.04, 0.1, 0.18, 0.26, 0.22, 0.2];
   }
 
-  if (steps >= goal * 0.7) {
+  if (steps >= 7000) {
     return [0.05, 0.12, 0.2, 0.25, 0.2, 0.18];
   }
 
-  if (steps >= goal * 0.3) {
+  if (steps >= 3000) {
     return [0.08, 0.16, 0.2, 0.22, 0.18, 0.16];
   }
 
   return [0.1, 0.18, 0.2, 0.18, 0.18, 0.16];
+}
+
+function formatPeriodValue(periodId, value) {
+  if (periodId === "7d") {
+    return Math.max(5, value);
+  }
+
+  if (periodId === "30d") {
+    return Math.max(20, value);
+  }
+
+  return Math.max(40, value);
+}
+
+function buildTickValues(maxValue, count = 5) {
+  return TOP_TICK_RATIOS.slice(0, count).map((ratio) => Math.round(maxValue * ratio));
+}
+
+function getSteppedAxisMax(maxValue, floor = 15000, step = 1000) {
+  const normalized = Math.max(floor, maxValue);
+  return Math.max(step, Math.ceil(normalized / step) * step);
+}
+
+function getCountAxisMax(periodId, maxCount) {
+  const floor = periodId === "7d" ? 5 : periodId === "30d" ? 20 : 40;
+  if (maxCount <= floor) {
+    return floor;
+  }
+  if (maxCount <= 10) {
+    return 10;
+  }
+  if (maxCount <= 20) {
+    return 20;
+  }
+  if (maxCount <= 30) {
+    return 30;
+  }
+  return Math.ceil(maxCount / 10) * 10;
 }
 
 function HorizontalChartScroll({ children }) {
@@ -496,46 +496,171 @@ function HorizontalChartScroll({ children }) {
 }
 
 function TrendLineChart({ records, width: chartWidth = 320 }) {
-  const height = 180;
-  const paddingX = 18;
-  const paddingTop = 18;
-  const paddingBottom = 28;
-  const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
-  const valueMax = Math.max(1, ...records.map((record) => Number(record.steps ?? 0)));
-  const widthForChart = Math.max(chartWidth, Math.max(320, records.length * 18 + paddingX * 2));
-  const gap = records.length > 1 ? (widthForChart - paddingX * 2) / (records.length - 1) : 0;
+  const [activeIndex, setActiveIndex] = useState(null);
+  const height = 240;
+  const axisWidth = 56;
+  const plotPadding = { top: 22, right: 18, bottom: 42, left: 10 };
+  const maxValue = getSteppedAxisMax(Math.max(0, ...records.map((record) => Number(record.steps ?? 0))));
+  const plotHeight = Math.max(1, height - plotPadding.top - plotPadding.bottom);
+  const plotWidth = Math.max(chartWidth, Math.max(320, records.length * 42 + plotPadding.left + plotPadding.right));
+  const gap = records.length > 1 ? (plotWidth - plotPadding.left - plotPadding.right) / (records.length - 1) : 0;
   const points = records.map((record, index) => {
-    const x = records.length > 1 ? paddingX + index * gap : widthForChart / 2;
+    const x = records.length > 1 ? plotPadding.left + index * gap : plotWidth / 2;
     const value = Number(record.steps ?? 0);
-    const y = paddingTop + (1 - value / valueMax) * plotHeight;
-    return { x, y, value, label: record.date, isToday: index === records.length - 1 };
+    const y = plotPadding.top + (1 - value / maxValue) * plotHeight;
+    return {
+      x,
+      y,
+      value,
+      date: record.date,
+      isToday: index === records.length - 1,
+      label: formatTrendDateLabel(record.date, index === records.length - 1, records.length),
+    };
   });
+  const ticks = buildTickValues(maxValue, 5);
 
   return (
-    <View style={[styles.trendChart, { width: widthForChart, height }]}>
-      {Array.from({ length: 4 }, (_, index) => {
-        const top = paddingTop + (plotHeight / 3) * index;
-        return <View key={`grid-${index}`} style={[styles.trendGridLine, { top }]} />;
-      })}
-
-      {points.map((point, index) => {
-        const prev = points[index - 1];
-        const line =
-          prev != null
-            ? buildSegmentStyle(prev.x, prev.y, point.x, point.y)
-            : null;
-        return (
-          <View key={`${point.label}-${index}`} style={styles.trendPointLayer}>
-            {line ? <View style={[styles.trendSegment, line]} /> : null}
-            <View style={[styles.trendPoint, point.isToday && styles.trendPointToday, { left: point.x - 4, top: point.y - 4 }]} />
-          </View>
-        );
-      })}
-
-      <View style={styles.trendAxisRow}>
-        <Text style={styles.chartHint}>왼쪽은 과거, 오른쪽은 오늘이에요.</Text>
-        <Text style={styles.chartHint}>최고 {formatNumber(valueMax)}보</Text>
+    <View style={styles.chartFrame}>
+      <View style={[styles.chartAxis, { width: axisWidth, height }]}>
+        {ticks.map((tickValue, index) => {
+          const top = plotPadding.top + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
+          return (
+            <Text key={`${tickValue}-${index}`} style={[styles.chartAxisLabel, { top }]}>
+              {formatNumber(tickValue)}
+            </Text>
+          );
+        })}
       </View>
+
+      <HorizontalChartScroll>
+        <View style={[styles.trendPlot, { width: plotWidth, height }]}>
+          {ticks.map((tickValue, index) => {
+            const top = plotPadding.top + (plotHeight / (ticks.length - 1 || 1)) * index;
+            return <View key={`grid-${tickValue}-${index}`} style={[styles.trendGridLine, { top }]} />;
+          })}
+
+          {points.map((point, index) => {
+            const prev = points[index - 1];
+            return (
+              <View key={`${point.date}-${index}`} style={styles.trendPointLayer}>
+                {prev ? <View style={[styles.trendSegment, buildSegmentStyle(prev.x, prev.y, point.x, point.y)]} /> : null}
+
+                <Pressable
+                  onPress={() => setActiveIndex(index)}
+                  style={[styles.trendPointHitArea, { left: point.x - 12, top: point.y - 12 }]}
+                >
+                  <View style={[styles.trendPoint, point.isToday && styles.trendPointToday, activeIndex === index && styles.trendPointActive]} />
+                </Pressable>
+
+                {activeIndex === index ? (
+                  <View style={[styles.trendTooltip, tooltipPosition(point.x, point.y, plotWidth)]}>
+                    <Text style={styles.trendTooltipValue}>{formatNumber(point.value)}보</Text>
+                    <Text style={styles.trendTooltipLabel}>{point.label}</Text>
+                  </View>
+                ) : null}
+
+                {shouldShowTrendLabel(index, points.length) ? (
+                  <Text style={[styles.trendDateLabel, { left: point.x - 14, bottom: 10 }]}>{point.isToday ? "오늘" : formatTrendShortLabel(point.date)}</Text>
+                ) : null}
+              </View>
+            );
+          })}
+        </View>
+      </HorizontalChartScroll>
+    </View>
+  );
+}
+
+function StepDistributionChart({ records, periodId, width: chartWidth = 320 }) {
+  const buckets = buildDistributionData(records);
+  const maxCount = getCountAxisMax(periodId, Math.max(1, ...buckets.map((bucket) => bucket.count)));
+  const height = 220;
+  const axisWidth = 56;
+  const barAreaWidth = Math.max(chartWidth, Math.max(320, buckets.length * 46 + 12));
+  const barTrackHeight = 118;
+  const ticks = buildTickValues(maxCount, 5);
+
+  return (
+    <View style={styles.chartFrame}>
+      <View style={[styles.chartAxis, { width: axisWidth, height }]}>
+        {ticks.map((tickValue, index) => {
+          const top = 18 + (barTrackHeight / (ticks.length - 1 || 1)) * index - 8;
+          return (
+            <Text key={`${tickValue}-${index}`} style={[styles.chartAxisLabel, { top }]}>
+              {formatNumber(tickValue)}
+            </Text>
+          );
+        })}
+      </View>
+
+      <HorizontalChartScroll>
+        <View style={[styles.barPlot, { width: barAreaWidth, height }]}>
+          {ticks.map((tickValue, index) => {
+            const top = 18 + (barTrackHeight / (ticks.length - 1 || 1)) * index;
+            return <View key={`bar-grid-${tickValue}-${index}`} style={[styles.barGridLine, { top }]} />;
+          })}
+
+          {buckets.map((bucket, index) => {
+            const barHeight = (bucket.count / maxCount) * barTrackHeight;
+            return (
+              <View key={bucket.label} style={styles.barColumn}>
+                <Text style={styles.barValue}>{bucket.count}</Text>
+                <View style={styles.barTrack}>
+                  <View style={[styles.barFill, { height: Math.max(8, barHeight) }]} />
+                </View>
+                <Text style={styles.barLabel}>{bucket.label}</Text>
+              </View>
+            );
+          })}
+        </View>
+      </HorizontalChartScroll>
+    </View>
+  );
+}
+
+function AveragePatternChart({ records, mode, width: chartWidth = 320 }) {
+  const data = buildAveragePatternData(records, mode);
+  const maxValue = getSteppedAxisMax(Math.max(0, ...data.map((item) => item.value)));
+  const height = 220;
+  const axisWidth = 56;
+  const barAreaWidth = Math.max(chartWidth, Math.max(320, data.length * 52 + 12));
+  const barTrackHeight = 118;
+  const ticks = buildTickValues(maxValue, 5);
+
+  return (
+    <View style={styles.chartFrame}>
+      <View style={[styles.chartAxis, { width: axisWidth, height }]}>
+        {ticks.map((tickValue, index) => {
+          const top = 18 + (barTrackHeight / (ticks.length - 1 || 1)) * index - 8;
+          return (
+            <Text key={`${tickValue}-${index}`} style={[styles.chartAxisLabel, { top }]}>
+              {formatNumber(tickValue)}
+            </Text>
+          );
+        })}
+      </View>
+
+      <HorizontalChartScroll>
+        <View style={[styles.barPlot, { width: barAreaWidth, height }]}>
+          {ticks.map((tickValue, index) => {
+            const top = 18 + (barTrackHeight / (ticks.length - 1 || 1)) * index;
+            return <View key={`avg-grid-${tickValue}-${index}`} style={[styles.barGridLine, { top }]} />;
+          })}
+
+          {data.map((item) => {
+            const barHeight = (item.value / maxValue) * barTrackHeight;
+            return (
+              <View key={item.label} style={styles.barColumn}>
+                <Text style={styles.barValue}>{formatNumber(item.value)}</Text>
+                <View style={styles.barTrack}>
+                  <View style={[styles.patternFill, { height: Math.max(10, barHeight) }]} />
+                </View>
+                <Text style={styles.barLabel}>{item.label}</Text>
+              </View>
+            );
+          })}
+        </View>
+      </HorizontalChartScroll>
     </View>
   );
 }
@@ -553,61 +678,49 @@ function buildSegmentStyle(x1, y1, x2, y2) {
   };
 }
 
-function BarDistributionChart({ records, width: chartWidth = 320 }) {
-  const buckets = buildDistributionData(records);
-  const maxCount = Math.max(1, ...buckets.map((bucket) => bucket.count));
-  const widthForChart = Math.max(chartWidth, Math.max(320, buckets.length * 44 + 16));
-
-  return (
-    <View style={[styles.distributionChart, { width: widthForChart }]}>
-      {buckets.map((bucket) => {
-        const barHeight = (bucket.count / maxCount) * 120;
-        return (
-          <View key={bucket.label} style={styles.barColumn}>
-            <Text style={styles.barValue}>{bucket.count}</Text>
-            <View style={styles.barTrack}>
-              <View style={[styles.barFill, { height: Math.max(8, barHeight) }]} />
-            </View>
-            <Text style={styles.barLabel}>{bucket.label}</Text>
-          </View>
-        );
-      })}
-    </View>
-  );
+function tooltipPosition(x, y, width) {
+  const bubbleWidth = 80;
+  const bubbleHeight = 44;
+  const left = Math.max(6, Math.min(x - bubbleWidth / 2, width - bubbleWidth - 6));
+  const top = Math.max(8, y - bubbleHeight - 10);
+  return {
+    left,
+    top,
+    width: bubbleWidth,
+    height: bubbleHeight,
+  };
 }
 
-function PatternAverageChart({ records, mode, goal, width: chartWidth = 320 }) {
-  const data = buildAveragePatternData(records, mode, goal);
-  const maxValue = Math.max(1, ...data.map((item) => item.value));
-  const widthForChart = Math.max(chartWidth, 320);
+function shouldShowTrendLabel(index, total) {
+  if (total <= 10) {
+    return true;
+  }
 
-  return (
-    <View style={[styles.patternChart, { width: widthForChart }]}>
-      {data.map((item) => {
-        const barHeight = (item.value / maxValue) * 124;
-        return (
-          <View key={item.label} style={styles.patternColumn}>
-            <Text style={styles.barValue}>{formatNumber(item.value)}</Text>
-            <View style={styles.barTrack}>
-              <View style={[styles.patternFill, { height: Math.max(10, barHeight) }]} />
-            </View>
-            <Text style={styles.barLabel}>{item.label}</Text>
-          </View>
-        );
-      })}
-    </View>
-  );
+  const interval = Math.ceil(total / 8);
+  return index === total - 1 || index % interval === 0;
 }
 
-function MiniStat({ label, value }) {
-  return (
-    <View style={styles.miniStat}>
-      <Text style={styles.miniStatLabel}>{label}</Text>
-      <Text style={styles.miniStatValue} numberOfLines={1}>
-        {value}
-      </Text>
-    </View>
-  );
+function formatTrendDateLabel(value, isToday, total) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return isToday ? "오늘" : String(value ?? "");
+  }
+
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  if (total <= 10) {
+    return isToday ? "오늘" : `${month}/${day}`;
+  }
+  return isToday ? "오늘" : `${month}/${day}`;
+}
+
+function formatTrendShortLabel(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return String(value ?? "");
+  }
+
+  return `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}`;
 }
 
 const styles = StyleSheet.create({
@@ -619,55 +732,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
     gap: theme.spacing.md,
-  },
-  personalFootprintCard: {
-    borderRadius: theme.radius.xl,
-    padding: 14,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    gap: 10,
-  },
-  personalFootprintTitle: {
-    color: theme.colors.ink,
-    fontSize: 17,
-    fontWeight: "900",
-    fontFamily: theme.fonts.display,
-  },
-  personalFootprintSub: {
-    color: theme.colors.inkSoft,
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: "600",
-    fontFamily: theme.fonts.body,
-  },
-  personalFootprintRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  miniStat: {
-    flex: 1,
-    minHeight: 60,
-    borderRadius: theme.radius.lg,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    backgroundColor: theme.colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    gap: 4,
-  },
-  miniStatLabel: {
-    color: theme.colors.inkSoft,
-    fontSize: 10,
-    fontWeight: "800",
-    fontFamily: theme.fonts.body,
-  },
-  miniStatValue: {
-    color: theme.colors.ink,
-    fontSize: 14,
-    lineHeight: 18,
-    fontWeight: "900",
-    fontFamily: theme.fonts.body,
   },
   pageTitleWrap: {
     alignItems: "center",
@@ -710,9 +774,56 @@ const styles = StyleSheet.create({
     color: theme.colors.ink,
     fontSize: 13,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
   tabLabelActive: {
     color: "#ffffff",
+  },
+  section: {
+    gap: 10,
+  },
+  sectionTitle: {
+    color: theme.colors.ink,
+    fontSize: 18,
+    fontWeight: "900",
+    fontFamily: theme.fonts.display,
+  },
+  subSection: {
+    gap: 10,
+  },
+  subSectionTitle: {
+    color: theme.colors.ink,
+    fontSize: 15,
+    fontWeight: "900",
+    fontFamily: theme.fonts.display,
+  },
+  sectionIntroCard: {
+    borderRadius: theme.radius.xl,
+    padding: 14,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 12,
+  },
+  sectionIntroTitle: {
+    color: theme.colors.ink,
+    fontSize: 17,
+    fontWeight: "900",
+    fontFamily: theme.fonts.display,
+  },
+  sectionIntroText: {
+    color: theme.colors.inkSoft,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
+  },
+  sectionNarrative: {
+    color: theme.colors.ink,
+    fontSize: 13,
+    lineHeight: 20,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
   summaryGrid: {
     flexDirection: "row",
@@ -723,7 +834,7 @@ const styles = StyleSheet.create({
     width: "48.5%",
     borderRadius: theme.radius.lg,
     padding: 14,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surfaceMuted,
     borderWidth: 1,
     borderColor: theme.colors.border,
     gap: 6,
@@ -740,29 +851,6 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
-  summarySentenceCard: {
-    borderRadius: theme.radius.xl,
-    padding: 14,
-    backgroundColor: "#fffaf2",
-    borderWidth: 1,
-    borderColor: "#f0dcc3",
-  },
-  summarySentence: {
-    color: theme.colors.ink,
-    fontSize: 13,
-    lineHeight: 19,
-    fontWeight: "700",
-    fontFamily: theme.fonts.body,
-  },
-  section: {
-    gap: 10,
-  },
-  sectionTitle: {
-    color: theme.colors.ink,
-    fontSize: 17,
-    fontWeight: "900",
-    fontFamily: theme.fonts.display,
-  },
   chartCard: {
     borderRadius: theme.radius.xl,
     padding: 12,
@@ -771,10 +859,28 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     gap: 10,
   },
-  chartScrollContent: {
-    paddingRight: 8,
+  chartFrame: {
+    flexDirection: "row",
+    alignItems: "stretch",
+    gap: 8,
+    minHeight: 220,
   },
-  trendChart: {
+  chartAxis: {
+    position: "relative",
+    alignItems: "flex-end",
+    justifyContent: "flex-start",
+    paddingTop: 18,
+    paddingBottom: 22,
+  },
+  chartAxisLabel: {
+    position: "absolute",
+    right: 0,
+    color: theme.colors.inkSoft,
+    fontSize: 10,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
+  },
+  trendPlot: {
     position: "relative",
     borderRadius: 18,
     backgroundColor: "#fbfbfa",
@@ -784,11 +890,11 @@ const styles = StyleSheet.create({
   },
   trendGridLine: {
     position: "absolute",
-    left: 12,
-    right: 12,
+    left: 10,
+    right: 10,
     height: 1,
     borderBottomWidth: 1,
-    borderBottomColor: "#ededea",
+    borderBottomColor: "#ececea",
   },
   trendPointLayer: {
     position: "absolute",
@@ -804,8 +910,14 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     opacity: 0.72,
   },
-  trendPoint: {
+  trendPointHitArea: {
     position: "absolute",
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  trendPoint: {
     width: 8,
     height: 8,
     borderRadius: 999,
@@ -816,26 +928,69 @@ const styles = StyleSheet.create({
   trendPointToday: {
     backgroundColor: "#111111",
   },
-  trendAxisRow: {
-    position: "absolute",
-    left: 14,
-    right: 14,
-    bottom: 8,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  trendPointActive: {
+    width: 12,
+    height: 12,
+    borderWidth: 2,
+    borderColor: "#111111",
   },
-  chartHint: {
+  trendTooltip: {
+    position: "absolute",
+    borderRadius: 14,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    shadowColor: "#000000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
+    zIndex: 20,
+  },
+  trendTooltipValue: {
+    color: theme.colors.ink,
+    fontSize: 12,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  trendTooltipLabel: {
+    color: theme.colors.inkSoft,
+    fontSize: 9,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
+  },
+  trendDateLabel: {
+    position: "absolute",
     color: theme.colors.inkSoft,
     fontSize: 10,
     fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
-  distributionChart: {
+  barPlot: {
+    position: "relative",
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
+    paddingTop: 18,
+    paddingBottom: 12,
     gap: 8,
+    borderRadius: 18,
+    backgroundColor: "#fbfbfa",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    overflow: "hidden",
+  },
+  barGridLine: {
+    position: "absolute",
+    left: 10,
+    right: 10,
+    height: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ececea",
   },
   barColumn: {
     flex: 1,
@@ -843,6 +998,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-end",
     gap: 6,
+    paddingHorizontal: 2,
   },
   barValue: {
     color: theme.colors.inkSoft,
@@ -852,7 +1008,7 @@ const styles = StyleSheet.create({
   },
   barTrack: {
     width: "100%",
-    height: 124,
+    height: 118,
     borderRadius: 14,
     backgroundColor: theme.colors.surfaceMuted,
     borderWidth: 1,
@@ -868,70 +1024,22 @@ const styles = StyleSheet.create({
     backgroundColor: "#111111",
     minHeight: 8,
   },
-  barLabel: {
-    color: theme.colors.inkSoft,
-    fontSize: 10,
-    fontWeight: "700",
-    fontFamily: theme.fonts.body,
-  },
-  patternChart: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  patternColumn: {
-    flex: 1,
-    minWidth: 36,
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 6,
-  },
   patternFill: {
     width: "68%",
     borderRadius: 999,
     backgroundColor: "#111111",
     minHeight: 10,
   },
-  trailGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  trailDateRow: {
-    flexDirection: "row",
-    gap: 8,
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  trailDateItem: {
-    flex: 1,
-    alignItems: "center",
-  },
-  trailDateCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  trailDateCircleActive: {
-    backgroundColor: theme.colors.ink,
-    borderColor: theme.colors.ink,
-  },
-  trailDateCircleText: {
-    color: theme.colors.ink,
-    fontSize: 11,
-    fontWeight: "900",
+  barLabel: {
+    color: theme.colors.inkSoft,
+    fontSize: 10,
+    fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
-  trailDateCircleTextActive: {
-    color: "#ffffff",
+  chartScrollContent: {
+    paddingRight: 8,
   },
-  trailDetailCard: {
+  groupFootprintCard: {
     borderRadius: theme.radius.xl,
     padding: 14,
     backgroundColor: theme.colors.surface,
@@ -939,99 +1047,47 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     gap: 12,
   },
-  trailDetailTop: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  trailDetailDateBlock: {
-    flex: 1,
-    gap: 4,
-  },
-  trailDetailDate: {
+  groupFootprintTitle: {
     color: theme.colors.ink,
-    fontSize: 14,
+    fontSize: 17,
     fontWeight: "900",
-    fontFamily: theme.fonts.body,
+    fontFamily: theme.fonts.display,
   },
-  trailDetailHint: {
+  groupFootprintText: {
     color: theme.colors.inkSoft,
-    fontSize: 11,
-    fontWeight: "700",
-    fontFamily: theme.fonts.body,
-  },
-  trailDetailEnergyBadge: {
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: theme.colors.appBackground,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  trailDetailEnergyText: {
-    fontSize: 11,
-    fontWeight: "900",
-    fontFamily: theme.fonts.body,
-  },
-  trailDetailBody: {
-    gap: 4,
-  },
-  trailDetailSteps: {
-    color: theme.colors.ink,
-    fontSize: 24,
-    fontWeight: "900",
-    fontFamily: theme.fonts.body,
-  },
-  trailDetailGoal: {
-    color: theme.colors.inkSoft,
-    fontSize: 12,
-    fontWeight: "700",
-    fontFamily: theme.fonts.body,
-  },
-  logList: {
-    gap: 8,
-  },
-  logItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    borderRadius: theme.radius.lg,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  logIcon: {
-    width: 22,
-    textAlign: "center",
-    fontSize: 14,
-    fontWeight: "900",
-  },
-  logText: {
-    flex: 1,
-    color: theme.colors.ink,
     fontSize: 12,
     lineHeight: 18,
     fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
-  memoryList: {
+  groupSummaryGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
-  memoryItem: {
+  miniStat: {
+    flex: 1,
+    minWidth: "47%",
+    minHeight: 60,
     borderRadius: theme.radius.lg,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    backgroundColor: theme.colors.surface,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    backgroundColor: theme.colors.surfaceMuted,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    gap: 4,
   },
-  memoryTitle: {
+  miniStatLabel: {
+    color: theme.colors.inkSoft,
+    fontSize: 10,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
+  },
+  miniStatValue: {
     color: theme.colors.ink,
-    fontSize: 13,
-    fontWeight: "700",
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
   missionGrid: {
@@ -1099,5 +1155,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
 });
