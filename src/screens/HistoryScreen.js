@@ -574,10 +574,11 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
 function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
   const [activeIndex, setActiveIndex] = useState(null);
   const axisWidth = 24;
-  const height = 176;
+  const height = 196;
   const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
-  const paddingBottom = 26;
+  const axisLabelHeight = 18;
+  const paddingBottom = 34;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const buckets = buildDistributionData(records);
   const maxCount = getCountAxisMax(periodId, Math.max(1, ...buckets.map((bucket) => bucket.count)));
@@ -635,21 +636,21 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
           return <View key={`distribution-grid-${tickValue}-${index}`} style={[styles.gridLine, { top }]} />;
         })}
 
-        {cursorX != null ? (
-          <View
-            pointerEvents="none"
-            style={[
-              styles.chartCursorLine,
-              {
-                left: activeLineX,
-                top: paddingTop,
-                height: plotHeight,
-              },
-            ]}
-          />
-        ) : null}
+          {cursorX != null ? (
+            <View
+              pointerEvents="none"
+              style={[
+                styles.chartCursorLine,
+                {
+                  left: activeLineX,
+                  top: 0,
+                  height: height - axisLabelHeight,
+                },
+              ]}
+            />
+          ) : null}
 
-        <View style={[styles.histTrack, { left: track.startX, width: track.contentWidth, height }]}>
+          <View style={[styles.histTrack, { left: track.startX, width: track.contentWidth, height }]}>
           {buckets.map((bucket, index) => {
             const barHeight = (bucket.count / maxCount) * plotHeight;
             const isActive = activeIndex === index;
@@ -681,6 +682,13 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
               </Pressable>
             );
           })}
+          <View style={[styles.histXAxis, { left: track.startX, width: track.contentWidth, bottom: 2, height: axisLabelHeight }]}>
+            {buckets.map((bucket, index) => (
+              <View key={`distribution-axis-label-${bucket.label}-${index}`} style={[styles.histColumn, { width: barSlotWidth }]}>
+                <Text style={styles.histXAxisLabel}>{bucket.label}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       </View>
     </View>
@@ -690,10 +698,11 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
 function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
   const [activeIndex, setActiveIndex] = useState(null);
   const axisWidth = 24;
-  const height = 176;
+  const height = 196;
   const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
-  const paddingBottom = 26;
+  const axisLabelHeight = 18;
+  const paddingBottom = 34;
   const plotHeight = Math.max(1, height - paddingTop - paddingBottom);
   const data = buildAveragePatternData(records, mode);
   const maxValue = getPatternAxisMax(Math.max(0, ...data.map((item) => item.value)));
@@ -751,19 +760,19 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
           return <View key={`average-grid-${tickValue}-${index}`} style={[styles.gridLine, { top }]} />;
         })}
 
-        {cursorX != null ? (
-          <View
-            pointerEvents="none"
-            style={[
-              styles.chartCursorLine,
-              {
-                left: activeLineX,
-                top: paddingTop,
-                height: plotHeight,
-              },
-            ]}
-          />
-        ) : null}
+          {cursorX != null ? (
+            <View
+              pointerEvents="none"
+              style={[
+                styles.chartCursorLine,
+                {
+                  left: activeLineX,
+                  top: 0,
+                  height: height - axisLabelHeight,
+                },
+              ]}
+            />
+          ) : null}
 
         <View style={[styles.histTrack, { left: track.startX, width: track.contentWidth, height }]}>
           {data.map((item, index) => {
@@ -797,6 +806,13 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
               </Pressable>
             );
           })}
+          <View style={[styles.histXAxis, { left: track.startX, width: track.contentWidth, bottom: 2, height: axisLabelHeight }]}>
+            {data.map((item, index) => (
+              <View key={`average-axis-label-${item.label}-${index}`} style={[styles.histColumn, { width: barSlotWidth }]}>
+                <Text style={styles.histXAxisLabel}>{item.label}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       </View>
     </View>
@@ -1039,8 +1055,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     color: theme.colors.inkSoft,
-    fontSize: 6,
-    lineHeight: 8,
+    fontSize: 8,
+    lineHeight: 10,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
   },
@@ -1156,6 +1172,13 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     overflow: "visible",
   },
+  histXAxis: {
+    position: "absolute",
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "flex-start",
+    overflow: "visible",
+  },
   histColumn: {
     minWidth: 0,
     alignSelf: "stretch",
@@ -1177,6 +1200,14 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 12,
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
+  },
+  histXAxisLabel: {
+    color: theme.colors.inkSoft,
+    fontSize: 7,
+    lineHeight: 9,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
+    textAlign: "center",
   },
   histTooltip: {
     zIndex: 30,
