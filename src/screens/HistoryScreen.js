@@ -33,7 +33,7 @@ const AVERAGE_PATTERN_TABS = [
   { id: "day", label: "요일별" },
 ];
 
-const HOUR_BUCKETS = ["새벽", "아침", "점심", "오후", "저녁", "밤"];
+const HOUR_BUCKETS = ["0-3시", "3-6시", "6-9시", "9-12시", "12-15시", "15-18시", "18-21시", "21-24시"];
 const DAY_BUCKETS = ["월", "화", "수", "목", "금", "토", "일"];
 const TREND_AXIS_TICKS = [1, 0.75, 0.5, 0.25, 0];
 
@@ -339,19 +339,15 @@ function buildPeriodRecords(history, days) {
 }
 
 function buildDistributionData(records) {
-  const maxSteps = records.reduce((max, record) => Math.max(max, Number(record.steps ?? 0)), 0);
-  const maxBucket = Math.max(0, Math.floor(maxSteps / 1000));
-  const buckets = Array.from({ length: maxBucket + 1 }, (_, bucket) => ({
-    bucket,
-    label: `${bucket}천대`,
+  const buckets = Array.from({ length: 16 }, (_, index) => ({
+    bucket: index,
+    label: index === 0 ? "0천대" : index + "천대",
     count: 0,
   }));
 
   for (const record of records) {
-    const bucketIndex = Math.max(0, Math.floor(Number(record.steps ?? 0) / 1000));
-    if (!buckets[bucketIndex]) {
-      buckets[bucketIndex] = { bucket: bucketIndex, label: `${bucketIndex}천대`, count: 0 };
-    }
+    const steps = Math.max(0, Number(record.steps ?? 0));
+    const bucketIndex = Math.min(15, Math.floor(steps / 1000));
     buckets[bucketIndex].count += 1;
   }
 
@@ -377,38 +373,39 @@ function buildAveragePatternData(records, mode) {
     }));
   }
 
-  const totals = HOUR_BUCKETS.map(() => 0);
-  const weights = HOUR_BUCKETS.map(() => 0);
+  const labels = HOUR_BUCKETS;
+  const totals = labels.map(() => 0);
+  const counts = labels.map(() => 0);
 
   for (const record of records) {
     const steps = Number(record.steps ?? 0);
-    const recordWeights = getTimeBucketWeights(steps);
-    recordWeights.forEach((weight, index) => {
+    const weights = getTimeBucketWeights(steps);
+    weights.forEach((weight, index) => {
       totals[index] += steps * weight;
-      weights[index] += weight;
+      counts[index] += weight;
     });
   }
 
-  return HOUR_BUCKETS.map((label, index) => ({
+  return labels.map((label, index) => ({
     label,
-    value: weights[index] ? Math.round(totals[index] / weights[index]) : 0,
+    value: counts[index] ? Math.round(totals[index] / counts[index]) : 0,
   }));
 }
 
 function getTimeBucketWeights(steps) {
   if (steps >= 12000) {
-    return [0.03, 0.08, 0.16, 0.28, 0.25, 0.2];
+    return [0.02, 0.05, 0.1, 0.18, 0.18, 0.16, 0.16, 0.15];
   }
   if (steps >= 10000) {
-    return [0.04, 0.1, 0.18, 0.26, 0.22, 0.2];
+    return [0.03, 0.06, 0.11, 0.18, 0.17, 0.15, 0.15, 0.15];
   }
   if (steps >= 7000) {
-    return [0.05, 0.12, 0.2, 0.25, 0.2, 0.18];
+    return [0.04, 0.08, 0.12, 0.17, 0.16, 0.15, 0.14, 0.14];
   }
   if (steps >= 3000) {
-    return [0.08, 0.16, 0.2, 0.22, 0.18, 0.16];
+    return [0.05, 0.1, 0.13, 0.16, 0.15, 0.14, 0.14, 0.13];
   }
-  return [0.1, 0.18, 0.2, 0.18, 0.18, 0.16];
+  return [0.07, 0.11, 0.13, 0.15, 0.14, 0.13, 0.14, 0.13];
 }
 
 function getTrendAxisMax(maxValue) {
@@ -585,7 +582,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
   const buckets = buildDistributionData(records);
   const maxCount = getCountAxisMax(periodId, Math.max(1, ...buckets.map((bucket) => bucket.count)));
   const ticks = getAxisTicks(maxCount);
-  const track = getCenteredTrackLayout(plotWidth, buckets.length, periodId === "7d" ? 0.8 : 0.82);
+  const track = getCenteredTrackLayout(plotWidth, buckets.length, 0.8);
   const barSlotWidth = buckets.length > 0 ? track.slotWidth : track.contentWidth;
   const [cursorX, setCursorX] = useState(null);
   const activeBucket = buckets[Math.min(Math.max(activeIndex, 0), Math.max(buckets.length - 1, 0))] ?? null;
@@ -664,7 +661,13 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
             >
               <View style={styles.histBarArea}>
                 {isActive ? (
-                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition(centerX, paddingTop + plotHeight - barHeight, plotWidth)]}>
+                  <View
+                    style={[
+                      styles.tooltip,
+                      styles.histTooltip,
+                      tooltipPositionInsideTrack(centerX, paddingTop + plotHeight - barHeight, track, plotWidth),
+                    ]}
+                  >
                     <Text style={styles.tooltipValue}>{bucket.count}개</Text>
                     <Text style={styles.tooltipLabel}>{bucket.label}</Text>
                   </View>
@@ -769,7 +772,13 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
             >
               <View style={styles.histBarArea}>
                 {isActive ? (
-                  <View style={[styles.tooltip, styles.histTooltip, tooltipPosition(centerX, paddingTop + plotHeight - barHeight, plotWidth)]}>
+                  <View
+                    style={[
+                      styles.tooltip,
+                      styles.histTooltip,
+                      tooltipPositionInsideTrack(centerX, paddingTop + plotHeight - barHeight, track, plotWidth),
+                    ]}
+                  >
                     <Text style={styles.tooltipValue}>{formatNumber(item.value)}보</Text>
                     <Text style={styles.tooltipLabel}>{item.label}</Text>
                   </View>
@@ -802,6 +811,24 @@ function tooltipPosition(x, y, width) {
   const bubbleWidth = 56;
   const bubbleHeight = 32;
   const left = Math.max(0, Math.min(x - bubbleWidth / 2, width - bubbleWidth));
+  const top = Math.max(0, y - bubbleHeight - 10);
+
+  return {
+    left,
+    top,
+    width: bubbleWidth,
+    height: bubbleHeight,
+  };
+}
+
+function tooltipPositionInsideTrack(x, y, track, width) {
+  const bubbleWidth = 56;
+  const bubbleHeight = 32;
+  const trackStart = Math.max(0, track?.startX ?? 0);
+  const trackEnd = Math.max(trackStart, Math.min(width, trackStart + (track?.contentWidth ?? width)));
+  const leftBound = trackStart;
+  const rightBound = Math.max(leftBound, trackEnd - bubbleWidth);
+  const left = Math.max(leftBound, Math.min(x - bubbleWidth / 2, rightBound));
   const top = Math.max(0, y - bubbleHeight - 10);
 
   return {
