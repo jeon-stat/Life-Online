@@ -53,6 +53,7 @@ const FRIEND_GROUP_STORE = {
   groups: [],
   friendGroupState: {},
   customFriends: [],
+  removedFriendIds: [],
   selectedGroupId: null,
 };
 
@@ -77,6 +78,8 @@ export function FriendsScreen() {
   const [groupJoinCode, setGroupJoinCode] = useState("");
   const [groupJoinMessage, setGroupJoinMessage] = useState("");
   const [customFriends, setCustomFriends] = useState(() => FRIEND_GROUP_STORE.customFriends.map((friend) => ({ ...friend })));
+  const [removedFriendIds, setRemovedFriendIds] = useState(() => [...(FRIEND_GROUP_STORE.removedFriendIds ?? [])]);
+  const [showFriendDeleteConfirm, setShowFriendDeleteConfirm] = useState(false);
 
   const characterViewState = useMemo(
     () => buildCharacterViewModel({ todayRecord: today, history, goal, admin }),
@@ -137,8 +140,9 @@ export function FriendsScreen() {
       ...friend,
       groupIds: getFriendGroupIds(friend, friendGroupState),
     }));
-    return dedupeFriends([...baseFriends, ...customFriends]);
-  }, [customFriends, friendGroupState, friends]);
+    const hiddenIds = new Set(removedFriendIds);
+    return dedupeFriends([...baseFriends, ...customFriends]).filter((friend) => !hiddenIds.has(friend.id));
+  }, [customFriends, friendGroupState, friends, removedFriendIds]);
 
   const groupCounts = useMemo(() => buildGroupCounts(groups, mergedFriends), [groups, mergedFriends]);
   const selectedGroup = useMemo(
@@ -164,6 +168,10 @@ export function FriendsScreen() {
   useEffect(() => {
     FRIEND_GROUP_STORE.customFriends = customFriends.map((friend) => ({ ...friend }));
   }, [customFriends]);
+
+  useEffect(() => {
+    FRIEND_GROUP_STORE.removedFriendIds = [...removedFriendIds];
+  }, [removedFriendIds]);
 
   useEffect(() => {
     FRIEND_GROUP_STORE.selectedGroupId = selectedGroupId;
@@ -304,6 +312,21 @@ export function FriendsScreen() {
     setShowDeleteConfirm(false);
   };
 
+  const deleteFriend = () => {
+    if (!selectedFriend) return;
+
+    const friendId = selectedFriend.id;
+    setCustomFriends((current) => current.filter((friend) => friend.id !== friendId));
+    setFriendGroupState((current) => {
+      const next = { ...current };
+      delete next[friendId];
+      return next;
+    });
+    setRemovedFriendIds((current) => Array.from(new Set([...current, friendId])));
+    setSelectedFriendId(null);
+    setShowFriendDeleteConfirm(false);
+  };
+
   const addFriendFromHandle = () => {
     const raw = String(friendHandleInput ?? "").trim();
     const normalized = raw.toLowerCase();
@@ -341,6 +364,7 @@ export function FriendsScreen() {
       }
       return [...current, foundFriend];
     });
+    setRemovedFriendIds((current) => current.filter((friendId) => friendId !== foundFriend.id));
     setFriendGroupState((current) => ({
       ...current,
       [foundFriend.id]: getFriendGroupIds(foundFriend),
@@ -536,6 +560,7 @@ export function FriendsScreen() {
                   previewCharacter={previewCharacter}
                   characterViewState={characterViewState}
                   caption={getModeInfo(friend, rankMode).primaryValue}
+                  showStepCount
                   onPress={() => setSelectedFriendId(friend.id)}
                 />
               ))}
@@ -582,6 +607,7 @@ export function FriendsScreen() {
                   onPress={() => setSelectedFriendId(friend.id)}
                   style={[
                     styles.friendGalleryCard,
+                    styles.friendManagementCard,
                     active && styles.friendGalleryCardSelected,
                     { width: galleryCardWidth },
                   ]}
@@ -589,11 +615,8 @@ export function FriendsScreen() {
                   <View style={styles.friendGalleryScene}>
                     <FriendPreview character={previewCharacter} state={characterViewState} size={galleryPreviewSize} />
                   </View>
-                  <View style={styles.friendGalleryCaption}>
+                  <View style={[styles.friendGalleryCaption, styles.friendGalleryCaptionCompact]}>
                     <FriendIdentity friend={friend} />
-                    <Text style={styles.friendGridSteps} numberOfLines={1}>
-                      👣 {formatNumber(friend.todaySteps)}
-                    </Text>
                   </View>
                 </Pressable>
               );
@@ -625,15 +648,12 @@ export function FriendsScreen() {
                     <View style={styles.friendGalleryScene}>
                       <FriendPreview character={previewCharacter} state={characterViewState} size={galleryPreviewSize} />
                     </View>
-                    <View style={styles.friendGalleryCaption}>
-                      <FriendIdentity friend={friend} />
-                      {isLeader ? <Text style={styles.friendLeaderBadge}>그룹장</Text> : null}
-                      <Text style={styles.friendGridSteps} numberOfLines={1}>
-                        👣 {formatNumber(friend.todaySteps)}
-                      </Text>
-                    </View>
-                  </Pressable>
-                );
+                  <View style={styles.friendGalleryCaption}>
+                    <FriendIdentity friend={friend} />
+                    {isLeader ? <Text style={styles.friendLeaderBadge}>그룹장</Text> : null}
+                  </View>
+                </Pressable>
+              );
               })}
             </View>
           ) : (
@@ -671,14 +691,56 @@ export function FriendsScreen() {
                     <FriendPreview character={previewCharacter} state={characterViewState} size={expandedPreviewSize} variant="detail" />
                   </View>
 
-                  <View style={styles.modalStatsRow}>
-                    <StatBlock label="최근 7일" value={`${formatNumber(selectedFriend.weeklySteps)}보`} />
-                    <StatBlock label="연속" value={`${selectedFriend.streak}일`} />
-                    <StatBlock label="상태" value={getLongTermLabel(selectedFriend.longTermState)} />
-                  </View>
+                  {viewMode === "friends" ? (
+                    <>
+                      <View style={styles.modalStatsRow}>
+                        <StatBlock label="친구가 된 날" value={formatFriendSince(selectedFriend.friendSince)} />
+                        <StatBlock label="함께 걸은지" value={formatFriendTogether(selectedFriend.friendSince)} />
+                      </View>
+                      <View style={styles.modalDeleteRow}>
+                        <Pressable
+                          onPress={() => setShowFriendDeleteConfirm(true)}
+                          style={({ pressed }) => [
+                            styles.friendDeleteButton,
+                            pressed && styles.friendDeleteButtonPressed,
+                          ]}
+                        >
+                          <Text style={styles.friendDeleteButtonLabel}>친구 삭제</Text>
+                        </Pressable>
+                      </View>
+                    </>
+                  ) : (
+                    <View style={styles.modalStatsRow}>
+                      <StatBlock label="최근 7일" value={`${formatNumber(selectedFriend.weeklySteps)}보`} />
+                      <StatBlock label="연속" value={`${selectedFriend.streak}일`} />
+                      <StatBlock label="상태" value={getLongTermLabel(selectedFriend.longTermState)} />
+                    </View>
+                  )}
                 </ScrollView>
               </>
             ) : null}
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal
+        visible={showFriendDeleteConfirm}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowFriendDeleteConfirm(false)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setShowFriendDeleteConfirm(false)}>
+          <Pressable style={styles.deleteConfirmCard} onPress={() => null}>
+            <Text style={styles.deleteConfirmTitle}>정말 삭제할까요?</Text>
+            <Text style={styles.deleteConfirmText}>친구 관계가 삭제되고 목록에서 사라져요.</Text>
+            <View style={styles.deleteConfirmRow}>
+              <Pressable onPress={() => setShowFriendDeleteConfirm(false)} style={styles.secondaryButton}>
+                <Text style={styles.secondaryButtonLabel}>취소</Text>
+              </Pressable>
+              <Pressable onPress={deleteFriend} style={styles.dangerButton}>
+                <Text style={styles.dangerButtonLabel}>삭제</Text>
+              </Pressable>
+            </View>
           </Pressable>
         </Pressable>
       </Modal>
@@ -721,6 +783,7 @@ function FriendGalleryCard({
   previewCharacter,
   characterViewState,
   caption,
+  showStepCount = true,
   onPress,
 }) {
   return (
@@ -734,9 +797,11 @@ function FriendGalleryCard({
 
       <View style={styles.friendGalleryCaption}>
         <FriendIdentity friend={friend} />
-        <Text style={styles.friendGridSteps} numberOfLines={1}>
-          {caption}
-        </Text>
+        {showStepCount ? (
+          <Text style={styles.friendGridSteps} numberOfLines={1}>
+            {caption}
+          </Text>
+        ) : null}
       </View>
     </Pressable>
   );
@@ -901,6 +966,36 @@ function getRankingDetails(rankMode) {
 
 function getLongTermLabel(state) {
   return LONG_TERM_META[state]?.label ?? "건강";
+}
+
+function formatFriendSince(friendSince) {
+  if (!friendSince) {
+    return "기록 없음";
+  }
+
+  const date = new Date(friendSince);
+  if (Number.isNaN(date.getTime())) {
+    return "기록 없음";
+  }
+
+  return String(friendSince).slice(0, 10).replaceAll("-", ".");
+}
+
+function formatFriendTogether(friendSince) {
+  if (!friendSince) {
+    return "0일";
+  }
+
+  const start = new Date(friendSince);
+  if (Number.isNaN(start.getTime())) {
+    return "0일";
+  }
+
+  const normalizedStart = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const now = new Date();
+  const normalizedNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.max(0, Math.round((normalizedNow.getTime() - normalizedStart.getTime()) / 86400000));
+  return `${days}일`;
 }
 
 function getRankBadgeStyle(rank) {
@@ -1346,6 +1441,11 @@ const styles = StyleSheet.create({
     borderColor: "#111111",
     backgroundColor: "#f8f8f7",
   },
+  friendManagementCard: {
+    padding: 6,
+    gap: 6,
+    aspectRatio: 0.54,
+  },
   friendGalleryScene: {
     flex: 1,
     borderRadius: theme.radius.lg,
@@ -1359,6 +1459,11 @@ const styles = StyleSheet.create({
     gap: 2,
     paddingHorizontal: 4,
     paddingBottom: 2,
+  },
+  friendGalleryCaptionCompact: {
+    minHeight: 28,
+    gap: 0,
+    paddingBottom: 0,
   },
   friendIdentity: {
     alignItems: "center",
@@ -1502,6 +1607,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
+  modalDeleteRow: {
+    marginTop: 2,
+  },
   statBlock: {
     flex: 1,
     borderRadius: theme.radius.lg,
@@ -1524,6 +1632,25 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     fontWeight: "900",
     flexShrink: 1,
+    fontFamily: theme.fonts.body,
+  },
+  friendDeleteButton: {
+    minHeight: 82,
+    borderRadius: theme.radius.lg,
+    borderWidth: 1,
+    borderColor: "#f0c3c0",
+    backgroundColor: "#fff6f5",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  friendDeleteButtonPressed: {
+    opacity: 0.88,
+  },
+  friendDeleteButtonLabel: {
+    color: "#c43c31",
+    fontSize: 15,
+    fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
   modalGroupCard: {

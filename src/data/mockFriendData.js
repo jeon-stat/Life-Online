@@ -16,6 +16,7 @@ const BASE_FRIENDS = [
     energyLevel: 6,
     longTermState: "ACTIVE",
     skinTone: SKIN_TONE_PRESETS[2]?.color ?? "#efbda8",
+    friendSince: "2026-02-10",
     groupIds: [],
   },
   {
@@ -29,6 +30,7 @@ const BASE_FRIENDS = [
     energyLevel: 5,
     longTermState: "HEALTHY",
     skinTone: SKIN_TONE_PRESETS[4]?.color ?? "#f29d6d",
+    friendSince: "2026-02-18",
     groupIds: [],
   },
   {
@@ -42,6 +44,7 @@ const BASE_FRIENDS = [
     energyLevel: 5,
     longTermState: "ACTIVE",
     skinTone: SKIN_TONE_PRESETS[0]?.color ?? "#f7d9cf",
+    friendSince: "2026-01-28",
     groupIds: [],
   },
   {
@@ -55,6 +58,7 @@ const BASE_FRIENDS = [
     energyLevel: 4,
     longTermState: "HEALTHY",
     skinTone: SKIN_TONE_PRESETS[1]?.color ?? "#f4cbbb",
+    friendSince: "2026-03-03",
     groupIds: [],
   },
   {
@@ -68,6 +72,7 @@ const BASE_FRIENDS = [
     energyLevel: 4,
     longTermState: "HEALTHY",
     skinTone: SKIN_TONE_PRESETS[5]?.color ?? "#d77c54",
+    friendSince: "2026-01-17",
     groupIds: [],
   },
 ];
@@ -85,6 +90,7 @@ const FRIEND_DIRECTORY = [
     energyLevel: 4,
     longTermState: "HEALTHY",
     skinTone: SKIN_TONE_PRESETS[3]?.color ?? "#f0b79b",
+    friendSince: "2026-02-24",
     groupIds: [],
   },
   {
@@ -98,6 +104,7 @@ const FRIEND_DIRECTORY = [
     energyLevel: 5,
     longTermState: "ACTIVE",
     skinTone: SKIN_TONE_PRESETS[6]?.color ?? "#cb7a53",
+    friendSince: "2026-03-08",
     groupIds: [],
   },
   {
@@ -111,6 +118,7 @@ const FRIEND_DIRECTORY = [
     energyLevel: 3,
     longTermState: "HEALTHY",
     skinTone: SKIN_TONE_PRESETS[1]?.color ?? "#f4cbbb",
+    friendSince: "2026-03-12",
     groupIds: [],
   },
 ];
@@ -140,6 +148,7 @@ export function buildFriendRankingData({
     energyLevel,
     longTermState,
     skinTone: meSkinTone,
+    friendSince: "2026-01-01",
     groupIds: [],
     isMe: true,
   };
