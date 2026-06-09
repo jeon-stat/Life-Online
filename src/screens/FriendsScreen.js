@@ -53,6 +53,7 @@ const FRIEND_GROUP_STORE = {
   groups: [],
   friendGroupState: {},
   customFriends: [],
+  selectedGroupId: null,
 };
 
 export function FriendsScreen() {
@@ -64,7 +65,7 @@ export function FriendsScreen() {
   const [rankMode, setRankMode] = useState("daily");
   const [groups, setGroups] = useState(() => FRIEND_GROUP_STORE.groups.map((group) => ({ ...group })));
   const [friendGroupState, setFriendGroupState] = useState(() => ({ ...FRIEND_GROUP_STORE.friendGroupState }));
-  const [selectedGroupId, setSelectedGroupId] = useState(null);
+  const [selectedGroupId, setSelectedGroupId] = useState(() => FRIEND_GROUP_STORE.selectedGroupId ?? null);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupCode, setNewGroupCode] = useState("");
   const [renameGroupName, setRenameGroupName] = useState("");
@@ -163,6 +164,24 @@ export function FriendsScreen() {
   useEffect(() => {
     FRIEND_GROUP_STORE.customFriends = customFriends.map((friend) => ({ ...friend }));
   }, [customFriends]);
+
+  useEffect(() => {
+    FRIEND_GROUP_STORE.selectedGroupId = selectedGroupId;
+  }, [selectedGroupId]);
+
+  useEffect(() => {
+    if (!groups.length) {
+      if (selectedGroupId !== null) {
+        setSelectedGroupId(null);
+      }
+      return;
+    }
+
+    const hasSelectedGroup = groups.some((group) => group.id === selectedGroupId);
+    if (!hasSelectedGroup) {
+      setSelectedGroupId(groups[0].id);
+    }
+  }, [groups, selectedGroupId]);
 
   useEffect(() => {
     if (selectedFriendId && mergedFriends.every((friend) => friend.id !== selectedFriendId)) {
