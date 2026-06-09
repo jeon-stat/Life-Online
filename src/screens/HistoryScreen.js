@@ -339,15 +339,23 @@ function buildPeriodRecords(history, days) {
 }
 
 function buildDistributionData(records) {
-  const buckets = Array.from({ length: 16 }, (_, index) => ({
+  const values = records.map((record) => Math.max(0, Number(record.steps ?? 0)));
+  const minValue = values.length ? Math.min(...values) : 0;
+  const maxValue = values.length ? Math.max(...values) : 0;
+  const start = Math.floor(minValue / 1000) * 1000;
+  const end = Math.ceil(maxValue / 1000) * 1000;
+  const safeEnd = Math.max(start, end);
+  const bucketCount = Math.max(1, Math.floor((safeEnd - start) / 1000) + 1);
+
+  const buckets = Array.from({ length: bucketCount }, (_, index) => ({
     bucket: index,
-    label: formatDistributionBucketLabel(index * 1000),
+    value: start + index * 1000,
+    label: formatDistributionBucketLabel(start + index * 1000),
     count: 0,
   }));
 
-  for (const record of records) {
-    const steps = Math.max(0, Number(record.steps ?? 0));
-    const bucketIndex = Math.min(15, Math.floor(steps / 1000));
+  for (const steps of values) {
+    const bucketIndex = Math.min(bucketCount - 1, Math.max(0, Math.floor((steps - start) / 1000)));
     buckets[bucketIndex].count += 1;
   }
 
@@ -688,7 +696,17 @@ function MetricLineChart({
           />
         ) : null}
 
-        <View style={[styles.histTrack, { left: track.startX, width: track.contentWidth, height }]}>
+        <View
+          style={[
+            styles.histTrack,
+            {
+              left: track.startX,
+              width: track.contentWidth,
+              top: paddingTop,
+              height: plotHeight,
+            },
+          ]}
+        >
           {bars.map((bar, index) => {
             const isActive = index === activeIndex;
             return (
@@ -714,7 +732,16 @@ function MetricLineChart({
           })}
         </View>
 
-        <View style={[styles.histXAxisRow, { marginLeft: track.startX, width: track.contentWidth }]}>
+        <View
+          style={[
+            styles.histXAxisRow,
+            {
+              marginLeft: track.startX,
+              width: track.contentWidth,
+              marginTop: 6,
+            },
+          ]}
+        >
           {bars.map((bar, index) =>
             index % xLabelEvery === 0 || index === bars.length - 1 ? (
               <View key={`metric-axis-label-${bar.label}-${index}`} style={[styles.histColumn, { width: track.slotWidth }]}>
@@ -1014,8 +1041,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     color: theme.colors.inkSoft,
-    fontSize: 10,
-    lineHeight: 12,
+    fontSize: 11,
+    lineHeight: 13,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
   },
@@ -1183,8 +1210,8 @@ const styles = StyleSheet.create({
   },
   histXAxisLabelCompact: {
     color: theme.colors.inkSoft,
-    fontSize: 9,
-    lineHeight: 11,
+    fontSize: 10,
+    lineHeight: 12,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
     textAlign: "center",
