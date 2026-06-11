@@ -562,32 +562,43 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
           />
         ) : null}
 
-        {points.map((point, index) => {
-          const prev = points[index - 1];
-          const isActive = index === activeIndex;
-          return (
-            <View key={`trend-point-${point.label}-${index}`} style={styles.pointLayer}>
-              {prev ? <View style={[styles.lineSegment, buildLineSegmentStyle(prev.x, prev.y, point.x, point.y)]} /> : null}
+        <View pointerEvents="none" style={styles.trendSegmentsLayer}>
+          {points.slice(1).map((point, index) => {
+            const prev = points[index];
+            return (
+              <View
+                key={`trend-segment-${point.label}-${index}`}
+                style={[styles.lineSegment, buildLineSegmentStyle(prev.x, prev.y, point.x, point.y)]}
+              />
+            );
+          })}
+        </View>
 
-              <View style={[styles.pointHitArea, { left: point.x - 16, top: point.y - 16 }]}>
-                <View style={[styles.pointDot, point.isToday && styles.pointDotToday, isActive && styles.pointDotActive]} />
-              </View>
-
-              {isActive && bubblePosition ? (
-                <View style={[styles.tooltip, styles.trendTooltip, bubblePosition]}>
-                  <Text style={styles.tooltipValue}>{formatNumber(point.value)}보</Text>
-                  <Text style={styles.tooltipLabel}>{point.displayLabel}</Text>
+        <View pointerEvents="none" style={styles.trendOverlayLayer}>
+          {points.map((point, index) => {
+            const isActive = index === activeIndex;
+            return (
+              <View key={`trend-point-${point.label}-${index}`} style={styles.pointLayer}>
+                <View style={[styles.pointHitArea, { left: point.x - 16, top: point.y - 16 }]}>
+                  <View style={[styles.pointDot, point.isToday && styles.pointDotToday, isActive && styles.pointDotActive]} />
                 </View>
-              ) : null}
 
-              {shouldShowTrendLabel(index, points.length) ? (
-                <Text style={[styles.trendDateLabel, { left: point.x - 10, bottom: 8 }]}>
-                  {point.isToday ? "오늘" : point.displayLabel}
-                </Text>
-              ) : null}
-            </View>
-          );
-        })}
+                {isActive && bubblePosition ? (
+                  <View style={[styles.tooltip, styles.trendTooltip, bubblePosition]}>
+                    <Text style={styles.tooltipValue}>{formatNumber(point.value)}보</Text>
+                    <Text style={styles.tooltipLabel}>{point.displayLabel}</Text>
+                  </View>
+                ) : null}
+
+                {shouldShowTrendLabel(index, points.length) ? (
+                  <Text style={[styles.trendDateLabel, { left: point.x - 10, bottom: 8 }]}>
+                    {point.isToday ? "오늘" : point.displayLabel}
+                  </Text>
+                ) : null}
+              </View>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
@@ -1082,12 +1093,31 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
+  trendSegmentsLayer: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1,
+    elevation: 1,
+  },
+  trendOverlayLayer: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 20,
+    elevation: 20,
+  },
   lineSegment: {
     position: "absolute",
     height: 2,
     backgroundColor: "#111111",
     borderRadius: 999,
     opacity: 0.75,
+    zIndex: 1,
   },
   pointHitArea: {
     position: "absolute",
@@ -1095,6 +1125,8 @@ const styles = StyleSheet.create({
     height: 32,
     alignItems: "center",
     justifyContent: "center",
+    zIndex: 2,
+    elevation: 2,
   },
   pointDot: {
     width: 8,
@@ -1132,6 +1164,7 @@ const styles = StyleSheet.create({
     lineHeight: 12,
     fontWeight: "700",
     fontFamily: theme.fonts.body,
+    zIndex: 5,
   },
   trendDateLabelCompact: {
     fontSize: 9,
@@ -1142,8 +1175,8 @@ const styles = StyleSheet.create({
     lineHeight: 11,
   },
   trendTooltip: {
-    zIndex: 100,
-    elevation: 10,
+    zIndex: 30,
+    elevation: 30,
   },
   tooltip: {
     position: "absolute",
@@ -1155,8 +1188,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 6,
     paddingVertical: 4,
-    zIndex: 100,
-    elevation: 10,
+    zIndex: 30,
+    elevation: 30,
   },
   tooltipValue: {
     color: theme.colors.ink,
