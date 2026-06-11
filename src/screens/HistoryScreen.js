@@ -36,6 +36,7 @@ const AVERAGE_PATTERN_TABS = [
 const HOUR_BUCKETS = ["0-3시", "3-6시", "6-9시", "9-12시", "12-15시", "15-18시", "18-21시", "21-24시"];
 const DAY_BUCKETS = ["월", "화", "수", "목", "금", "토", "일"];
 const TREND_AXIS_TICKS = [1, 0.75, 0.5, 0.25, 0];
+const CHART_AXIS_WIDTH = 40;
 
 export function HistoryScreen() {
   const { history, goal } = useStepData();
@@ -293,7 +294,7 @@ function formatAxisStepLabel(value) {
   if (numeric >= 10000) {
     const tenThousands = Math.floor(numeric / 10000);
     const thousands = Math.floor((numeric % 10000) / 1000);
-    return thousands > 0 ? `${tenThousands}만 ${thousands}천` : `${tenThousands}만`;
+    return thousands > 0 ? `${tenThousands}만\u00A0${thousands}천` : `${tenThousands}만`;
   }
 
   const thousands = Math.floor(numeric / 1000);
@@ -475,7 +476,7 @@ function getCenteredTrackLayout(totalWidth, itemCount, fillRatio) {
 function TrendLineChart({ records, width: chartWidth = 280 }) {
   const [activeIndex, setActiveIndex] = useState(() => Math.max(0, records.length - 1));
   const [cursorX, setCursorX] = useState(null);
-  const axisWidth = 24;
+  const axisWidth = CHART_AXIS_WIDTH;
   const height = 176;
   const plotWidth = Math.max(180, chartWidth - axisWidth);
   const paddingTop = 12;
@@ -533,7 +534,7 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
           return (
-            <Text key={`trend-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]}>
+            <Text key={`trend-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]} numberOfLines={1}>
               {formatAxisStepLabel(tickValue)}
             </Text>
           );
@@ -622,7 +623,7 @@ function MetricLineChart({
   const [activeIndex, setActiveIndex] = useState(Math.max(0, items.length - 1));
   const [cursorX, setCursorX] = useState(null);
   const [tooltipSize, setTooltipSize] = useState({ width: 56, height: 32 });
-  const axisWidth = 24;
+  const axisWidth = CHART_AXIS_WIDTH;
   const height = 186;
   const plotWidth = Math.max(190, chartWidth - axisWidth);
   const paddingTop = 12;
@@ -679,7 +680,7 @@ function MetricLineChart({
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index - 8;
           return (
-            <Text key={`metric-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]}>
+            <Text key={`metric-axis-${tickValue}-${index}`} style={[styles.axisLabel, { top }]} numberOfLines={1}>
               {formatYAxisLabel(tickValue)}
             </Text>
           );
@@ -1072,8 +1073,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 0,
     color: theme.colors.inkSoft,
-    fontSize: 11,
-    lineHeight: 13,
+    fontSize: 10,
+    lineHeight: 12,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
   },
