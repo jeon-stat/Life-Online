@@ -774,7 +774,7 @@ function MetricLineChart({
           ]}
         >
           {bars.map((bar, index) =>
-            index % xLabelEvery === 0 || index === bars.length - 1 ? (
+            index % xLabelEvery === 0 ? (
               <View key={`metric-axis-label-${bar.label}-${index}`} style={[styles.histColumn, { width: track.slotWidth }]}>
                 <Text
                   style={[
