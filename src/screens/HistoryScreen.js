@@ -731,7 +731,13 @@ function MetricLineChart({
                 style={[styles.histColumn, { width: track.slotWidth }]}
               >
                 <View style={styles.histBarArea}>
-                  <View style={[styles.histBar, { height: Math.max(6, bar.barHeight) }]} />
+                  <View
+                    style={[
+                      styles.histBar,
+                      isActive && styles.histBarActive,
+                      { height: Math.max(6, bar.barHeight) },
+                    ]}
+                  />
                 </View>
               </Pressable>
             );
@@ -1249,6 +1255,11 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 12,
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
+  },
+  histBarActive: {
+    borderWidth: 2,
+    borderColor: "#0f0f0f",
+    backgroundColor: "#fbfbf8",
   },
   histXAxisLabel: {
     color: theme.colors.inkSoft,
