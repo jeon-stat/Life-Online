@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
 import { theme } from "../constants/theme.js";
@@ -476,6 +476,11 @@ function getCenteredTrackLayout(totalWidth, itemCount, fillRatio) {
 function TrendLineChart({ records, width: chartWidth = 280 }) {
   const [activeIndex, setActiveIndex] = useState(() => Math.max(0, records.length - 1));
   const [cursorX, setCursorX] = useState(null);
+  const gestureState = useRef({
+    startX: 0,
+    startY: 0,
+    active: false,
+  });
   const axisWidth = CHART_AXIS_WIDTH;
   const height = 176;
   const plotWidth = Math.max(180, chartWidth - axisWidth);
@@ -528,6 +533,36 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
     setCursorX(x);
   };
 
+  const beginGesture = (event) => {
+    gestureState.current.startX = event.nativeEvent.locationX;
+    gestureState.current.startY = event.nativeEvent.locationY;
+    gestureState.current.active = true;
+    updateCursor(event.nativeEvent.locationX);
+  };
+
+  const resetGesture = () => {
+    gestureState.current.active = false;
+  };
+
+  const shouldCaptureGesture = (event) => {
+    const { active, startX, startY } = gestureState.current;
+    if (!active) {
+      gestureState.current.startX = event.nativeEvent.locationX;
+      gestureState.current.startY = event.nativeEvent.locationY;
+      gestureState.current.active = true;
+      return false;
+    }
+
+    const dx = Math.abs(event.nativeEvent.locationX - startX);
+    const dy = Math.abs(event.nativeEvent.locationY - startY);
+
+    if (dx < 8 && dy < 8) {
+      return false;
+    }
+
+    return dx > dy * 1.15;
+  };
+
   return (
     <View style={styles.chartFrame}>
       <View style={[styles.axisColumn, styles.tightAxisColumn, { width: axisWidth, height }]}>
@@ -543,10 +578,13 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
 
       <View
         style={[styles.trendPlot, { width: plotWidth, height }]}
-        onStartShouldSetResponder={() => true}
-        onMoveShouldSetResponder={() => true}
-        onResponderGrant={(event) => updateCursor(event.nativeEvent.locationX)}
+        onStartShouldSetResponder={() => false}
+        onMoveShouldSetResponderCapture={shouldCaptureGesture}
+        onResponderGrant={beginGesture}
         onResponderMove={(event) => updateCursor(event.nativeEvent.locationX)}
+        onResponderRelease={resetGesture}
+        onResponderTerminate={resetGesture}
+        onResponderTerminationRequest={() => false}
       >
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index;
@@ -623,6 +661,11 @@ function MetricLineChart({
   const [activeIndex, setActiveIndex] = useState(Math.max(0, items.length - 1));
   const [cursorX, setCursorX] = useState(null);
   const [tooltipSize, setTooltipSize] = useState({ width: 56, height: 32 });
+  const gestureState = useRef({
+    startX: 0,
+    startY: 0,
+    active: false,
+  });
   const axisWidth = CHART_AXIS_WIDTH;
   const height = 186;
   const plotWidth = Math.max(190, chartWidth - axisWidth);
@@ -674,6 +717,36 @@ function MetricLineChart({
     setCursorX(x);
   };
 
+  const beginGesture = (event) => {
+    gestureState.current.startX = event.nativeEvent.locationX;
+    gestureState.current.startY = event.nativeEvent.locationY;
+    gestureState.current.active = true;
+    updateCursor(event.nativeEvent.locationX);
+  };
+
+  const resetGesture = () => {
+    gestureState.current.active = false;
+  };
+
+  const shouldCaptureGesture = (event) => {
+    const { active, startX, startY } = gestureState.current;
+    if (!active) {
+      gestureState.current.startX = event.nativeEvent.locationX;
+      gestureState.current.startY = event.nativeEvent.locationY;
+      gestureState.current.active = true;
+      return false;
+    }
+
+    const dx = Math.abs(event.nativeEvent.locationX - startX);
+    const dy = Math.abs(event.nativeEvent.locationY - startY);
+
+    if (dx < 8 && dy < 8) {
+      return false;
+    }
+
+    return dx > dy * 1.15;
+  };
+
   return (
     <View style={styles.chartFrame}>
       <View style={[styles.axisColumn, styles.tightAxisColumn, { width: axisWidth, height }]}>
@@ -689,10 +762,13 @@ function MetricLineChart({
 
       <View
         style={[styles.barPlot, { width: plotWidth, height }]}
-        onStartShouldSetResponder={() => true}
-        onMoveShouldSetResponder={() => true}
-        onResponderGrant={(event) => updateCursor(event.nativeEvent.locationX)}
+        onStartShouldSetResponder={() => false}
+        onMoveShouldSetResponderCapture={shouldCaptureGesture}
+        onResponderGrant={beginGesture}
         onResponderMove={(event) => updateCursor(event.nativeEvent.locationX)}
+        onResponderRelease={resetGesture}
+        onResponderTerminate={resetGesture}
+        onResponderTerminationRequest={() => false}
       >
         {ticks.map((tickValue, index) => {
           const top = paddingTop + (plotHeight / (ticks.length - 1 || 1)) * index;
