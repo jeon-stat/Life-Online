@@ -342,7 +342,7 @@ function buildDistributionData(records) {
   const values = records.map((record) => Math.max(0, Number(record.steps ?? 0)));
   const minValue = values.length ? Math.min(...values) : 0;
   const maxValue = values.length ? Math.max(...values) : 0;
-  const bucketSize = 2000;
+  const bucketSize = 1000;
   const start = Math.floor(minValue / bucketSize) * bucketSize;
   const end = Math.ceil(maxValue / bucketSize) * bucketSize;
   const safeEnd = Math.max(start, end);
@@ -365,19 +365,16 @@ function buildDistributionData(records) {
 
 function formatDistributionBucketLabel(value) {
   const numeric = Math.max(0, Math.floor(Number(value ?? 0)));
-  if (numeric === 0) {
-    return "0";
-  }
   if (numeric < 10000) {
-    return `${Math.floor(numeric / 1000)}천`;
+    return `${Math.floor(numeric / 1000)}천보`;
   }
 
   const tenThousands = Math.floor(numeric / 10000);
   const thousands = Math.floor((numeric % 10000) / 1000);
   if (thousands === 0) {
-    return `${tenThousands}만`;
+    return `${tenThousands}만보`;
   }
-  return `${tenThousands}만 ${thousands}천`;
+  return `${tenThousands}만 ${thousands}천보`;
 }
 
 function buildAveragePatternData(records, mode) {
@@ -819,7 +816,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
       formatTooltipValue={(value) => `${value}개`}
       formatTooltipLabel={(label) => label}
       xLabelClassName="compact"
-      xLabelEvery={1}
+      xLabelEvery={2}
     />
   );
 }
