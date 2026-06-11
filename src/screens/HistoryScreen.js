@@ -606,6 +606,7 @@ function MetricLineChart({
 }) {
   const [activeIndex, setActiveIndex] = useState(Math.max(0, items.length - 1));
   const [cursorX, setCursorX] = useState(null);
+  const [tooltipSize, setTooltipSize] = useState({ width: 56, height: 32 });
   const axisWidth = 24;
   const height = 186;
   const plotWidth = Math.max(190, chartWidth - axisWidth);
@@ -631,7 +632,7 @@ function MetricLineChart({
   const activeLineX = cursorX ?? activeBar?.centerX ?? plotWidth / 2;
   const tooltipPositionForBar = activeBar
     ? {
-        left: Math.max(0, Math.min(activeLineX - 28, plotWidth - 56)),
+        left: Math.max(0, Math.min(activeLineX - tooltipSize.width / 2, plotWidth - tooltipSize.width)),
         top: Math.max(0, paddingTop + 2),
       }
     : null;
@@ -719,18 +720,30 @@ function MetricLineChart({
                 style={[styles.histColumn, { width: track.slotWidth }]}
               >
                 <View style={styles.histBarArea}>
-                  {isActive && tooltipPositionForBar ? (
-                    <View style={[styles.tooltip, styles.histTooltip, tooltipPositionForBar]}>
-                      <Text style={styles.tooltipValue}>{formatTooltipValue(bar.value)}</Text>
-                      <Text style={styles.tooltipLabel}>{formatTooltipLabel(bar.label)}</Text>
-                    </View>
-                  ) : null}
                   <View style={[styles.histBar, { height: Math.max(6, bar.barHeight) }]} />
                 </View>
               </Pressable>
             );
           })}
         </View>
+
+        {isTooltipVisible(tooltipPositionForBar) ? (
+          <View
+            pointerEvents="none"
+            style={[styles.tooltip, styles.histTooltip, tooltipPositionForBar]}
+            onLayout={(event) => {
+              const { width, height: measuredHeight } = event.nativeEvent.layout;
+              setTooltipSize((current) =>
+                current.width === width && current.height === measuredHeight
+                  ? current
+                  : { width, height: measuredHeight },
+              );
+            }}
+          >
+            <Text style={styles.tooltipValue}>{formatTooltipValue(activeBar.value)}</Text>
+            <Text style={styles.tooltipLabel}>{formatTooltipLabel(activeBar.label)}</Text>
+          </View>
+        ) : null}
 
         <View
           style={[
@@ -762,6 +775,10 @@ function MetricLineChart({
       </View>
     </View>
   );
+}
+
+function isTooltipVisible(position) {
+  return Boolean(position);
 }
 
 function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
