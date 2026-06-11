@@ -88,7 +88,7 @@ export function HistoryScreen() {
               </View>
             </View>
 
-            <SubSection title="걸음 추이">
+            <SubSection title="걸음 기록">
               <TabRow tabs={TREND_PERIOD_TABS} activeId={trendPeriod} onChange={setTrendPeriod} />
               <TrendLineChart records={trendRecords} width={chartWidth} onGestureLockChange={setChartsScrollLocked} />
             </SubSection>
@@ -103,7 +103,7 @@ export function HistoryScreen() {
               />
             </SubSection>
 
-            <SubSection title="평균 패턴">
+            <SubSection title="평균 걸음">
               <TabRow tabs={AVERAGE_PATTERN_TABS} activeId={averagePatternMode} onChange={setAveragePatternMode} />
               <AveragePatternChart
                 mode={averagePatternMode}
@@ -1356,7 +1356,7 @@ const styles = StyleSheet.create({
   histBar: {
     width: "100%",
     backgroundColor: "#ffffff",
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: "#111111",
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
@@ -1364,8 +1364,8 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 0,
   },
   histBarActive: {
-    borderWidth: 2,
-    borderColor: "#0f0f0f",
+    borderWidth: 3,
+    borderColor: "#000000",
     backgroundColor: "#fbfbf8",
   },
   histXAxisLabel: {
