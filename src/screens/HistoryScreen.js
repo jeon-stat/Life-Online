@@ -438,11 +438,14 @@ function getTrendAxisMax(maxValue) {
 }
 
 function getCountAxisMax(periodId, maxCount) {
-  const floor = periodId === "7d" ? 5 : periodId === "30d" ? 20 : 40;
-  if (maxCount <= floor) {
-    return floor;
-  }
-  return Math.max(floor, Math.ceil(maxCount / 5) * 5);
+  const baseTarget = getCountAxisBaseTarget(periodId);
+  const normalizedMax = Math.max(baseTarget, Math.max(0, Number(maxCount ?? 0)));
+  return Math.ceil(normalizedMax / 4) * 4;
+}
+
+function getCountAxisBaseTarget(periodId) {
+  const days = periodId === "7d" ? 7 : periodId === "30d" ? 30 : 365;
+  return Math.ceil((days / 2) / 4) * 4;
 }
 
 function getPatternAxisMax(maxValue) {
