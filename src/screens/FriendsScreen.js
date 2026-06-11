@@ -52,13 +52,10 @@ const LONG_TERM_META = {
 const FRIEND_GROUP_STORE = {
   groups: [],
   friendGroupState: {},
-  friendGroupJoinedAt: {},
   customFriends: [],
   removedFriendIds: [],
   selectedGroupId: null,
 };
-
-const CURRENT_FRIEND_ID = "friend-me";
 
 export function FriendsScreen() {
   const { currentUser } = useAuth();
@@ -69,9 +66,6 @@ export function FriendsScreen() {
   const [rankMode, setRankMode] = useState("daily");
   const [groups, setGroups] = useState(() => FRIEND_GROUP_STORE.groups.map((group) => ({ ...group })));
   const [friendGroupState, setFriendGroupState] = useState(() => ({ ...FRIEND_GROUP_STORE.friendGroupState }));
-  const [friendGroupJoinedAt, setFriendGroupJoinedAt] = useState(() => ({
-    ...FRIEND_GROUP_STORE.friendGroupJoinedAt,
-  }));
   const [selectedGroupId, setSelectedGroupId] = useState(() => FRIEND_GROUP_STORE.selectedGroupId ?? null);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupCode, setNewGroupCode] = useState("");
@@ -86,7 +80,6 @@ export function FriendsScreen() {
   const [customFriends, setCustomFriends] = useState(() => FRIEND_GROUP_STORE.customFriends.map((friend) => ({ ...friend })));
   const [removedFriendIds, setRemovedFriendIds] = useState(() => [...(FRIEND_GROUP_STORE.removedFriendIds ?? [])]);
   const [showFriendDeleteConfirm, setShowFriendDeleteConfirm] = useState(false);
-  const [showGroupKickConfirm, setShowGroupKickConfirm] = useState(false);
 
   const characterViewState = useMemo(
     () => buildCharacterViewModel({ todayRecord: today, history, goal, admin }),
@@ -156,10 +149,6 @@ export function FriendsScreen() {
     () => groups.find((group) => group.id === selectedGroupId) ?? null,
     [groups, selectedGroupId],
   );
-  const selectedFriendGroupJoinedAt = useMemo(
-    () => getFriendGroupJoinedDate(friendGroupJoinedAt, selectedFriend?.id, selectedGroup?.id),
-    [friendGroupJoinedAt, selectedFriend?.id, selectedGroup?.id],
-  );
 
   useEffect(() => {
     setRenameGroupName(selectedGroup && !selectedGroup.system ? selectedGroup.name : "");
@@ -175,12 +164,6 @@ export function FriendsScreen() {
       Object.entries(friendGroupState ?? {}).map(([friendId, groupIds]) => [friendId, [...(groupIds ?? [])]]),
     );
   }, [friendGroupState]);
-
-  useEffect(() => {
-    FRIEND_GROUP_STORE.friendGroupJoinedAt = Object.fromEntries(
-      Object.entries(friendGroupJoinedAt ?? {}).map(([friendId, groupMap]) => [friendId, { ...(groupMap ?? {}) }]),
-    );
-  }, [friendGroupJoinedAt]);
 
   useEffect(() => {
     FRIEND_GROUP_STORE.customFriends = customFriends.map((friend) => ({ ...friend }));
@@ -278,18 +261,10 @@ export function FriendsScreen() {
 
     const code = generateGroupCode(groups);
     const id = makeGroupId(name, groups);
-    const joinedAt = getTodayDateStamp(today);
-    setGroups((current) => [...current, { id, name, code, system: false, leaderId: CURRENT_FRIEND_ID }]);
+    setGroups((current) => [...current, { id, name, code, system: false, leaderId: "friend-me" }]);
     setFriendGroupState((current) => ({
       ...current,
-      [CURRENT_FRIEND_ID]: Array.from(new Set([...(current[CURRENT_FRIEND_ID] ?? []), id])),
-    }));
-    setFriendGroupJoinedAt((current) => ({
-      ...current,
-      [CURRENT_FRIEND_ID]: {
-        ...(current[CURRENT_FRIEND_ID] ?? {}),
-        [id]: joinedAt,
-      },
+      "friend-me": Array.from(new Set([...(current["friend-me"] ?? []), id])),
     }));
     setSelectedGroupId(id);
     setNewGroupName("");
@@ -311,18 +286,10 @@ export function FriendsScreen() {
       return;
     }
 
-    const joinedAt = getTodayDateStamp(today);
     setSelectedGroupId(matchedGroup.id);
     setFriendGroupState((current) => ({
       ...current,
-      [CURRENT_FRIEND_ID]: Array.from(new Set([...(current[CURRENT_FRIEND_ID] ?? []), matchedGroup.id])),
-    }));
-    setFriendGroupJoinedAt((current) => ({
-      ...current,
-      [CURRENT_FRIEND_ID]: {
-        ...(current[CURRENT_FRIEND_ID] ?? {}),
-        [matchedGroup.id]: joinedAt,
-      },
+      "friend-me": Array.from(new Set([...(current["friend-me"] ?? []), matchedGroup.id])),
     }));
     setGroupJoinMessage(`${matchedGroup.name} 그룹에 들어갔어요.`);
   };
@@ -340,34 +307,9 @@ export function FriendsScreen() {
 
     setGroups((current) => current.filter((group) => group.id !== selectedGroup.id));
     setFriendGroupState((current) => removeGroupFromAllFriends(current, selectedGroup.id));
-    setFriendGroupJoinedAt((current) => removeGroupFromAllFriendJoinDates(current, selectedGroup.id));
     setSelectedGroupId(null);
     setShowGroupRename(false);
     setShowDeleteConfirm(false);
-  };
-
-  const kickFriendFromGroup = () => {
-    if (!selectedFriend || !selectedGroup) return;
-
-    const friendId = selectedFriend.id;
-    const groupId = selectedGroup.id;
-
-    setFriendGroupState((current) => {
-      const next = { ...current };
-      const nextGroupIds = Array.from(new Set((next[friendId] ?? []).filter((id) => id !== groupId)));
-
-      if (nextGroupIds.length) {
-        next[friendId] = nextGroupIds;
-      } else {
-        delete next[friendId];
-      }
-
-      return next;
-    });
-
-    setFriendGroupJoinedAt((current) => removeGroupFromFriendJoinDates(current, friendId, groupId));
-    setSelectedFriendId(null);
-    setShowGroupKickConfirm(false);
   };
 
   const deleteFriend = () => {
@@ -376,11 +318,6 @@ export function FriendsScreen() {
     const friendId = selectedFriend.id;
     setCustomFriends((current) => current.filter((friend) => friend.id !== friendId));
     setFriendGroupState((current) => {
-      const next = { ...current };
-      delete next[friendId];
-      return next;
-    });
-    setFriendGroupJoinedAt((current) => {
       const next = { ...current };
       delete next[friendId];
       return next;
@@ -772,30 +709,11 @@ export function FriendsScreen() {
                         </Pressable>
                       </View>
                     </>
-                  ) : viewMode === "groups" ? (
-                    <>
-                      <View style={styles.modalStatsRow}>
-                        <StatBlock label="??? ??? ?" value={formatGroupJoinedDate(selectedFriendGroupJoinedAt)} />
-                      </View>
-                      {selectedGroup?.leaderId === CURRENT_FRIEND_ID && selectedFriend.id !== CURRENT_FRIEND_ID ? (
-                        <View style={styles.modalDeleteRow}>
-                          <Pressable
-                            onPress={() => setShowGroupKickConfirm(true)}
-                            style={({ pressed }) => [
-                              styles.friendDeleteButton,
-                              pressed && styles.friendDeleteButtonPressed,
-                            ]}
-                          >
-                            <Text style={styles.friendDeleteButtonLabel}>??, ??</Text>
-                          </Pressable>
-                        </View>
-                      ) : null}
-                    </>
                   ) : (
                     <View style={styles.modalStatsRow}>
-                      <StatBlock label="?? 7?" value={`${formatNumber(selectedFriend.weeklySteps)}?`} />
-                      <StatBlock label="??" value={`${selectedFriend.streak}?`} />
-                      <StatBlock label="??" value={getLongTermLabel(selectedFriend.longTermState)} />
+                      <StatBlock label="최근 7일" value={`${formatNumber(selectedFriend.weeklySteps)}보`} />
+                      <StatBlock label="연속" value={`${selectedFriend.streak}일`} />
+                      <StatBlock label="상태" value={getLongTermLabel(selectedFriend.longTermState)} />
                     </View>
                   )}
                 </ScrollView>
@@ -851,28 +769,6 @@ export function FriendsScreen() {
                 style={styles.dangerButton}
               >
                 <Text style={styles.dangerButtonLabel}>삭제</Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      <Modal
-        visible={showGroupKickConfirm}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowGroupKickConfirm(false)}
-      >
-        <Pressable style={styles.modalBackdrop} onPress={() => setShowGroupKickConfirm(false)}>
-          <Pressable style={styles.deleteConfirmCard} onPress={() => null}>
-            <Text style={styles.deleteConfirmTitle}>?? ??????</Text>
-            <Text style={styles.deleteConfirmText}>? ??? ???? ???? ?? ???? ??? ???? ???.</Text>
-            <View style={styles.deleteConfirmRow}>
-              <Pressable onPress={() => setShowGroupKickConfirm(false)} style={[styles.secondaryButton, styles.deleteConfirmButton]}>
-                <Text style={styles.secondaryButtonLabel}>??</Text>
-              </Pressable>
-              <Pressable onPress={kickFriendFromGroup} style={[styles.dangerButton, styles.deleteConfirmButton]}>
-                <Text style={styles.dangerButtonLabel}>??, ??</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -993,65 +889,6 @@ function removeGroupFromAllFriends(groupState, groupId) {
   }
 
   return next;
-}
-
-function removeGroupFromFriendJoinDates(joinedAtState, friendId, groupId) {
-  const next = { ...(joinedAtState ?? {}) };
-  const friendMap = { ...(next[friendId] ?? {}) };
-  delete friendMap[groupId];
-
-  if (Object.keys(friendMap).length) {
-    next[friendId] = friendMap;
-  } else {
-    delete next[friendId];
-  }
-
-  return next;
-}
-
-function removeGroupFromAllFriendJoinDates(joinedAtState, groupId) {
-  const next = {};
-
-  for (const [friendId, groupMap] of Object.entries(joinedAtState ?? {})) {
-    const nextGroupMap = { ...(groupMap ?? {}) };
-    delete nextGroupMap[groupId];
-
-    if (Object.keys(nextGroupMap).length) {
-      next[friendId] = nextGroupMap;
-    }
-  }
-
-  return next;
-}
-
-function getFriendGroupJoinedDate(joinedAtState, friendId, groupId) {
-  if (!friendId || !groupId) {
-    return null;
-  }
-
-  return joinedAtState?.[friendId]?.[groupId] ?? null;
-}
-
-function getTodayDateStamp(today) {
-  const raw = String(today?.date ?? "").trim();
-  if (raw) {
-    return raw.slice(0, 10);
-  }
-
-  return new Date().toISOString().slice(0, 10);
-}
-
-function formatGroupJoinedDate(joinedAt) {
-  if (!joinedAt) {
-    return "?? ??";
-  }
-
-  const date = new Date(joinedAt);
-  if (Number.isNaN(date.getTime())) {
-    return "?? ??";
-  }
-
-  return String(joinedAt).slice(0, 10).replaceAll("-", ".");
 }
 
 function makeGroupId(name, groups) {
