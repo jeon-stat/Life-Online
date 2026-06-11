@@ -80,13 +80,8 @@ export function HistoryScreen() {
       {storyTab === "footprints" ? (
         <>
           <Section title="개인 발자국">
-            <View style={styles.summaryPanel}>
-              <View style={styles.summaryGrid}>
-                <SummaryStat icon="👣" label="총 걸음" value={`${formatNumber(personalOverview.totalSteps)}보`} />
-                <SummaryStat icon="📈" label="평균" value={`${formatNumber(personalOverview.averageSteps)}보`} />
-                <SummaryStat icon="🏅" label="최고" value={`${formatNumber(personalOverview.bestSteps)}보`} />
-                <SummaryStat icon="🔥" label="연속" value={`${personalOverview.streak}일`} />
-              </View>
+                        <View style={styles.summaryPanelCompact}>
+              <Text style={styles.summaryInlineText}>{`이번 주 발자국은 총 ${formatNumber(personalOverview.totalSteps)}보, 하루 평균 ${formatNumber(personalOverview.averageSteps)}보, 최고 ${formatNumber(personalOverview.bestSteps)}보, 연속 ${personalOverview.streak}일이에요.`}</Text>
             </View>
 
             <SubSection title="걸음 추이">
@@ -922,7 +917,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280, onG
       yMax={maxCount}
       yTicks={getAxisTicks(maxCount)}
       formatYAxisLabel={formatCountAxisLabel}
-      formatTooltipValue={(value) => `${value}개`}
+      formatTooltipValue={(value) => `${value}번`}
       formatTooltipLabel={(label) => label}
       xLabelClassName="compact"
       xLabelEvery={2}
@@ -1091,6 +1086,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "900",
     fontFamily: theme.fonts.display,
+  },
+  summaryPanelCompact: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: theme.radius.md,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  summaryInlineText: {
+    color: theme.colors.ink,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
   },
   summaryPanel: {
     gap: 8,
