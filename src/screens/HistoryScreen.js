@@ -80,8 +80,12 @@ export function HistoryScreen() {
       {storyTab === "footprints" ? (
         <>
           <Section title="개인 발자국">
-                        <View style={styles.summaryPanelCompact}>
-              <Text style={styles.summaryInlineText}>{`이번 주 발자국은 총 ${formatNumber(personalOverview.totalSteps)}보, 하루 평균 ${formatNumber(personalOverview.averageSteps)}보, 최고 ${formatNumber(personalOverview.bestSteps)}보, 연속 ${personalOverview.streak}일이에요.`}</Text>
+            <View style={styles.summaryPanel}>
+              <View style={styles.summaryGrid}>
+                <SummaryStat icon="👣" label="총 걸음" value={`${formatNumber(personalOverview.totalSteps)}보`} />
+                <SummaryStat icon="🏅" label="최고 걸음" value={`${formatNumber(personalOverview.bestSteps)}보`} />
+                <SummaryStat icon="🔥" label="최고 연속" value={`${personalOverview.streak}일`} />
+              </View>
             </View>
 
             <SubSection title="걸음 추이">
@@ -1087,21 +1091,6 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     fontFamily: theme.fonts.display,
   },
-  summaryPanelCompact: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  summaryInlineText: {
-    color: theme.colors.ink,
-    fontSize: 12,
-    lineHeight: 17,
-    fontWeight: "800",
-    fontFamily: theme.fonts.body,
-  },
   summaryPanel: {
     gap: 8,
   },
@@ -1111,7 +1100,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   summaryStat: {
-    width: "48.5%",
+    width: "32.5%",
     borderRadius: theme.radius.md,
     paddingHorizontal: 12,
     paddingVertical: 10,
