@@ -46,6 +46,7 @@ export function HistoryScreen() {
   const [trendPeriod, setTrendPeriod] = useState("7d");
   const [distributionPeriod, setDistributionPeriod] = useState("7d");
   const [averagePatternMode, setAveragePatternMode] = useState("time");
+  const [chartsScrollLocked, setChartsScrollLocked] = useState(false);
 
   const streak = useMemo(() => getStreak(history, goal), [history, goal]);
   const achievementCards = useMemo(() => getMemories(history, goal, 3), [goal, history]);
@@ -62,7 +63,12 @@ export function HistoryScreen() {
   const chartWidth = Math.max(260, Math.floor(width - theme.spacing.md * 2));
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}
+      scrollEnabled={!chartsScrollLocked}
+    >
       <View style={styles.pageTitleWrap}>
         <Text style={styles.pageTitle}>추억</Text>
       </View>
@@ -85,17 +91,27 @@ export function HistoryScreen() {
 
             <SubSection title="걸음 추이">
               <TabRow tabs={TREND_PERIOD_TABS} activeId={trendPeriod} onChange={setTrendPeriod} />
-              <TrendLineChart records={trendRecords} width={chartWidth} />
+              <TrendLineChart records={trendRecords} width={chartWidth} onGestureLockChange={setChartsScrollLocked} />
             </SubSection>
 
             <SubSection title="걸음 분포">
               <TabRow tabs={DISTRIBUTION_PERIOD_TABS} activeId={distributionPeriod} onChange={setDistributionPeriod} />
-              <StepDistributionChart periodId={distributionPeriod} records={distributionRecords} width={chartWidth} />
+              <StepDistributionChart
+                periodId={distributionPeriod}
+                records={distributionRecords}
+                width={chartWidth}
+                onGestureLockChange={setChartsScrollLocked}
+              />
             </SubSection>
 
             <SubSection title="평균 패턴">
               <TabRow tabs={AVERAGE_PATTERN_TABS} activeId={averagePatternMode} onChange={setAveragePatternMode} />
-              <AveragePatternChart mode={averagePatternMode} records={averagePatternRecords} width={chartWidth} />
+              <AveragePatternChart
+                mode={averagePatternMode}
+                records={averagePatternRecords}
+                width={chartWidth}
+                onGestureLockChange={setChartsScrollLocked}
+              />
             </SubSection>
           </Section>
 
@@ -473,7 +489,7 @@ function getCenteredTrackLayout(totalWidth, itemCount, fillRatio) {
   };
 }
 
-function TrendLineChart({ records, width: chartWidth = 280 }) {
+function TrendLineChart({ records, width: chartWidth = 280, onGestureLockChange = () => {} }) {
   const [activeIndex, setActiveIndex] = useState(() => Math.max(0, records.length - 1));
   const [cursorX, setCursorX] = useState(null);
   const gestureState = useRef({
@@ -534,6 +550,7 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
   };
 
   const beginGesture = (event) => {
+    onGestureLockChange(true);
     gestureState.current.startX = event.nativeEvent.locationX;
     gestureState.current.startY = event.nativeEvent.locationY;
     gestureState.current.active = true;
@@ -542,6 +559,7 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
 
   const resetGesture = () => {
     gestureState.current.active = false;
+    onGestureLockChange(false);
   };
 
   const shouldCaptureGesture = (event) => {
@@ -560,7 +578,11 @@ function TrendLineChart({ records, width: chartWidth = 280 }) {
       return false;
     }
 
-    return dx > dy * 1.15;
+    const shouldLock = dx > dy * 1.15;
+    if (shouldLock) {
+      onGestureLockChange(true);
+    }
+    return shouldLock;
   };
 
   return (
@@ -657,6 +679,7 @@ function MetricLineChart({
   formatTooltipLabel,
   xLabelClassName = "compact",
   xLabelEvery = 1,
+  onGestureLockChange = () => {},
 }) {
   const [activeIndex, setActiveIndex] = useState(Math.max(0, items.length - 1));
   const [cursorX, setCursorX] = useState(null);
@@ -718,6 +741,7 @@ function MetricLineChart({
   };
 
   const beginGesture = (event) => {
+    onGestureLockChange(true);
     gestureState.current.startX = event.nativeEvent.locationX;
     gestureState.current.startY = event.nativeEvent.locationY;
     gestureState.current.active = true;
@@ -726,6 +750,7 @@ function MetricLineChart({
 
   const resetGesture = () => {
     gestureState.current.active = false;
+    onGestureLockChange(false);
   };
 
   const shouldCaptureGesture = (event) => {
@@ -744,7 +769,11 @@ function MetricLineChart({
       return false;
     }
 
-    return dx > dy * 1.15;
+    const shouldLock = dx > dy * 1.15;
+    if (shouldLock) {
+      onGestureLockChange(true);
+    }
+    return shouldLock;
   };
 
   return (
@@ -879,7 +908,7 @@ function isTooltipVisible(position) {
   return Boolean(position);
 }
 
-function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
+function StepDistributionChart({ records, periodId, width: chartWidth = 280, onGestureLockChange = () => {} }) {
   const buckets = buildDistributionData(records);
   const maxCount = getCountAxisMax(periodId, Math.max(1, ...buckets.map((bucket) => bucket.count)));
 
@@ -897,11 +926,12 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
       formatTooltipLabel={(label) => label}
       xLabelClassName="compact"
       xLabelEvery={2}
+      onGestureLockChange={onGestureLockChange}
     />
   );
 }
 
-function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
+function AveragePatternChart({ records, mode, width: chartWidth = 280, onGestureLockChange = () => {} }) {
   const data = buildAveragePatternData(records, mode);
   const maxValue = getPatternAxisMax(Math.max(0, ...data.map((item) => item.value)));
 
@@ -916,6 +946,7 @@ function AveragePatternChart({ records, mode, width: chartWidth = 280 }) {
       formatTooltipLabel={(label) => label}
       xLabelClassName="wide"
       xLabelEvery={1}
+      onGestureLockChange={onGestureLockChange}
     />
   );
 }
