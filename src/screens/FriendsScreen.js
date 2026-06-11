@@ -26,9 +26,9 @@ import { theme } from "../constants/theme.js";
 import { FriendCharacterPreview } from "../components/FriendCharacterPreview";
 
 const VIEW_TABS = [
-  { id: "ranking", label: "랭킹" },
   { id: "friends", label: "친구 관리" },
   { id: "groups", label: "그룹 관리" },
+  { id: "ranking", label: "랭킹" },
 ];
 
 const RANK_TABS = [
