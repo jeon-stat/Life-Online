@@ -342,20 +342,21 @@ function buildDistributionData(records) {
   const values = records.map((record) => Math.max(0, Number(record.steps ?? 0)));
   const minValue = values.length ? Math.min(...values) : 0;
   const maxValue = values.length ? Math.max(...values) : 0;
-  const start = Math.floor(minValue / 1000) * 1000;
-  const end = Math.ceil(maxValue / 1000) * 1000;
+  const bucketSize = 2000;
+  const start = Math.floor(minValue / bucketSize) * bucketSize;
+  const end = Math.ceil(maxValue / bucketSize) * bucketSize;
   const safeEnd = Math.max(start, end);
-  const bucketCount = Math.max(1, Math.floor((safeEnd - start) / 1000) + 1);
+  const bucketCount = Math.max(1, Math.floor((safeEnd - start) / bucketSize) + 1);
 
   const buckets = Array.from({ length: bucketCount }, (_, index) => ({
     bucket: index,
-    value: start + index * 1000,
-    label: formatDistributionBucketLabel(start + index * 1000),
+    value: start + index * bucketSize,
+    label: formatDistributionBucketLabel(start + index * bucketSize),
     count: 0,
   }));
 
   for (const steps of values) {
-    const bucketIndex = Math.min(bucketCount - 1, Math.max(0, Math.floor((steps - start) / 1000)));
+    const bucketIndex = Math.min(bucketCount - 1, Math.max(0, Math.floor((steps - start) / bucketSize)));
     buckets[bucketIndex].count += 1;
   }
 
@@ -364,6 +365,9 @@ function buildDistributionData(records) {
 
 function formatDistributionBucketLabel(value) {
   const numeric = Math.max(0, Math.floor(Number(value ?? 0)));
+  if (numeric === 0) {
+    return "0";
+  }
   if (numeric < 10000) {
     return `${Math.floor(numeric / 1000)}천`;
   }
@@ -815,7 +819,7 @@ function StepDistributionChart({ records, periodId, width: chartWidth = 280 }) {
       formatTooltipValue={(value) => `${value}개`}
       formatTooltipLabel={(label) => label}
       xLabelClassName="compact"
-      xLabelEvery={3}
+      xLabelEvery={1}
     />
   );
 }
@@ -903,14 +907,7 @@ function formatTrendShortLabel(value, isToday) {
 
 function formatCountAxisLabel(value) {
   const numeric = Math.max(0, Math.floor(Number(value ?? 0)));
-  if (numeric === 0) {
-    return "0";
-  }
-  if (numeric < 1000) {
-    return String(numeric);
-  }
-  const thousands = Math.floor(numeric / 1000);
-  return `${thousands}천`;
+  return `${numeric}개`;
 }
 
 const styles = StyleSheet.create({
@@ -1281,8 +1278,8 @@ const styles = StyleSheet.create({
   },
   histXAxisLabelWide: {
     color: theme.colors.inkSoft,
-    fontSize: 11,
-    lineHeight: 13,
+    fontSize: 9,
+    lineHeight: 11,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
     textAlign: "center",
