@@ -880,6 +880,7 @@ function MetricLineChart({
               marginTop: 6,
             },
           ]}
+          pointerEvents="none"
         >
           {bars.map((bar, index) =>
             index % xLabelEvery === 0 ? (
@@ -1340,6 +1341,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     overflow: "visible",
     marginTop: 4,
+    zIndex: 0,
   },
   histColumn: {
     minWidth: 0,
