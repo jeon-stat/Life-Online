@@ -62,7 +62,7 @@ export function FriendsScreen() {
   const { today, history, goal, admin } = useStepData();
   const { width } = useWindowDimensions();
 
-  const [viewMode, setViewMode] = useState("ranking");
+  const [viewMode, setViewMode] = useState("friends");
   const [rankMode, setRankMode] = useState("daily");
   const [groups, setGroups] = useState(() => FRIEND_GROUP_STORE.groups.map((group) => ({ ...group })));
   const [friendGroupState, setFriendGroupState] = useState(() => ({ ...FRIEND_GROUP_STORE.friendGroupState }));
