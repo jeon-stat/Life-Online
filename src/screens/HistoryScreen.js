@@ -631,7 +631,7 @@ function MetricLineChart({
   const activeLineX = cursorX ?? activeBar?.centerX ?? plotWidth / 2;
   const tooltipPositionForBar = activeBar
     ? {
-        left: Math.max(0, Math.min(activeBar.centerX - 28, plotWidth - 56)),
+        left: Math.max(0, Math.min(activeLineX - 28, plotWidth - 56)),
         top: Math.max(0, paddingTop + 2),
       }
     : null;
