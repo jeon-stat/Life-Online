@@ -417,6 +417,16 @@ function buildAveragePatternData(records, mode) {
   const counts = labels.map(() => 0);
 
   for (const record of records) {
+    if (Array.isArray(record.hourlySteps) && record.hourlySteps.length >= 24) {
+      labels.forEach((_, index) => {
+        const startHour = index * 3;
+        const bucketTotal = record.hourlySteps.slice(startHour, startHour + 3).reduce((sum, value) => sum + Number(value ?? 0), 0);
+        totals[index] += bucketTotal;
+        counts[index] += 1;
+      });
+      continue;
+    }
+
     const steps = Number(record.steps ?? 0);
     const weights = getTimeBucketWeights(steps);
     weights.forEach((weight, index) => {
