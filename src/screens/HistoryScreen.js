@@ -359,8 +359,8 @@ function buildDistributionData(records) {
   const minValue = values.length ? Math.min(...values) : 0;
   const maxValue = values.length ? Math.max(...values) : 0;
   const bucketSize = 1000;
-  const start = Math.max(0, Math.ceil(minValue / bucketSize) * bucketSize);
-  const end = Math.max(start, Math.floor(maxValue / bucketSize) * bucketSize);
+  const start = Math.max(0, Math.floor(minValue / bucketSize) * bucketSize - bucketSize);
+  const end = Math.max(start, Math.ceil(maxValue / bucketSize) * bucketSize + bucketSize);
   const safeEnd = Math.max(start, end);
   const bucketCount = Math.max(1, Math.floor((safeEnd - start) / bucketSize) + 1);
 
