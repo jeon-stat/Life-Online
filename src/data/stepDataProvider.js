@@ -23,6 +23,7 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
     selectedItemIdsByCategory: defaultSelectedItemIds,
     skinToneId: defaultSelectedItemIds.skinTone,
   }));
+  const [claimedMissionRewardIds, setClaimedMissionRewardIds] = useState([]);
   const [behaviorAdmin, setBehaviorAdmin] = useState(() => ({
     forcedEnergyLevel: null,
     forcedLongTermState: null,
@@ -98,6 +99,19 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
 
           return purchaseStatus;
         },
+        grantCoins: (amount = 0) => {
+          const coinAmount = Math.max(0, Math.floor(Number(amount ?? 0)));
+          if (!coinAmount) {
+            return 0;
+          }
+
+          setShopState((current) => ({
+            ...current,
+            coinBalance: current.coinBalance + coinAmount,
+          }));
+
+          return coinAmount;
+        },
         setSkinTone: (nextSkinToneId) => {
           setShopState((current) => ({
             ...current,
@@ -107,6 +121,35 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
               skinTone: nextSkinToneId,
             },
           }));
+        },
+      },
+      missionRewards: {
+        claimedIds: claimedMissionRewardIds,
+        isClaimed: (missionId) => claimedMissionRewardIds.includes(missionId),
+        claim: ({ missionId, coins = 0 }) => {
+          if (!missionId) {
+            return false;
+          }
+
+          let didClaim = false;
+          const coinAmount = Math.max(0, Math.floor(Number(coins ?? 0)));
+          setClaimedMissionRewardIds((current) => {
+            if (current.includes(missionId)) {
+              return current;
+            }
+
+            didClaim = true;
+            return [...current, missionId];
+          });
+
+          if (didClaim && coinAmount > 0) {
+            setShopState((current) => ({
+              ...current,
+              coinBalance: current.coinBalance + coinAmount,
+            }));
+          }
+
+          return didClaim;
         },
       },
       admin: {
@@ -171,7 +214,17 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
         },
       },
     }),
-    [adminEnabled, adminVisible, behaviorAdmin, history, isMockMode, mode, shopState, today],
+    [
+      adminEnabled,
+      adminVisible,
+      behaviorAdmin,
+      claimedMissionRewardIds,
+      history,
+      isMockMode,
+      mode,
+      shopState,
+      today,
+    ],
   );
 
   return <StepDataContext.Provider value={value}>{children}</StepDataContext.Provider>;

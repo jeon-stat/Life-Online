@@ -39,7 +39,7 @@ const TREND_AXIS_TICKS = [1, 0.75, 0.5, 0.25, 0];
 const CHART_AXIS_WIDTH = 40;
 
 export function HistoryScreen() {
-  const { history, goal } = useStepData();
+  const { history, goal, missionRewards } = useStepData();
   const { width } = useWindowDimensions();
   const [storyTab, setStoryTab] = useState("footprints");
   const [achievementTab, setAchievementTab] = useState("mission");
@@ -61,6 +61,8 @@ export function HistoryScreen() {
   );
   const averagePatternRecords = trendRecords;
   const chartWidth = Math.max(260, Math.floor(width - theme.spacing.md * 2));
+  const claimMissionReward = missionRewards?.claim ?? null;
+  const isMissionRewardClaimed = missionRewards?.isClaimed ?? (() => false);
 
   return (
     <ScrollView
@@ -168,11 +170,40 @@ export function HistoryScreen() {
 
                           <View style={styles.missionProgressRow}>
                             <Text style={styles.missionProgressText}>{card.progressText}</Text>
-                            <Text style={styles.missionRewardText}>{card.reward}</Text>
                           </View>
 
                           <View style={styles.missionProgressTrack}>
                             <View style={[styles.missionProgressFill, { width: `${Math.max(0, Math.min(100, card.progress * 100))}%` }]} />
+                          </View>
+
+                          <View style={styles.missionActionRow}>
+                            <Pressable
+                              onPress={() => {
+                                if (!card.completed || isMissionRewardClaimed(card.key) || !claimMissionReward) {
+                                  return;
+                                }
+
+                                claimMissionReward({ missionId: card.key, coins: card.rewardCoins });
+                              }}
+                              disabled={!card.completed || isMissionRewardClaimed(card.key)}
+                              style={({ pressed }) => [
+                                styles.missionClaimButton,
+                                card.completed && !isMissionRewardClaimed(card.key) && styles.missionClaimButtonActive,
+                                (pressed && card.completed && !isMissionRewardClaimed(card.key)) && styles.missionClaimButtonPressed,
+                                (!card.completed || isMissionRewardClaimed(card.key)) && styles.missionClaimButtonDisabled,
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.missionClaimButtonLabel,
+                                  card.completed && !isMissionRewardClaimed(card.key) && styles.missionClaimButtonLabelActive,
+                                  (!card.completed || isMissionRewardClaimed(card.key)) && styles.missionClaimButtonLabelDisabled,
+                                ]}
+                              >
+                                {isMissionRewardClaimed(card.key) ? "받음" : card.completed ? "받기" : "진행중"}
+                              </Text>
+                            </Pressable>
+                            <Text style={styles.missionRewardText}>{card.rewardLabel}</Text>
                           </View>
                         </View>
                       ))}
@@ -308,7 +339,8 @@ function buildMissionModel({ history, goal, streak }) {
           title: "오늘 3,000보 걷기",
           currentValue: latestSteps,
           targetValue: 3000,
-          reward: "+30 코인",
+          rewardCoins: 30,
+          rewardLabel: "+30 코인",
           progressText: `${formatNumber(Math.min(latestSteps, 3000))} / 3,000보`,
         }),
         createMissionCard({
@@ -319,7 +351,8 @@ function buildMissionModel({ history, goal, streak }) {
           title: "오늘 목표 달성하기",
           currentValue: latestSteps,
           targetValue: goalValue,
-          reward: "+50 코인",
+          rewardCoins: 50,
+          rewardLabel: "+50 코인",
           progressText: `${formatNumber(Math.min(latestSteps, goalValue))} / ${formatNumber(goalValue)}보`,
         }),
         createMissionCard({
@@ -330,7 +363,8 @@ function buildMissionModel({ history, goal, streak }) {
           title: "오늘 8,000보 걷기",
           currentValue: latestSteps,
           targetValue: 8000,
-          reward: "+70 코인",
+          rewardCoins: 70,
+          rewardLabel: "+70 코인",
           progressText: `${formatNumber(Math.min(latestSteps, 8000))} / 8,000보`,
         }),
       ],
@@ -347,7 +381,8 @@ function buildMissionModel({ history, goal, streak }) {
           title: "이번 주 3일 달성",
           currentValue: goalDays,
           targetValue: 3,
-          reward: "+100 코인",
+          rewardCoins: 100,
+          rewardLabel: "+100 코인",
           progressText: `${Math.min(goalDays, 3)} / 3일`,
         }),
         createMissionCard({
@@ -358,7 +393,8 @@ function buildMissionModel({ history, goal, streak }) {
           title: "최근 7일 누적 40,000보",
           currentValue: weeklySteps,
           targetValue: 40000,
-          reward: "+특별 상자 1개",
+          rewardCoins: 150,
+          rewardLabel: "+150 코인",
           progressText: `${formatNumber(Math.min(weeklySteps, 40000))} / 40,000보`,
         }),
         createMissionCard({
@@ -369,7 +405,8 @@ function buildMissionModel({ history, goal, streak }) {
           title: "3일 연속 걷기",
           currentValue: streak,
           targetValue: 3,
-          reward: "+80 코인",
+          rewardCoins: 80,
+          rewardLabel: "+80 코인",
           progressText: `${Math.min(streak, 3)} / 3일`,
         }),
       ],
@@ -386,7 +423,8 @@ function buildMissionModel({ history, goal, streak }) {
           title: "최고 기록 10,000보 달성",
           currentValue: bestSteps,
           targetValue: 10000,
-          reward: "+특별 조각 1개",
+          rewardCoins: 200,
+          rewardLabel: "+200 코인",
           progressText: `${formatNumber(Math.min(bestSteps, 10000))} / 10,000보`,
         }),
         createMissionCard({
@@ -397,7 +435,8 @@ function buildMissionModel({ history, goal, streak }) {
           title: "한 달 누적 150,000보",
           currentValue: monthlySteps,
           targetValue: 150000,
-          reward: "+배지 1개",
+          rewardCoins: 300,
+          rewardLabel: "+300 코인",
           progressText: `${formatNumber(Math.min(monthlySteps, 150000))} / 150,000보`,
         }),
       ],
@@ -420,7 +459,8 @@ function createMissionCard({
   title,
   currentValue,
   targetValue,
-  reward,
+  rewardCoins,
+  rewardLabel,
   progressText,
 }) {
   const safeTarget = Math.max(1, Number(targetValue ?? 1));
@@ -431,15 +471,28 @@ function createMissionCard({
   return {
     key,
     typeKey,
+    typeStyle: getMissionTypeStyle(typeKey),
     typeLabel,
     icon,
     title,
-    reward,
+    rewardCoins: Math.max(0, Math.floor(Number(rewardCoins ?? 0))),
+    rewardLabel,
     progress,
     progressText: progressText ?? `${formatNumber(Math.min(safeCurrent, safeTarget))} / ${formatNumber(safeTarget)}`,
     statusLabel: completed ? "완료" : "진행중",
     completed,
   };
+}
+
+function getMissionTypeStyle(typeKey) {
+  switch (typeKey) {
+    case "weekly":
+      return styles.missionTypePillWeekly;
+    case "special":
+      return styles.missionTypePillSpecial;
+    default:
+      return styles.missionTypePillDaily;
+  }
 }
 
 function formatTrailDateLabel(value, isToday) {
@@ -1728,6 +1781,45 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
     fontFamily: theme.fonts.body,
+  },
+  missionActionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  missionClaimButton: {
+    minWidth: 74,
+    minHeight: 30,
+    paddingHorizontal: 12,
+    borderRadius: theme.radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: "#ffffff",
+  },
+  missionClaimButtonActive: {
+    backgroundColor: "#111111",
+    borderColor: "#111111",
+  },
+  missionClaimButtonPressed: {
+    opacity: 0.84,
+  },
+  missionClaimButtonDisabled: {
+    backgroundColor: "#f1f2f5",
+  },
+  missionClaimButtonLabel: {
+    color: theme.colors.inkSoft,
+    fontSize: 11,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  missionClaimButtonLabelActive: {
+    color: "#ffffff",
+  },
+  missionClaimButtonLabelDisabled: {
+    color: "#8d8d8d",
   },
   missionRewardText: {
     color: "#111111",
