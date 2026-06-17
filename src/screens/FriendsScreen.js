@@ -77,6 +77,7 @@ export function FriendsScreen() {
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupCode, setNewGroupCode] = useState("");
   const [renameGroupName, setRenameGroupName] = useState("");
+  const [groupToolMode, setGroupToolMode] = useState(null);
   const [showGroupRename, setShowGroupRename] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [selectedFriendId, setSelectedFriendId] = useState(null);
@@ -300,6 +301,7 @@ export function FriendsScreen() {
     setSelectedGroupId(id);
     setNewGroupName("");
     setNewGroupCode(code);
+    setGroupToolMode("create");
     setShowGroupRename(false);
   };
 
@@ -320,6 +322,7 @@ export function FriendsScreen() {
     setSelectedGroupId(matchedGroup.id);
     setFriendGroupState((current) => addFriendToGroup(current, "friend-me", matchedGroup.id));
     setGroupJoinMessage(`${matchedGroup.name} 그룹에 들어갔어요.`);
+    setGroupToolMode("join");
   };
 
   const renameGroup = () => {
@@ -643,50 +646,80 @@ export function FriendsScreen() {
 
       {viewMode === "groups" ? (
         <>
-          <View style={styles.groupToolStack}>
-            <View style={styles.groupToolCard}>
-              <View style={styles.groupActionHeader}>
-                <Text style={styles.groupActionTitle}>그룹 만들기</Text>
-                <Text style={styles.groupActionHint}>고유 번호</Text>
-              </View>
-              <View style={styles.inlineInputRow}>
-                <TextInput
-                  value={newGroupName}
-                  onChangeText={setNewGroupName}
-                  placeholder="그룹 이름"
-                  placeholderTextColor={theme.colors.inkSoft}
-                  style={styles.textInput}
-                />
-                <Pressable onPress={createGroup} style={styles.primaryButton}>
-                  <Text style={styles.primaryButtonLabel}>생성</Text>
-                </Pressable>
-              </View>
-              <Text style={styles.groupActionNote}>
-                만들면 고유 번호가 생겨요. {newGroupCode ? `최근 번호 ${newGroupCode}` : ""}
+          <View style={styles.groupToolNavRow}>
+            <Pressable
+              onPress={() => setGroupToolMode("create")}
+              style={[styles.groupToolNavButton, groupToolMode === "create" && styles.groupToolNavButtonActive]}
+            >
+              <Text
+                style={[
+                  styles.groupToolNavButtonLabel,
+                  groupToolMode === "create" && styles.groupToolNavButtonLabelActive,
+                ]}
+              >
+                그룹 만들기
               </Text>
-            </View>
+            </Pressable>
 
-            <View style={styles.groupToolCard}>
-              <View style={styles.groupActionHeader}>
-                <Text style={styles.groupActionTitle}>그룹 들어가기</Text>
-                <Text style={styles.groupActionHint}>번호 입력</Text>
-              </View>
-              <View style={styles.inlineInputRow}>
-                <TextInput
-                  value={groupJoinCode}
-                  onChangeText={setGroupJoinCode}
-                  placeholder="그룹 번호"
-                  placeholderTextColor={theme.colors.inkSoft}
-                  keyboardType="number-pad"
-                  style={styles.textInput}
-                />
-                <Pressable onPress={joinGroup} style={styles.primaryButton}>
-                  <Text style={styles.primaryButtonLabel}>입장</Text>
-                </Pressable>
-              </View>
-              {groupJoinMessage ? <Text style={styles.groupActionNote}>{groupJoinMessage}</Text> : null}
-            </View>
+            <Pressable
+              onPress={() => setGroupToolMode("join")}
+              style={[styles.groupToolNavButton, groupToolMode === "join" && styles.groupToolNavButtonActive]}
+            >
+              <Text
+                style={[styles.groupToolNavButtonLabel, groupToolMode === "join" && styles.groupToolNavButtonLabelActive]}
+              >
+                그룹 들어가기
+              </Text>
+            </Pressable>
           </View>
+
+          {groupToolMode ? (
+            <View style={styles.groupActionCard}>
+              <View style={styles.groupActionHeader}>
+                <Text style={styles.groupActionTitle}>{groupToolMode === "create" ? "그룹 만들기" : "그룹 들어가기"}</Text>
+                <Text style={styles.groupActionHint}>{groupToolMode === "create" ? "새 그룹 생성" : "번호 입력"}</Text>
+              </View>
+
+              {groupToolMode === "create" ? (
+                <>
+                  <View style={styles.inlineInputRow}>
+                    <TextInput
+                      value={newGroupName}
+                      onChangeText={setNewGroupName}
+                      placeholder="그룹 이름"
+                      placeholderTextColor={theme.colors.inkSoft}
+                      style={styles.textInput}
+                    />
+                    <Pressable onPress={createGroup} style={styles.primaryButton}>
+                      <Text style={styles.primaryButtonLabel}>생성</Text>
+                    </Pressable>
+                  </View>
+                  <Text style={styles.groupActionNote}>
+                    만들면 고유 번호가 생겨요. {newGroupCode ? `최근 번호 ${newGroupCode}` : ""}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <View style={styles.inlineInputRow}>
+                    <TextInput
+                      value={groupJoinCode}
+                      onChangeText={setGroupJoinCode}
+                      placeholder="그룹 번호"
+                      placeholderTextColor={theme.colors.inkSoft}
+                      keyboardType="number-pad"
+                      style={styles.textInput}
+                    />
+                    <Pressable onPress={joinGroup} style={styles.primaryButton}>
+                      <Text style={styles.primaryButtonLabel}>입장</Text>
+                    </Pressable>
+                  </View>
+                  {groupJoinMessage ? <Text style={styles.groupActionNote}>{groupJoinMessage}</Text> : null}
+                </>
+              )}
+            </View>
+          ) : (
+            <Text style={styles.groupActionNote}>버튼을 눌러 상세를 열어 주세요.</Text>
+          )}
         </>
       ) : null}
 
@@ -1272,17 +1305,6 @@ const styles = StyleSheet.create({
   groupChipLabelActive: {
     color: "#ffffff",
   },
-  groupToolStack: {
-    gap: 10,
-  },
-  groupToolCard: {
-    borderRadius: theme.radius.lg,
-    padding: 14,
-    backgroundColor: "#ffffff",
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    gap: 10,
-  },
   groupActionCard: {
     borderRadius: theme.radius.lg,
     padding: 14,
@@ -1320,7 +1342,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
-  groupActionFlexButton: {
+  groupToolNavRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  groupToolNavButton: {
     flex: 1,
     minHeight: 42,
     alignItems: "center",
@@ -1330,28 +1356,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  groupActionToggle: {
-    minHeight: 34,
-    paddingHorizontal: 12,
-    borderRadius: theme.radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  groupActionToggleActive: {
+  groupToolNavButtonActive: {
     backgroundColor: "#111111",
     borderColor: "#111111",
   },
-  groupActionToggleLabel: {
+  groupToolNavButtonLabel: {
     color: theme.colors.inkSoft,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
-  groupActionToggleLabelActive: {
+  groupToolNavButtonLabelActive: {
     color: "#ffffff",
+  },
+  groupActionFlexButton: {
+    flex: 1,
+    minHeight: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: theme.radius.lg,
+    backgroundColor: theme.colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   inlineInputRow: {
     flexDirection: "row",
