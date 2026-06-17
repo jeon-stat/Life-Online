@@ -141,17 +141,13 @@ export function HistoryScreen() {
                     {missionModel.completedCount}/{missionModel.totalCount} 완료
                   </Text>
                 </View>
-                <Text style={styles.missionSummaryText}>일일, 주간, 특별 미션을 1열로 길게 보여줘요.</Text>
               </View>
 
               <View style={styles.missionSectionList}>
                 {missionModel.sections.map((section) => (
                   <View key={section.key} style={styles.missionSection}>
                     <View style={styles.missionSectionHeader}>
-                      <View>
-                        <Text style={styles.missionSectionTitle}>{section.title}</Text>
-                        <Text style={styles.missionSectionSubtitle}>{section.subtitle}</Text>
-                      </View>
+                      <Text style={styles.missionSectionTitle}>{section.title}</Text>
                       <Text style={styles.missionSectionCount}>{section.items.length}개</Text>
                     </View>
 
@@ -169,7 +165,6 @@ export function HistoryScreen() {
                           </View>
 
                           <Text style={styles.missionTitle}>{card.title}</Text>
-                          <Text style={styles.missionNote}>{card.note}</Text>
 
                           <View style={styles.missionProgressRow}>
                             <Text style={styles.missionProgressText}>{card.progressText}</Text>
@@ -179,8 +174,6 @@ export function HistoryScreen() {
                           <View style={styles.missionProgressTrack}>
                             <View style={[styles.missionProgressFill, { width: `${Math.max(0, Math.min(100, card.progress * 100))}%` }]} />
                           </View>
-
-                          <Text style={styles.missionFooterText}>{card.footer}</Text>
                         </View>
                       ))}
                     </View>
@@ -306,7 +299,6 @@ function buildMissionModel({ history, goal, streak }) {
     {
       key: "daily",
       title: "일일 미션",
-      subtitle: "오늘 바로 끝낼 수 있는 짧은 미션이에요.",
       items: [
         createMissionCard({
           key: "daily-3000",
@@ -314,13 +306,10 @@ function buildMissionModel({ history, goal, streak }) {
           typeLabel: "일일",
           icon: "👣",
           title: "오늘 3,000보 걷기",
-          note: "가볍게 몸을 풀기 좋은 입문 미션이에요.",
           currentValue: latestSteps,
           targetValue: 3000,
           reward: "+30 코인",
           progressText: `${formatNumber(Math.min(latestSteps, 3000))} / 3,000보`,
-          completedFooter: "가볍게 성공했어요.",
-          pendingFooter: `${formatNumber(Math.max(3000 - latestSteps, 0))}보 남았어요.`,
         }),
         createMissionCard({
           key: "daily-goal",
@@ -328,13 +317,10 @@ function buildMissionModel({ history, goal, streak }) {
           typeLabel: "일일",
           icon: "🎯",
           title: "오늘 목표 달성하기",
-          note: "기본 목표를 채우면 보상이 열려요.",
           currentValue: latestSteps,
           targetValue: goalValue,
           reward: "+50 코인",
           progressText: `${formatNumber(Math.min(latestSteps, goalValue))} / ${formatNumber(goalValue)}보`,
-          completedFooter: "기본 목표를 달성했어요.",
-          pendingFooter: `${formatNumber(Math.max(goalValue - latestSteps, 0))}보 남았어요.`,
         }),
         createMissionCard({
           key: "daily-8000",
@@ -342,20 +328,16 @@ function buildMissionModel({ history, goal, streak }) {
           typeLabel: "일일",
           icon: "✨",
           title: "오늘 8,000보 걷기",
-          note: "조금 더 걸으면 추가 보상을 받을 수 있어요.",
           currentValue: latestSteps,
           targetValue: 8000,
           reward: "+70 코인",
           progressText: `${formatNumber(Math.min(latestSteps, 8000))} / 8,000보`,
-          completedFooter: "오늘은 충분히 많이 걸었어요.",
-          pendingFooter: `${formatNumber(Math.max(8000 - latestSteps, 0))}보 남았어요.`,
         }),
       ],
     },
     {
       key: "weekly",
       title: "주간 미션",
-      subtitle: "이번 주 누적 기록으로 보상을 챙기는 미션이에요.",
       items: [
         createMissionCard({
           key: "weekly-3days",
@@ -363,13 +345,10 @@ function buildMissionModel({ history, goal, streak }) {
           typeLabel: "주간",
           icon: "📅",
           title: "이번 주 3일 달성",
-          note: "주 3회만 성공해도 보상을 받을 수 있어요.",
           currentValue: goalDays,
           targetValue: 3,
           reward: "+100 코인",
           progressText: `${Math.min(goalDays, 3)} / 3일`,
-          completedFooter: "주간 기본 미션을 완료했어요.",
-          pendingFooter: `${Math.max(3 - goalDays, 0)}일 더 걸으면 돼요.`,
         }),
         createMissionCard({
           key: "weekly-steps",
@@ -377,13 +356,10 @@ function buildMissionModel({ history, goal, streak }) {
           typeLabel: "주간",
           icon: "🧭",
           title: "최근 7일 누적 40,000보",
-          note: "일주일 동안 걸은 걸음을 차곡차곡 모아봐요.",
           currentValue: weeklySteps,
           targetValue: 40000,
           reward: "+특별 상자 1개",
           progressText: `${formatNumber(Math.min(weeklySteps, 40000))} / 40,000보`,
-          completedFooter: "이번 주 걸음이 충분히 쌓였어요.",
-          pendingFooter: `${formatNumber(Math.max(40000 - weeklySteps, 0))}보 남았어요.`,
         }),
         createMissionCard({
           key: "weekly-streak",
@@ -391,20 +367,16 @@ function buildMissionModel({ history, goal, streak }) {
           typeLabel: "주간",
           icon: "🔥",
           title: "3일 연속 걷기",
-          note: "연속 기록은 습관 만들기에 좋아요.",
           currentValue: streak,
           targetValue: 3,
           reward: "+80 코인",
           progressText: `${Math.min(streak, 3)} / 3일`,
-          completedFooter: "연속 기록을 이어가고 있어요.",
-          pendingFooter: `${Math.max(3 - streak, 0)}일 더 이어가면 돼요.`,
         }),
       ],
     },
     {
       key: "special",
       title: "특별 미션",
-      subtitle: "조금 더 큰 보상과 연결되는 장기 미션이에요.",
       items: [
         createMissionCard({
           key: "special-best",
@@ -412,13 +384,10 @@ function buildMissionModel({ history, goal, streak }) {
           typeLabel: "특별",
           icon: "🏅",
           title: "최고 기록 10,000보 달성",
-          note: "한 번 크게 걸으면 열리는 도전 과제예요.",
           currentValue: bestSteps,
           targetValue: 10000,
           reward: "+특별 조각 1개",
           progressText: `${formatNumber(Math.min(bestSteps, 10000))} / 10,000보`,
-          completedFooter: "개인 최고 기록을 넘어섰어요.",
-          pendingFooter: `${formatNumber(Math.max(10000 - bestSteps, 0))}보 남았어요.`,
         }),
         createMissionCard({
           key: "special-month",
@@ -426,13 +395,10 @@ function buildMissionModel({ history, goal, streak }) {
           typeLabel: "특별",
           icon: "🌙",
           title: "한 달 누적 150,000보",
-          note: "장기 목표를 채우면 큰 보상을 받을 수 있어요.",
           currentValue: monthlySteps,
           targetValue: 150000,
           reward: "+배지 1개",
           progressText: `${formatNumber(Math.min(monthlySteps, 150000))} / 150,000보`,
-          completedFooter: "한 달 목표를 향해 잘 가고 있어요.",
-          pendingFooter: `${formatNumber(Math.max(150000 - monthlySteps, 0))}보 남았어요.`,
         }),
       ],
     },
@@ -452,13 +418,10 @@ function createMissionCard({
   typeLabel,
   icon,
   title,
-  note,
   currentValue,
   targetValue,
   reward,
   progressText,
-  completedFooter,
-  pendingFooter,
 }) {
   const safeTarget = Math.max(1, Number(targetValue ?? 1));
   const safeCurrent = Math.max(0, Number(currentValue ?? 0));
@@ -471,12 +434,10 @@ function createMissionCard({
     typeLabel,
     icon,
     title,
-    note,
     reward,
     progress,
     progressText: progressText ?? `${formatNumber(Math.min(safeCurrent, safeTarget))} / ${formatNumber(safeTarget)}`,
     statusLabel: completed ? "완료" : "진행중",
-    footer: completed ? completedFooter : pendingFooter ?? "아직 진행 중이에요.",
     completed,
   };
 }
