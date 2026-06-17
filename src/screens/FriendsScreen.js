@@ -672,56 +672,78 @@ export function FriendsScreen() {
               </Text>
             </Pressable>
           </View>
-
-          {groupToolMode ? (
-            <View style={styles.groupActionCard}>
-              <View style={styles.groupActionHeader}>
-                <Text style={styles.groupActionTitle}>{groupToolMode === "create" ? "그룹 만들기" : "그룹 들어가기"}</Text>
-                <Text style={styles.groupActionHint}>{groupToolMode === "create" ? "새 그룹 생성" : "번호 입력"}</Text>
-              </View>
-
-              {groupToolMode === "create" ? (
-                <>
-                  <View style={styles.inlineInputRow}>
-                    <TextInput
-                      value={newGroupName}
-                      onChangeText={setNewGroupName}
-                      placeholder="그룹 이름"
-                      placeholderTextColor={theme.colors.inkSoft}
-                      style={styles.textInput}
-                    />
-                    <Pressable onPress={createGroup} style={styles.primaryButton}>
-                      <Text style={styles.primaryButtonLabel}>생성</Text>
-                    </Pressable>
-                  </View>
-                  <Text style={styles.groupActionNote}>
-                    만들면 고유 번호가 생겨요. {newGroupCode ? `최근 번호 ${newGroupCode}` : ""}
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <View style={styles.inlineInputRow}>
-                    <TextInput
-                      value={groupJoinCode}
-                      onChangeText={setGroupJoinCode}
-                      placeholder="그룹 번호"
-                      placeholderTextColor={theme.colors.inkSoft}
-                      keyboardType="number-pad"
-                      style={styles.textInput}
-                    />
-                    <Pressable onPress={joinGroup} style={styles.primaryButton}>
-                      <Text style={styles.primaryButtonLabel}>입장</Text>
-                    </Pressable>
-                  </View>
-                  {groupJoinMessage ? <Text style={styles.groupActionNote}>{groupJoinMessage}</Text> : null}
-                </>
-              )}
-            </View>
-          ) : (
-            <Text style={styles.groupActionNote}>버튼을 눌러 상세를 열어 주세요.</Text>
-          )}
         </>
       ) : null}
+
+      <Modal
+        visible={groupToolMode !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setGroupToolMode(null)}
+      >
+        <Pressable style={styles.modalBackdrop} onPress={() => setGroupToolMode(null)}>
+          <Pressable style={styles.modalCard} onPress={() => null}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalHeaderText}>
+                <Text style={styles.modalTitle}>
+                  {groupToolMode === "create" ? "그룹 만들기" : "그룹 들어가기"}
+                </Text>
+                <Text style={styles.modalHandle}>
+                  {groupToolMode === "create" ? "새 그룹 생성" : "번호 입력"}
+                </Text>
+              </View>
+              <Pressable onPress={() => setGroupToolMode(null)} style={styles.modalCloseButton}>
+                <Text style={styles.modalCloseButtonLabel}>×</Text>
+              </Pressable>
+            </View>
+
+            {groupToolMode === "create" ? (
+              <View style={styles.groupActionCard}>
+                <View style={styles.groupActionHeader}>
+                  <Text style={styles.groupActionTitle}>그룹 이름</Text>
+                  <Text style={styles.groupActionHint}>새 그룹 생성</Text>
+                </View>
+                <View style={styles.inlineInputRow}>
+                  <TextInput
+                    value={newGroupName}
+                    onChangeText={setNewGroupName}
+                    placeholder="그룹 이름"
+                    placeholderTextColor={theme.colors.inkSoft}
+                    style={styles.textInput}
+                  />
+                  <Pressable onPress={createGroup} style={styles.primaryButton}>
+                    <Text style={styles.primaryButtonLabel}>생성</Text>
+                  </Pressable>
+                </View>
+                <Text style={styles.groupActionNote}>
+                  만들면 고유 번호가 생겨요. {newGroupCode ? `최근 번호 ${newGroupCode}` : ""}
+                </Text>
+              </View>
+            ) : groupToolMode === "join" ? (
+              <View style={styles.groupActionCard}>
+                <View style={styles.groupActionHeader}>
+                  <Text style={styles.groupActionTitle}>그룹 번호</Text>
+                  <Text style={styles.groupActionHint}>번호 입력</Text>
+                </View>
+                <View style={styles.inlineInputRow}>
+                  <TextInput
+                    value={groupJoinCode}
+                    onChangeText={setGroupJoinCode}
+                    placeholder="그룹 번호"
+                    placeholderTextColor={theme.colors.inkSoft}
+                    keyboardType="number-pad"
+                    style={styles.textInput}
+                  />
+                  <Pressable onPress={joinGroup} style={styles.primaryButton}>
+                    <Text style={styles.primaryButtonLabel}>입장</Text>
+                  </Pressable>
+                </View>
+                {groupJoinMessage ? <Text style={styles.groupActionNote}>{groupJoinMessage}</Text> : null}
+              </View>
+            ) : null}
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Modal
         visible={Boolean(selectedFriend)}
