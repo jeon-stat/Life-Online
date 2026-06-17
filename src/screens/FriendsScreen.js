@@ -424,55 +424,6 @@ export function FriendsScreen() {
         </View>
       </View>
 
-      {viewMode === "groups" ? (
-        <>
-          <View style={styles.groupToolStack}>
-            <View style={styles.groupToolCard}>
-              <View style={styles.groupActionHeader}>
-                <Text style={styles.groupActionTitle}>그룹 만들기</Text>
-                <Text style={styles.groupActionHint}>고유 번호</Text>
-              </View>
-              <View style={styles.inlineInputRow}>
-                <TextInput
-                  value={newGroupName}
-                  onChangeText={setNewGroupName}
-                  placeholder="그룹 이름"
-                  placeholderTextColor={theme.colors.inkSoft}
-                  style={styles.textInput}
-                />
-                <Pressable onPress={createGroup} style={styles.primaryButton}>
-                  <Text style={styles.primaryButtonLabel}>생성</Text>
-                </Pressable>
-              </View>
-              <Text style={styles.groupActionNote}>
-                만들면 고유 번호가 생겨요. {newGroupCode ? `최근 번호 ${newGroupCode}` : ""}
-              </Text>
-            </View>
-
-            <View style={styles.groupToolCard}>
-              <View style={styles.groupActionHeader}>
-                <Text style={styles.groupActionTitle}>그룹 들어가기</Text>
-                <Text style={styles.groupActionHint}>번호 입력</Text>
-              </View>
-              <View style={styles.inlineInputRow}>
-                <TextInput
-                  value={groupJoinCode}
-                  onChangeText={setGroupJoinCode}
-                  placeholder="그룹 번호"
-                  placeholderTextColor={theme.colors.inkSoft}
-                  keyboardType="number-pad"
-                  style={styles.textInput}
-                />
-                <Pressable onPress={joinGroup} style={styles.primaryButton}>
-                  <Text style={styles.primaryButtonLabel}>입장</Text>
-                </Pressable>
-              </View>
-              {groupJoinMessage ? <Text style={styles.groupActionNote}>{groupJoinMessage}</Text> : null}
-            </View>
-          </View>
-        </>
-      ) : null}
-
       {viewMode !== "friends" ? (
         <View style={styles.groupCard}>
           <View style={styles.groupCardTop}>
@@ -689,6 +640,55 @@ export function FriendsScreen() {
           )}
         </>
       )}
+
+      {viewMode === "groups" ? (
+        <>
+          <View style={styles.groupToolStack}>
+            <View style={styles.groupToolCard}>
+              <View style={styles.groupActionHeader}>
+                <Text style={styles.groupActionTitle}>그룹 만들기</Text>
+                <Text style={styles.groupActionHint}>고유 번호</Text>
+              </View>
+              <View style={styles.inlineInputRow}>
+                <TextInput
+                  value={newGroupName}
+                  onChangeText={setNewGroupName}
+                  placeholder="그룹 이름"
+                  placeholderTextColor={theme.colors.inkSoft}
+                  style={styles.textInput}
+                />
+                <Pressable onPress={createGroup} style={styles.primaryButton}>
+                  <Text style={styles.primaryButtonLabel}>생성</Text>
+                </Pressable>
+              </View>
+              <Text style={styles.groupActionNote}>
+                만들면 고유 번호가 생겨요. {newGroupCode ? `최근 번호 ${newGroupCode}` : ""}
+              </Text>
+            </View>
+
+            <View style={styles.groupToolCard}>
+              <View style={styles.groupActionHeader}>
+                <Text style={styles.groupActionTitle}>그룹 들어가기</Text>
+                <Text style={styles.groupActionHint}>번호 입력</Text>
+              </View>
+              <View style={styles.inlineInputRow}>
+                <TextInput
+                  value={groupJoinCode}
+                  onChangeText={setGroupJoinCode}
+                  placeholder="그룹 번호"
+                  placeholderTextColor={theme.colors.inkSoft}
+                  keyboardType="number-pad"
+                  style={styles.textInput}
+                />
+                <Pressable onPress={joinGroup} style={styles.primaryButton}>
+                  <Text style={styles.primaryButtonLabel}>입장</Text>
+                </Pressable>
+              </View>
+              {groupJoinMessage ? <Text style={styles.groupActionNote}>{groupJoinMessage}</Text> : null}
+            </View>
+          </View>
+        </>
+      ) : null}
 
       <Modal
         visible={Boolean(selectedFriend)}
