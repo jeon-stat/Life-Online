@@ -163,6 +163,36 @@ export function HistoryScreen() {
                                 {card.statusLabel}
                               </Text>
                             </View>
+
+                            <View style={styles.missionRewardRow}>
+                              <Text style={styles.missionRewardText}>{card.rewardLabel}</Text>
+                              <Pressable
+                                onPress={() => {
+                                  if (!card.completed || isMissionRewardClaimed(card.key) || !claimMissionReward) {
+                                    return;
+                                  }
+
+                                  claimMissionReward({ missionId: card.key, coins: card.rewardCoins });
+                                }}
+                                disabled={!card.completed || isMissionRewardClaimed(card.key)}
+                                style={({ pressed }) => [
+                                  styles.missionClaimButton,
+                                  card.completed && !isMissionRewardClaimed(card.key) && styles.missionClaimButtonActive,
+                                  (pressed && card.completed && !isMissionRewardClaimed(card.key)) && styles.missionClaimButtonPressed,
+                                  (!card.completed || isMissionRewardClaimed(card.key)) && styles.missionClaimButtonDisabled,
+                                ]}
+                              >
+                                <Text
+                                  style={[
+                                    styles.missionClaimButtonLabel,
+                                    card.completed && !isMissionRewardClaimed(card.key) && styles.missionClaimButtonLabelActive,
+                                    (!card.completed || isMissionRewardClaimed(card.key)) && styles.missionClaimButtonLabelDisabled,
+                                  ]}
+                                >
+                                  {isMissionRewardClaimed(card.key) ? "[받음]" : card.completed ? "[받기]" : "[진행중]"}
+                                </Text>
+                              </Pressable>
+                            </View>
                           </View>
 
                           <Text style={styles.missionTitle}>{card.title}</Text>
@@ -173,36 +203,6 @@ export function HistoryScreen() {
 
                           <View style={styles.missionProgressTrack}>
                             <View style={[styles.missionProgressFill, { width: `${Math.max(0, Math.min(100, card.progress * 100))}%` }]} />
-                          </View>
-
-                          <View style={styles.missionActionRow}>
-                            <Pressable
-                              onPress={() => {
-                                if (!card.completed || isMissionRewardClaimed(card.key) || !claimMissionReward) {
-                                  return;
-                                }
-
-                                claimMissionReward({ missionId: card.key, coins: card.rewardCoins });
-                              }}
-                              disabled={!card.completed || isMissionRewardClaimed(card.key)}
-                              style={({ pressed }) => [
-                                styles.missionClaimButton,
-                                card.completed && !isMissionRewardClaimed(card.key) && styles.missionClaimButtonActive,
-                                (pressed && card.completed && !isMissionRewardClaimed(card.key)) && styles.missionClaimButtonPressed,
-                                (!card.completed || isMissionRewardClaimed(card.key)) && styles.missionClaimButtonDisabled,
-                              ]}
-                            >
-                              <Text
-                                style={[
-                                  styles.missionClaimButtonLabel,
-                                  card.completed && !isMissionRewardClaimed(card.key) && styles.missionClaimButtonLabelActive,
-                                  (!card.completed || isMissionRewardClaimed(card.key)) && styles.missionClaimButtonLabelDisabled,
-                                ]}
-                              >
-                                {isMissionRewardClaimed(card.key) ? "받음" : card.completed ? "받기" : "진행중"}
-                              </Text>
-                            </Pressable>
-                            <Text style={styles.missionRewardText}>{card.rewardLabel}</Text>
                           </View>
                         </View>
                       ))}
@@ -1698,7 +1698,7 @@ const styles = StyleSheet.create({
   },
   missionCardTopRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
     gap: 10,
   },
@@ -1760,16 +1760,15 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     fontFamily: theme.fonts.body,
   },
-  missionActionRow: {
+  missionRewardRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
+    gap: 6,
   },
   missionClaimButton: {
-    minWidth: 74,
-    minHeight: 30,
-    paddingHorizontal: 12,
+    minWidth: 60,
+    minHeight: 26,
+    paddingHorizontal: 10,
     borderRadius: theme.radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -1789,7 +1788,7 @@ const styles = StyleSheet.create({
   },
   missionClaimButtonLabel: {
     color: theme.colors.inkSoft,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
@@ -1801,7 +1800,7 @@ const styles = StyleSheet.create({
   },
   missionRewardText: {
     color: "#111111",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
