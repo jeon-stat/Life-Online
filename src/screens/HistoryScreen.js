@@ -182,17 +182,17 @@ export function HistoryScreen() {
                                   (!card.completed || isMissionRewardClaimed(card.key)) && styles.missionClaimButtonDisabled,
                                 ]}
                               >
-                                <Text
-                                  style={[
-                                    styles.missionClaimButtonLabel,
-                                    card.completed && !isMissionRewardClaimed(card.key) && styles.missionClaimButtonLabelActive,
-                                    (!card.completed || isMissionRewardClaimed(card.key)) && styles.missionClaimButtonLabelDisabled,
-                                  ]}
-                                >
-                                  {isMissionRewardClaimed(card.key) ? "[받음]" : card.completed ? "[받기]" : "[진행중]"}
-                                </Text>
-                              </Pressable>
-                            </View>
+                              <Text
+                                style={[
+                                  styles.missionClaimButtonLabel,
+                                  card.completed && !isMissionRewardClaimed(card.key) && styles.missionClaimButtonLabelActive,
+                                  (!card.completed || isMissionRewardClaimed(card.key)) && styles.missionClaimButtonLabelDisabled,
+                                ]}
+                              >
+                                {isMissionRewardClaimed(card.key) ? "받음" : card.completed ? "받기" : "진행중"}
+                              </Text>
+                            </Pressable>
+                          </View>
                           </View>
 
                           <Text style={styles.missionTitle}>{card.title}</Text>
