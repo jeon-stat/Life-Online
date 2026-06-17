@@ -218,7 +218,6 @@ export function HistoryScreen() {
                   achievementCards.map((card) => (
                     <View key={card.id} style={styles.badgeCard}>
                       <Text style={styles.badgeTitle}>{card.title}</Text>
-                      <Text style={styles.badgeSummary}>{card.summary}</Text>
                     </View>
                   ))
                 ) : (
@@ -1824,19 +1823,12 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    gap: 4,
   },
   badgeTitle: {
     color: theme.colors.ink,
-    fontSize: 13,
-    fontWeight: "800",
-    fontFamily: theme.fonts.body,
-  },
-  badgeSummary: {
-    color: theme.colors.inkSoft,
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: "700",
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
   emptyText: {
