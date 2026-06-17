@@ -163,7 +163,6 @@ export function HistoryScreen() {
                                 {card.statusLabel}
                               </Text>
                             </View>
-                            <Text style={styles.missionIcon}>{card.icon}</Text>
                           </View>
 
                           <Text style={styles.missionTitle}>{card.title}</Text>
@@ -335,7 +334,6 @@ function buildMissionModel({ history, goal, streak }) {
           key: "daily-3000",
           typeKey: "daily",
           typeLabel: "일일",
-          icon: "👣",
           title: "오늘 3,000보 걷기",
           currentValue: latestSteps,
           targetValue: 3000,
@@ -347,7 +345,6 @@ function buildMissionModel({ history, goal, streak }) {
           key: "daily-goal",
           typeKey: "daily",
           typeLabel: "일일",
-          icon: "🎯",
           title: "오늘 목표 달성하기",
           currentValue: latestSteps,
           targetValue: goalValue,
@@ -359,7 +356,6 @@ function buildMissionModel({ history, goal, streak }) {
           key: "daily-8000",
           typeKey: "daily",
           typeLabel: "일일",
-          icon: "✨",
           title: "오늘 8,000보 걷기",
           currentValue: latestSteps,
           targetValue: 8000,
@@ -377,7 +373,6 @@ function buildMissionModel({ history, goal, streak }) {
           key: "weekly-3days",
           typeKey: "weekly",
           typeLabel: "주간",
-          icon: "📅",
           title: "이번 주 3일 달성",
           currentValue: goalDays,
           targetValue: 3,
@@ -389,7 +384,6 @@ function buildMissionModel({ history, goal, streak }) {
           key: "weekly-steps",
           typeKey: "weekly",
           typeLabel: "주간",
-          icon: "🧭",
           title: "최근 7일 누적 40,000보",
           currentValue: weeklySteps,
           targetValue: 40000,
@@ -401,7 +395,6 @@ function buildMissionModel({ history, goal, streak }) {
           key: "weekly-streak",
           typeKey: "weekly",
           typeLabel: "주간",
-          icon: "🔥",
           title: "3일 연속 걷기",
           currentValue: streak,
           targetValue: 3,
@@ -419,7 +412,6 @@ function buildMissionModel({ history, goal, streak }) {
           key: "special-best",
           typeKey: "special",
           typeLabel: "특별",
-          icon: "🏅",
           title: "최고 기록 10,000보 달성",
           currentValue: bestSteps,
           targetValue: 10000,
@@ -431,7 +423,6 @@ function buildMissionModel({ history, goal, streak }) {
           key: "special-month",
           typeKey: "special",
           typeLabel: "특별",
-          icon: "🌙",
           title: "한 달 누적 150,000보",
           currentValue: monthlySteps,
           targetValue: 150000,
@@ -455,7 +446,6 @@ function createMissionCard({
   key,
   typeKey,
   typeLabel,
-  icon,
   title,
   currentValue,
   targetValue,
@@ -473,7 +463,6 @@ function createMissionCard({
     typeKey,
     typeStyle: getMissionTypeStyle(typeKey),
     typeLabel,
-    icon,
     title,
     rewardCoins: Math.max(0, Math.floor(Number(rewardCoins ?? 0))),
     rewardLabel,
@@ -1753,21 +1742,10 @@ const styles = StyleSheet.create({
     color: "#155724",
     backgroundColor: "#dff3e7",
   },
-  missionIcon: {
-    fontSize: 18,
-    fontWeight: "900",
-  },
   missionTitle: {
     color: theme.colors.ink,
     fontSize: 15,
     fontWeight: "900",
-    fontFamily: theme.fonts.body,
-  },
-  missionNote: {
-    color: theme.colors.inkSoft,
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
   missionProgressRow: {
@@ -1837,13 +1815,6 @@ const styles = StyleSheet.create({
     height: "100%",
     borderRadius: theme.radius.pill,
     backgroundColor: "#111111",
-  },
-  missionFooterText: {
-    color: theme.colors.inkSoft,
-    fontSize: 11,
-    lineHeight: 16,
-    fontWeight: "700",
-    fontFamily: theme.fonts.body,
   },
   badgeList: {
     gap: 8,
