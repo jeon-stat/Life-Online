@@ -18,9 +18,14 @@ import {
   filterFriendsByGroup,
   findFriendByHandle,
   getFriendGroupIds,
+  getFriendGroupJoinedAt,
   sortFriendCards,
 } from "../data/mockFriendData.js";
 import { buildCharacterViewModel } from "../game/characterState.js";
+import {
+  getContributionScore,
+  getGroupAverageAdjustedWeeklySteps,
+} from "../game/groupMetrics.js";
 import { getStreak } from "../game/progression.js";
 import { theme } from "../constants/theme.js";
 import { FriendCharacterPreview } from "../components/FriendCharacterPreview";
@@ -65,7 +70,9 @@ export function FriendsScreen() {
   const [viewMode, setViewMode] = useState("friends");
   const [rankMode, setRankMode] = useState("daily");
   const [groups, setGroups] = useState(() => FRIEND_GROUP_STORE.groups.map((group) => ({ ...group })));
-  const [friendGroupState, setFriendGroupState] = useState(() => ({ ...FRIEND_GROUP_STORE.friendGroupState }));
+  const [friendGroupState, setFriendGroupState] = useState(() =>
+    normalizeFriendGroupState(FRIEND_GROUP_STORE.friendGroupState),
+  );
   const [selectedGroupId, setSelectedGroupId] = useState(() => FRIEND_GROUP_STORE.selectedGroupId ?? null);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupCode, setNewGroupCode] = useState("");
@@ -125,10 +132,10 @@ export function FriendsScreen() {
 
   useEffect(() => {
     setFriendGroupState((current) => {
-      const next = { ...current };
+      const next = normalizeFriendGroupState(current);
       for (const friend of [...friends, ...customFriends]) {
         if (!next[friend.id]) {
-          next[friend.id] = getFriendGroupIds(friend);
+          next[friend.id] = createEmptyMembershipRecord(getFriendGroupIds(friend));
         }
       }
       return next;
@@ -160,9 +167,7 @@ export function FriendsScreen() {
   }, [groups]);
 
   useEffect(() => {
-    FRIEND_GROUP_STORE.friendGroupState = Object.fromEntries(
-      Object.entries(friendGroupState ?? {}).map(([friendId, groupIds]) => [friendId, [...(groupIds ?? [])]]),
-    );
+    FRIEND_GROUP_STORE.friendGroupState = cloneFriendGroupState(friendGroupState);
   }, [friendGroupState]);
 
   useEffect(() => {
@@ -230,6 +235,35 @@ export function FriendsScreen() {
     [listFriends, selectedFriendId],
   );
 
+  const selectedFriendGroupJoinedAt = useMemo(() => {
+    if (!selectedFriend || !selectedGroupId) {
+      return null;
+    }
+
+    return getFriendGroupJoinedAt(selectedFriend, selectedGroupId, friendGroupState);
+  }, [friendGroupState, selectedFriend, selectedGroupId]);
+
+  const groupContributionAverage = useMemo(
+    () =>
+      getGroupAverageAdjustedWeeklySteps(
+        groupFriends,
+        (friend) => getFriendGroupJoinedAt(friend, selectedGroupId, friendGroupState),
+      ),
+    [friendGroupState, groupFriends, selectedGroupId],
+  );
+
+  const selectedFriendContribution = useMemo(() => {
+    if (!selectedFriend || !selectedGroupId) {
+      return 0;
+    }
+
+    return getContributionScore(
+      selectedFriend.weeklySteps ?? 0,
+      groupContributionAverage,
+      selectedFriendGroupJoinedAt,
+    );
+  }, [groupContributionAverage, selectedFriend, selectedFriendGroupJoinedAt, selectedGroupId]);
+
   const cardWidth = useMemo(() => {
     const horizontalPadding = theme.spacing.md * 2;
     const usableWidth = Math.max(0, width - horizontalPadding);
@@ -262,10 +296,7 @@ export function FriendsScreen() {
     const code = generateGroupCode(groups);
     const id = makeGroupId(name, groups);
     setGroups((current) => [...current, { id, name, code, system: false, leaderId: "friend-me" }]);
-    setFriendGroupState((current) => ({
-      ...current,
-      "friend-me": Array.from(new Set([...(current["friend-me"] ?? []), id])),
-    }));
+    setFriendGroupState((current) => addFriendToGroup(current, "friend-me", id));
     setSelectedGroupId(id);
     setNewGroupName("");
     setNewGroupCode(code);
@@ -287,10 +318,7 @@ export function FriendsScreen() {
     }
 
     setSelectedGroupId(matchedGroup.id);
-    setFriendGroupState((current) => ({
-      ...current,
-      "friend-me": Array.from(new Set([...(current["friend-me"] ?? []), matchedGroup.id])),
-    }));
+    setFriendGroupState((current) => addFriendToGroup(current, "friend-me", matchedGroup.id));
     setGroupJoinMessage(`${matchedGroup.name} 그룹에 들어갔어요.`);
   };
 
@@ -449,14 +477,14 @@ export function FriendsScreen() {
         <View style={styles.groupCard}>
           <View style={styles.groupCardTop}>
             <View>
-              <Text style={styles.groupCardLabel}>그룹</Text>
-              <Text style={styles.groupCardTitle}>{selectedGroup?.name ?? "아직 그룹이 없어요"}</Text>
+              <Text style={styles.groupCardLabel}>??</Text>
+              <Text style={styles.groupCardTitle}>{selectedGroup?.name ?? "?? ??? ???"}</Text>
             </View>
-            {selectedGroup ? <Text style={styles.systemBadge}>번호 {selectedGroup.code}</Text> : null}
+            {selectedGroup ? <Text style={styles.systemBadge}>?? {selectedGroup.code}</Text> : null}
           </View>
           <Text style={styles.groupCardMeta}>
-            {selectedGroup ? `${groupCounts[selectedGroup.id] ?? 0}명` : "새 그룹을 만들거나 들어가세요."}
-            {selectedGroup?.leaderId ? ` · 그룹장 ${mergedFriends.find((friend) => friend.id === selectedGroup.leaderId)?.nickname ?? "나"}` : ""}
+            {selectedGroup ? String(groupCounts[selectedGroup.id] ?? 0) + "?" : "? ??? ???? ?????."}
+            {selectedGroup?.leaderId ? " ? ??? " + (mergedFriends.find((friend) => friend.id === selectedGroup.leaderId)?.nickname ?? "") : ""}
           </Text>
 
           {groups.length ? (
@@ -494,14 +522,14 @@ export function FriendsScreen() {
                       onPress={() => setShowGroupRename((current) => !current)}
                       style={styles.groupActionFlexButton}
                     >
-                      <Text style={styles.secondaryButtonLabel}>그룹 관리</Text>
+                      <Text style={styles.secondaryButtonLabel}>?? ??</Text>
                     </Pressable>
                     <Pressable onPress={() => setShowDeleteConfirm(true)} style={styles.dangerButton}>
-                      <Text style={styles.dangerButtonLabel}>그룹 삭제</Text>
+                      <Text style={styles.dangerButtonLabel}>?? ??</Text>
                     </Pressable>
                   </>
                 ) : (
-                  <Text style={styles.groupActionNote}>그룹을 하나 만들거나 번호를 입력해 들어가세요.</Text>
+                  <Text style={styles.groupActionNote}>??? ?? ???? ??? ??? ?????.</Text>
                 )}
               </View>
 
@@ -510,12 +538,12 @@ export function FriendsScreen() {
                   <TextInput
                     value={renameGroupName}
                     onChangeText={setRenameGroupName}
-                    placeholder="그룹 이름"
+                    placeholder="?? ??"
                     placeholderTextColor={theme.colors.inkSoft}
                     style={styles.textInput}
                   />
                   <Pressable onPress={renameGroup} style={styles.secondaryButton}>
-                    <Text style={styles.secondaryButtonLabel}>변경</Text>
+                    <Text style={styles.secondaryButtonLabel}>??</Text>
                   </Pressable>
                 </View>
               ) : null}
@@ -573,29 +601,29 @@ export function FriendsScreen() {
         <>
           <View style={styles.groupActionCard}>
             <View style={styles.groupActionHeader}>
-              <Text style={styles.groupActionTitle}>친구 추가</Text>
-              <Text style={styles.groupActionHint}>@아이디</Text>
+              <Text style={styles.groupActionTitle}>?? ??</Text>
+              <Text style={styles.groupActionHint}>@???</Text>
             </View>
             <View style={styles.inlineInputRow}>
               <TextInput
                 value={friendHandleInput}
                 onChangeText={setFriendHandleInput}
-                placeholder="@아이디"
+                placeholder="@???"
                 placeholderTextColor={theme.colors.inkSoft}
                 autoCapitalize="none"
                 autoCorrect={false}
                 style={styles.textInput}
               />
               <Pressable onPress={addFriendFromHandle} style={styles.primaryButton}>
-                <Text style={styles.primaryButtonLabel}>추가</Text>
+                <Text style={styles.primaryButtonLabel}>??</Text>
               </Pressable>
             </View>
             {friendAddMessage ? <Text style={styles.groupActionNote}>{friendAddMessage}</Text> : null}
           </View>
 
           <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>친구 목록</Text>
-            <Text style={styles.listSubtitle}>캐릭터를 눌러 크게 볼 수 있어요.</Text>
+            <Text style={styles.listTitle}>?? ??</Text>
+            <Text style={styles.listSubtitle}>??? ?? ??? ? ? ???.</Text>
           </View>
 
           <View style={styles.friendGallery}>
@@ -626,8 +654,8 @@ export function FriendsScreen() {
       ) : (
         <>
           <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>그룹 친구</Text>
-            <Text style={styles.listSubtitle}>선택한 그룹의 친구만 보여요.</Text>
+            <Text style={styles.listTitle}>?? ??</Text>
+            <Text style={styles.listSubtitle}>??? ??? ???? ????.</Text>
           </View>
 
           {groupFriends.length ? (
@@ -648,12 +676,12 @@ export function FriendsScreen() {
                     <View style={styles.friendGalleryScene}>
                       <FriendPreview character={previewCharacter} state={characterViewState} size={galleryPreviewSize} />
                     </View>
-                  <View style={styles.friendGalleryCaption}>
-                    <FriendIdentity friend={friend} />
-                    {isLeader ? <Text style={styles.friendLeaderBadge}>그룹장</Text> : null}
-                  </View>
-                </Pressable>
-              );
+                    <View style={styles.friendGalleryCaption}>
+                      <FriendIdentity friend={friend} />
+                      {isLeader ? <Text style={styles.friendLeaderBadge}>???</Text> : null}
+                    </View>
+                  </Pressable>
+                );
               })}
             </View>
           ) : (
@@ -678,7 +706,7 @@ export function FriendsScreen() {
                     <Text style={styles.modalHandle}>@{selectedFriend.handle}</Text>
                   </View>
                   <Pressable onPress={() => setSelectedFriendId(null)} style={styles.modalCloseButton}>
-                    <Text style={styles.modalCloseButtonLabel}>×</Text>
+                    <Text style={styles.modalCloseButtonLabel}>?</Text>
                   </Pressable>
                 </View>
 
@@ -694,8 +722,8 @@ export function FriendsScreen() {
                   {viewMode === "friends" ? (
                     <>
                       <View style={styles.modalStatsRow}>
-                        <StatBlock label="친구가 된 날" value={formatFriendSince(selectedFriend.friendSince)} />
-                        <StatBlock label="함께 걸은지" value={formatFriendTogether(selectedFriend.friendSince)} />
+                        <StatBlock label="??? ? ?" value={formatFriendSince(selectedFriend.friendSince)} />
+                        <StatBlock label="?? ???" value={formatFriendTogether(selectedFriend.friendSince)} />
                       </View>
                       <View style={styles.modalDeleteRow}>
                         <Pressable
@@ -705,15 +733,14 @@ export function FriendsScreen() {
                             pressed && styles.friendDeleteButtonPressed,
                           ]}
                         >
-                          <Text style={styles.friendDeleteButtonLabel}>친구 삭제</Text>
+                          <Text style={styles.friendDeleteButtonLabel}>?? ??</Text>
                         </Pressable>
                       </View>
                     </>
                   ) : (
                     <View style={styles.modalStatsRow}>
-                      <StatBlock label="최근 7일" value={`${formatNumber(selectedFriend.weeklySteps)}보`} />
-                      <StatBlock label="연속" value={`${selectedFriend.streak}일`} />
-                      <StatBlock label="상태" value={getLongTermLabel(selectedFriend.longTermState)} />
+                      <StatBlock label="??? ??? ?" value={formatMembershipDate(selectedFriendGroupJoinedAt)} />
+                      <StatBlock label="???" value={String(selectedFriendContribution) + "?"} />
                     </View>
                   )}
                 </ScrollView>
@@ -731,17 +758,17 @@ export function FriendsScreen() {
       >
         <Pressable style={styles.modalBackdrop} onPress={() => setShowFriendDeleteConfirm(false)}>
           <Pressable style={styles.deleteConfirmCard} onPress={() => null}>
-            <Text style={styles.deleteConfirmTitle}>정말 삭제할까요?</Text>
-            <Text style={styles.deleteConfirmText}>친구 관계가 삭제되고 목록에서 사라져요.</Text>
+            <Text style={styles.deleteConfirmTitle}>?? ??????</Text>
+            <Text style={styles.deleteConfirmText}>?? ??? ???? ???? ????.</Text>
             <View style={styles.deleteConfirmRow}>
               <Pressable
                 onPress={() => setShowFriendDeleteConfirm(false)}
                 style={[styles.secondaryButton, styles.deleteConfirmButton]}
               >
-                <Text style={styles.secondaryButtonLabel}>취소</Text>
+                <Text style={styles.secondaryButtonLabel}>??</Text>
               </Pressable>
               <Pressable onPress={deleteFriend} style={[styles.dangerButton, styles.deleteConfirmButton]}>
-                <Text style={styles.dangerButtonLabel}>삭제</Text>
+                <Text style={styles.dangerButtonLabel}>??</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -756,11 +783,11 @@ export function FriendsScreen() {
       >
         <Pressable style={styles.modalBackdrop} onPress={() => setShowDeleteConfirm(false)}>
           <Pressable style={styles.deleteConfirmCard} onPress={() => null}>
-            <Text style={styles.deleteConfirmTitle}>정말 삭제할까요?</Text>
-            <Text style={styles.deleteConfirmText}>그룹 정보와 멤버가 삭제될 수 있어요.</Text>
+            <Text style={styles.deleteConfirmTitle}>?? ??????</Text>
+            <Text style={styles.deleteConfirmText}>?? ??? ??? ????.</Text>
             <View style={styles.deleteConfirmRow}>
               <Pressable onPress={() => setShowDeleteConfirm(false)} style={styles.secondaryButton}>
-                <Text style={styles.secondaryButtonLabel}>취소</Text>
+                <Text style={styles.secondaryButtonLabel}>??</Text>
               </Pressable>
               <Pressable
                 onPress={() => {
@@ -768,7 +795,7 @@ export function FriendsScreen() {
                 }}
                 style={styles.dangerButton}
               >
-                <Text style={styles.dangerButtonLabel}>삭제</Text>
+                <Text style={styles.dangerButtonLabel}>??</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -884,11 +911,87 @@ function buildGroupCounts(groups, friends) {
 function removeGroupFromAllFriends(groupState, groupId) {
   const next = {};
 
-  for (const [friendId, groupIds] of Object.entries(groupState)) {
-    next[friendId] = Array.from(new Set((groupIds ?? []).filter((id) => id !== groupId)));
+  for (const [friendId, memberships] of Object.entries(groupState ?? {})) {
+    if (!memberships || typeof memberships !== "object" || Array.isArray(memberships)) {
+      next[friendId] = {};
+      continue;
+    }
+
+    const nextMemberships = { ...memberships };
+    delete nextMemberships[groupId];
+    next[friendId] = nextMemberships;
   }
 
   return next;
+}
+
+function addFriendToGroup(groupState, friendId, groupId) {
+  const next = normalizeFriendGroupState(groupState);
+  const currentMemberships = next[friendId] ?? {};
+  next[friendId] = {
+    ...currentMemberships,
+    [groupId]: currentMemberships[groupId] ?? getTodayDateKey(),
+  };
+  return next;
+}
+
+function normalizeFriendGroupState(groupState) {
+  const next = {};
+
+  for (const [friendId, memberships] of Object.entries(groupState ?? {})) {
+    next[friendId] = normalizeMembershipRecord(memberships);
+  }
+
+  return next;
+}
+
+function normalizeMembershipRecord(memberships) {
+  if (!memberships) {
+    return {};
+  }
+
+  if (Array.isArray(memberships)) {
+    return memberships.reduce((acc, groupId) => {
+      const normalizedGroupId = String(groupId ?? "").trim();
+      if (normalizedGroupId) {
+        acc[normalizedGroupId] = getTodayDateKey();
+      }
+      return acc;
+    }, {});
+  }
+
+  if (typeof memberships !== "object") {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(memberships)
+      .map(([groupId, joinedAt]) => [String(groupId ?? "").trim(), normalizeDateKey(joinedAt)])
+      .filter(([groupId]) => Boolean(groupId)),
+  );
+}
+
+function createEmptyMembershipRecord(groupIds = []) {
+  return normalizeMembershipRecord(groupIds);
+}
+
+function cloneFriendGroupState(groupState) {
+  return Object.fromEntries(
+    Object.entries(normalizeFriendGroupState(groupState)).map(([friendId, memberships]) => [friendId, { ...memberships }]),
+  );
+}
+
+function getTodayDateKey(referenceDate = new Date()) {
+  return normalizeDateKey(referenceDate);
+}
+
+function normalizeDateKey(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return getTodayDateKey();
+  }
+
+  return date.toISOString().slice(0, 10);
 }
 
 function makeGroupId(name, groups) {
@@ -982,6 +1085,19 @@ function formatFriendSince(friendSince) {
   }
 
   return String(friendSince).slice(0, 10).replaceAll("-", ".");
+}
+
+function formatMembershipDate(joinedAt) {
+  if (!joinedAt) {
+    return "기록 없음";
+  }
+
+  const date = new Date(joinedAt);
+  if (Number.isNaN(date.getTime())) {
+    return "기록 없음";
+  }
+
+  return date.toISOString().slice(0, 10).replaceAll("-", ".");
 }
 
 function formatFriendTogether(friendSince) {
