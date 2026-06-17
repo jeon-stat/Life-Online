@@ -50,7 +50,7 @@ export function HistoryScreen() {
 
   const streak = useMemo(() => getStreak(history, goal), [history, goal]);
   const achievementCards = useMemo(() => getMemories(history, goal, 3), [goal, history]);
-  const missionCards = useMemo(() => buildMissionCards({ history, goal, streak }), [goal, history, streak]);
+  const missionModel = useMemo(() => buildMissionModel({ history, goal, streak }), [goal, history, streak]);
   const personalOverview = useMemo(() => buildPersonalOverview(history, goal, streak), [history, goal, streak]);
   const trendPeriodConfig = useMemo(() => getPeriodConfig(trendPeriod), [trendPeriod]);
   const distributionPeriodConfig = useMemo(() => getPeriodConfig(distributionPeriod), [distributionPeriod]);
@@ -133,15 +133,60 @@ export function HistoryScreen() {
           </View>
 
           {achievementTab === "mission" ? (
-            <View style={styles.missionGrid}>
-              {missionCards.map((card) => (
-                <View key={card.key} style={styles.missionCard}>
-                  <Text style={styles.missionIcon}>{card.icon}</Text>
-                  <Text style={styles.missionTitle}>{card.title}</Text>
-                  <Text style={styles.missionValue}>{card.value}</Text>
-                  <Text style={styles.missionNote}>{card.note}</Text>
+            <View style={styles.missionWrap}>
+              <View style={styles.missionSummaryCard}>
+                <View style={styles.missionSummaryTopRow}>
+                  <Text style={styles.missionSummaryTitle}>오늘의 미션</Text>
+                  <Text style={styles.missionSummaryBadge}>
+                    {missionModel.completedCount}/{missionModel.totalCount} 완료
+                  </Text>
                 </View>
-              ))}
+                <Text style={styles.missionSummaryText}>일일, 주간, 특별 미션을 1열로 길게 보여줘요.</Text>
+              </View>
+
+              <View style={styles.missionSectionList}>
+                {missionModel.sections.map((section) => (
+                  <View key={section.key} style={styles.missionSection}>
+                    <View style={styles.missionSectionHeader}>
+                      <View>
+                        <Text style={styles.missionSectionTitle}>{section.title}</Text>
+                        <Text style={styles.missionSectionSubtitle}>{section.subtitle}</Text>
+                      </View>
+                      <Text style={styles.missionSectionCount}>{section.items.length}개</Text>
+                    </View>
+
+                    <View style={styles.missionList}>
+                      {section.items.map((card) => (
+                        <View key={card.key} style={styles.missionCard}>
+                          <View style={styles.missionCardTopRow}>
+                            <View style={styles.missionPillRow}>
+                              <Text style={[styles.missionTypePill, card.typeStyle]}>{card.typeLabel}</Text>
+                              <Text style={[styles.missionStatePill, card.completed && styles.missionStatePillComplete]}>
+                                {card.statusLabel}
+                              </Text>
+                            </View>
+                            <Text style={styles.missionIcon}>{card.icon}</Text>
+                          </View>
+
+                          <Text style={styles.missionTitle}>{card.title}</Text>
+                          <Text style={styles.missionNote}>{card.note}</Text>
+
+                          <View style={styles.missionProgressRow}>
+                            <Text style={styles.missionProgressText}>{card.progressText}</Text>
+                            <Text style={styles.missionRewardText}>{card.reward}</Text>
+                          </View>
+
+                          <View style={styles.missionProgressTrack}>
+                            <View style={[styles.missionProgressFill, { width: `${Math.max(0, Math.min(100, card.progress * 100))}%` }]} />
+                          </View>
+
+                          <Text style={styles.missionFooterText}>{card.footer}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                ))}
+              </View>
             </View>
           ) : (
             <Section title="업적">
@@ -240,48 +285,200 @@ function buildPersonalOverview(history, goal, streak) {
   };
 }
 
-function buildMissionCards({ history, goal, streak }) {
+function buildMissionModel({ history, goal, streak }) {
   const latest = history[0] ?? null;
-  const goalDays = history.reduce((count, record) => count + ((record?.steps ?? 0) >= goal ? 1 : 0), 0);
-  const latestSteps = latest?.steps ?? 0;
-  const latestEnergy = getEnergyLevel(latestSteps, goal);
+  const latestSteps = Number(latest?.steps ?? 0);
+  const goalValue = Math.max(1, Number(goal ?? 1));
+  const weeklyRecords = history.slice(0, 7);
+  const monthlyRecords = history.slice(0, 30);
+  const weeklySteps = weeklyRecords.reduce((sum, record) => sum + Number(record?.steps ?? 0), 0);
+  const monthlySteps = monthlyRecords.reduce((sum, record) => sum + Number(record?.steps ?? 0), 0);
+  const goalDays = weeklyRecords.reduce((count, record) => count + ((record?.steps ?? 0) >= goalValue ? 1 : 0), 0);
   const bestRecord = history.reduce((best, record) => {
     if (!best || (record?.steps ?? 0) > (best?.steps ?? 0)) {
       return record;
     }
     return best;
   }, null);
+  const bestSteps = Number(bestRecord?.steps ?? 0);
 
-  return [
+  const sections = [
     {
-      key: "today",
-      icon: "👣",
-      title: "오늘",
-      value: latest ? `${formatNumber(latestSteps)}보` : "0보",
-      note: latestSteps >= goal ? `E${latestEnergy} 달성` : `${Math.max(goal - latestSteps, 0)}보 남음`,
+      key: "daily",
+      title: "일일 미션",
+      subtitle: "오늘 바로 끝낼 수 있는 짧은 미션이에요.",
+      items: [
+        createMissionCard({
+          key: "daily-3000",
+          typeKey: "daily",
+          typeLabel: "일일",
+          icon: "👣",
+          title: "오늘 3,000보 걷기",
+          note: "가볍게 몸을 풀기 좋은 입문 미션이에요.",
+          currentValue: latestSteps,
+          targetValue: 3000,
+          reward: "+30 코인",
+          progressText: `${formatNumber(Math.min(latestSteps, 3000))} / 3,000보`,
+          completedFooter: "가볍게 성공했어요.",
+          pendingFooter: `${formatNumber(Math.max(3000 - latestSteps, 0))}보 남았어요.`,
+        }),
+        createMissionCard({
+          key: "daily-goal",
+          typeKey: "daily",
+          typeLabel: "일일",
+          icon: "🎯",
+          title: "오늘 목표 달성하기",
+          note: "기본 목표를 채우면 보상이 열려요.",
+          currentValue: latestSteps,
+          targetValue: goalValue,
+          reward: "+50 코인",
+          progressText: `${formatNumber(Math.min(latestSteps, goalValue))} / ${formatNumber(goalValue)}보`,
+          completedFooter: "기본 목표를 달성했어요.",
+          pendingFooter: `${formatNumber(Math.max(goalValue - latestSteps, 0))}보 남았어요.`,
+        }),
+        createMissionCard({
+          key: "daily-8000",
+          typeKey: "daily",
+          typeLabel: "일일",
+          icon: "✨",
+          title: "오늘 8,000보 걷기",
+          note: "조금 더 걸으면 추가 보상을 받을 수 있어요.",
+          currentValue: latestSteps,
+          targetValue: 8000,
+          reward: "+70 코인",
+          progressText: `${formatNumber(Math.min(latestSteps, 8000))} / 8,000보`,
+          completedFooter: "오늘은 충분히 많이 걸었어요.",
+          pendingFooter: `${formatNumber(Math.max(8000 - latestSteps, 0))}보 남았어요.`,
+        }),
+      ],
     },
     {
-      key: "week",
-      icon: "🎯",
-      title: "이번 주",
-      value: `${goalDays}/7`,
-      note: "목표 달성 일수",
+      key: "weekly",
+      title: "주간 미션",
+      subtitle: "이번 주 누적 기록으로 보상을 챙기는 미션이에요.",
+      items: [
+        createMissionCard({
+          key: "weekly-3days",
+          typeKey: "weekly",
+          typeLabel: "주간",
+          icon: "📅",
+          title: "이번 주 3일 달성",
+          note: "주 3회만 성공해도 보상을 받을 수 있어요.",
+          currentValue: goalDays,
+          targetValue: 3,
+          reward: "+100 코인",
+          progressText: `${Math.min(goalDays, 3)} / 3일`,
+          completedFooter: "주간 기본 미션을 완료했어요.",
+          pendingFooter: `${Math.max(3 - goalDays, 0)}일 더 걸으면 돼요.`,
+        }),
+        createMissionCard({
+          key: "weekly-steps",
+          typeKey: "weekly",
+          typeLabel: "주간",
+          icon: "🧭",
+          title: "최근 7일 누적 40,000보",
+          note: "일주일 동안 걸은 걸음을 차곡차곡 모아봐요.",
+          currentValue: weeklySteps,
+          targetValue: 40000,
+          reward: "+특별 상자 1개",
+          progressText: `${formatNumber(Math.min(weeklySteps, 40000))} / 40,000보`,
+          completedFooter: "이번 주 걸음이 충분히 쌓였어요.",
+          pendingFooter: `${formatNumber(Math.max(40000 - weeklySteps, 0))}보 남았어요.`,
+        }),
+        createMissionCard({
+          key: "weekly-streak",
+          typeKey: "weekly",
+          typeLabel: "주간",
+          icon: "🔥",
+          title: "3일 연속 걷기",
+          note: "연속 기록은 습관 만들기에 좋아요.",
+          currentValue: streak,
+          targetValue: 3,
+          reward: "+80 코인",
+          progressText: `${Math.min(streak, 3)} / 3일`,
+          completedFooter: "연속 기록을 이어가고 있어요.",
+          pendingFooter: `${Math.max(3 - streak, 0)}일 더 이어가면 돼요.`,
+        }),
+      ],
     },
     {
-      key: "streak",
-      icon: "🔥",
-      title: "연속",
-      value: `${streak}일`,
-      note: "이어가는 중",
-    },
-    {
-      key: "best",
-      icon: "🏅",
-      title: "최고",
-      value: `${formatNumber(bestRecord?.steps ?? 0)}보`,
-      note: bestRecord ? formatTrailDateLabel(bestRecord.date, bestRecord.id === latest?.id) : "기록 없음",
+      key: "special",
+      title: "특별 미션",
+      subtitle: "조금 더 큰 보상과 연결되는 장기 미션이에요.",
+      items: [
+        createMissionCard({
+          key: "special-best",
+          typeKey: "special",
+          typeLabel: "특별",
+          icon: "🏅",
+          title: "최고 기록 10,000보 달성",
+          note: "한 번 크게 걸으면 열리는 도전 과제예요.",
+          currentValue: bestSteps,
+          targetValue: 10000,
+          reward: "+특별 조각 1개",
+          progressText: `${formatNumber(Math.min(bestSteps, 10000))} / 10,000보`,
+          completedFooter: "개인 최고 기록을 넘어섰어요.",
+          pendingFooter: `${formatNumber(Math.max(10000 - bestSteps, 0))}보 남았어요.`,
+        }),
+        createMissionCard({
+          key: "special-month",
+          typeKey: "special",
+          typeLabel: "특별",
+          icon: "🌙",
+          title: "한 달 누적 150,000보",
+          note: "장기 목표를 채우면 큰 보상을 받을 수 있어요.",
+          currentValue: monthlySteps,
+          targetValue: 150000,
+          reward: "+배지 1개",
+          progressText: `${formatNumber(Math.min(monthlySteps, 150000))} / 150,000보`,
+          completedFooter: "한 달 목표를 향해 잘 가고 있어요.",
+          pendingFooter: `${formatNumber(Math.max(150000 - monthlySteps, 0))}보 남았어요.`,
+        }),
+      ],
     },
   ];
+
+  const allItems = sections.flatMap((section) => section.items);
+  return {
+    sections,
+    totalCount: allItems.length,
+    completedCount: allItems.filter((item) => item.completed).length,
+  };
+}
+
+function createMissionCard({
+  key,
+  typeKey,
+  typeLabel,
+  icon,
+  title,
+  note,
+  currentValue,
+  targetValue,
+  reward,
+  progressText,
+  completedFooter,
+  pendingFooter,
+}) {
+  const safeTarget = Math.max(1, Number(targetValue ?? 1));
+  const safeCurrent = Math.max(0, Number(currentValue ?? 0));
+  const progress = Math.min(1, safeCurrent / safeTarget);
+  const completed = progress >= 1;
+
+  return {
+    key,
+    typeKey,
+    typeLabel,
+    icon,
+    title,
+    note,
+    reward,
+    progress,
+    progressText: progressText ?? `${formatNumber(Math.min(safeCurrent, safeTarget))} / ${formatNumber(safeTarget)}`,
+    statusLabel: completed ? "완료" : "진행중",
+    footer: completed ? completedFooter : pendingFooter ?? "아직 진행 중이에요.",
+    completed,
+  };
 }
 
 function formatTrailDateLabel(value, isToday) {
@@ -1413,39 +1610,185 @@ const styles = StyleSheet.create({
   tightAxisColumn: {
     paddingRight: 2,
   },
-  missionGrid: {
+  missionWrap: {
+    gap: 12,
+  },
+  missionSummaryCard: {
+    borderRadius: theme.radius.lg,
+    padding: 14,
+    backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 8,
+  },
+  missionSummaryTopRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  missionSummaryTitle: {
+    color: theme.colors.ink,
+    fontSize: 14,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  missionSummaryBadge: {
+    color: "#ffffff",
+    backgroundColor: "#111111",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: theme.radius.pill,
+    fontSize: 11,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
+  },
+  missionSummaryText: {
+    color: theme.colors.inkSoft,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
+  },
+  missionSectionList: {
+    gap: 14,
+  },
+  missionSection: {
+    gap: 10,
+  },
+  missionSectionHeader: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  missionSectionTitle: {
+    color: theme.colors.ink,
+    fontSize: 15,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  missionSectionSubtitle: {
+    color: theme.colors.inkSoft,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
+    marginTop: 3,
+  },
+  missionSectionCount: {
+    color: theme.colors.inkSoft,
+    fontSize: 11,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
+  },
+  missionList: {
     gap: 10,
   },
   missionCard: {
-    width: "48.5%",
     borderRadius: theme.radius.lg,
     padding: 14,
     backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    gap: 8,
+  },
+  missionCardTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  missionPillRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
     gap: 6,
+    flex: 1,
+  },
+  missionTypePill: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: theme.radius.pill,
+    fontSize: 11,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
+    color: "#ffffff",
+    backgroundColor: "#111111",
+  },
+  missionTypePillDaily: {
+    backgroundColor: "#2f6bff",
+  },
+  missionTypePillWeekly: {
+    backgroundColor: "#12a76b",
+  },
+  missionTypePillSpecial: {
+    backgroundColor: "#ba6b00",
+  },
+  missionStatePill: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: theme.radius.pill,
+    fontSize: 11,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
+    color: theme.colors.inkSoft,
+    backgroundColor: "#f1f2f5",
+  },
+  missionStatePillComplete: {
+    color: "#155724",
+    backgroundColor: "#dff3e7",
   },
   missionIcon: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: "900",
   },
   missionTitle: {
-    color: theme.colors.inkSoft,
-    fontSize: 10,
-    fontWeight: "800",
-    fontFamily: theme.fonts.body,
-  },
-  missionValue: {
     color: theme.colors.ink,
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
   missionNote: {
     color: theme.colors.inkSoft,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
+  },
+  missionProgressRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  missionProgressText: {
+    color: theme.colors.ink,
+    fontSize: 12,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
+  },
+  missionRewardText: {
+    color: "#111111",
+    fontSize: 12,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  missionProgressTrack: {
+    height: 8,
+    borderRadius: theme.radius.pill,
+    overflow: "hidden",
+    backgroundColor: "#eceff3",
+  },
+  missionProgressFill: {
+    height: "100%",
+    borderRadius: theme.radius.pill,
+    backgroundColor: "#111111",
+  },
+  missionFooterText: {
+    color: theme.colors.inkSoft,
     fontSize: 11,
+    lineHeight: 16,
     fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
