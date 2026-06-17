@@ -1,4 +1,4 @@
-﻿import { Platform, SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, Platform, SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, TextInput } from "react-native";
@@ -84,7 +84,7 @@ function useWebFonts() {
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState("home");
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isReady: isAuthReady } = useAuth();
   const adminEnabled = useMemo(() => {
     if (typeof __DEV__ !== "undefined" && __DEV__ === true) {
       return true;
@@ -96,6 +96,15 @@ function AppContent() {
 
     return false;
   }, []);
+
+  if (!isAuthReady) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <LoadingScreen label="앱 데이터를 불러오는 중" />
+        <StatusBar style="dark" />
+      </SafeAreaView>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
@@ -114,7 +123,7 @@ function AppContent() {
 }
 
 function AppShell({ activeTab, onChangeTab }) {
-  const { today, history, goal, admin } = useStepData();
+  const { today, history, goal, admin, isReady: isStepReady } = useStepData();
   const { currentUser, signOut } = useAuth();
   const [menuVisible, setMenuVisible] = useState(false);
 
@@ -128,6 +137,14 @@ function AppShell({ activeTab, onChangeTab }) {
       }),
     [admin, goal, history, today],
   );
+
+  if (!isStepReady) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <LoadingScreen label="사용자 데이터를 불러오는 중" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -202,6 +219,15 @@ function AppShell({ activeTab, onChangeTab }) {
   );
 }
 
+function LoadingScreen({ label }) {
+  return (
+    <View style={styles.loadingScreen}>
+      <ActivityIndicator size="large" color={theme.colors.ink} />
+      <Text style={styles.loadingLabel}>{label}</Text>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -213,6 +239,18 @@ const styles = StyleSheet.create({
   },
   screenArea: {
     flex: 1,
+  },
+  loadingScreen: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 14,
+    backgroundColor: theme.colors.appBackground,
+  },
+  loadingLabel: {
+    color: theme.colors.inkSoft,
+    fontSize: 14,
+    fontWeight: "800",
   },
   updatedAtBadge: {
     position: "absolute",
@@ -291,4 +329,3 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 });
-

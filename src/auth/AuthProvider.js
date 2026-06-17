@@ -1,11 +1,35 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-import { createLocalAccount, loadAuthState, loginWithHandle, logoutLocalAccount } from "./authStorage.js";
+import { createLocalAccount, loadAuthState, loginWithHandle, logoutLocalAccount, saveAuthState } from "./authStorage.js";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [authState, setAuthState] = useState(() => loadAuthState());
+  const [authState, setAuthState] = useState({ accounts: [], sessionId: null });
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadAuthState()
+      .then((nextState) => {
+        if (cancelled) {
+          return;
+        }
+
+        setAuthState(nextState);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) {
+          setIsReady(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const value = useMemo(() => {
     const currentUser = authState.accounts.find((account) => account.id === authState.sessionId) ?? null;
@@ -14,20 +38,24 @@ export function AuthProvider({ children }) {
       currentUser,
       accounts: authState.accounts,
       isAuthenticated: Boolean(currentUser),
+      isReady,
       signUp: ({ handle, nickname }) => {
-        const next = createLocalAccount({ handle, nickname });
+        const next = createLocalAccount(authState, { handle, nickname });
         setAuthState(next);
+        void saveAuthState(next);
       },
       signIn: (handle) => {
-        const next = loginWithHandle(handle);
+        const next = loginWithHandle(authState, handle);
         setAuthState(next);
+        void saveAuthState(next);
       },
       signOut: () => {
-        const next = logoutLocalAccount();
+        const next = logoutLocalAccount(authState);
         setAuthState(next);
+        void saveAuthState(next);
       },
     };
-  }, [authState]);
+  }, [authState, isReady]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

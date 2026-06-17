@@ -1,4 +1,4 @@
-import { Platform } from "react-native";
+import { readPersistedJson, writePersistedJson } from "../storage/persistedJson.js";
 
 const STORAGE_KEY = "life-online-auth-v1";
 
@@ -7,55 +7,33 @@ let memoryState = {
   sessionId: null,
 };
 
-function canUseLocalStorage() {
-  return Platform.OS === "web" && typeof window !== "undefined" && window.localStorage;
-}
-
-function normalizeState(value) {
+export function normalizeAuthState(value) {
   return {
     accounts: Array.isArray(value?.accounts) ? value.accounts : [],
     sessionId: value?.sessionId ?? null,
   };
 }
 
-export function loadAuthState() {
-  if (!canUseLocalStorage()) {
-    return normalizeState(memoryState);
-  }
-
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return normalizeState(memoryState);
-    return normalizeState(JSON.parse(raw));
-  } catch {
-    return normalizeState(memoryState);
-  }
+export async function loadAuthState() {
+  const nextState = normalizeAuthState(await readPersistedJson(STORAGE_KEY, memoryState));
+  memoryState = nextState;
+  return nextState;
 }
 
-export function saveAuthState(nextState) {
-  const normalized = normalizeState(nextState);
+export async function saveAuthState(nextState) {
+  const normalized = normalizeAuthState(nextState);
   memoryState = normalized;
-
-  if (!canUseLocalStorage()) {
-    return normalized;
-  }
-
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
-  } catch {
-    return normalized;
-  }
-
+  await writePersistedJson(STORAGE_KEY, normalized);
   return normalized;
 }
 
-export function createLocalAccount({ handle, nickname }) {
-  const current = loadAuthState();
+export function createLocalAccount(currentState, { handle, nickname }) {
   const normalizedHandle = String(handle ?? "")
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9_-]/g, "");
   const normalizedNickname = String(nickname ?? "").trim();
+  const current = normalizeAuthState(currentState);
 
   if (!normalizedHandle || !normalizedNickname) {
     throw new Error("invalid_profile");
@@ -72,14 +50,14 @@ export function createLocalAccount({ handle, nickname }) {
     createdAt: new Date().toISOString(),
   };
 
-  return saveAuthState({
+  return normalizeAuthState({
     accounts: [account, ...current.accounts],
     sessionId: account.id,
   });
 }
 
-export function loginWithHandle(handle) {
-  const current = loadAuthState();
+export function loginWithHandle(currentState, handle) {
+  const current = normalizeAuthState(currentState);
   const normalizedHandle = String(handle ?? "")
     .trim()
     .toLowerCase()
@@ -90,15 +68,15 @@ export function loginWithHandle(handle) {
     throw new Error("account_not_found");
   }
 
-  return saveAuthState({
+  return normalizeAuthState({
     ...current,
     sessionId: account.id,
   });
 }
 
-export function logoutLocalAccount() {
-  const current = loadAuthState();
-  return saveAuthState({
+export function logoutLocalAccount(currentState) {
+  const current = normalizeAuthState(currentState);
+  return normalizeAuthState({
     ...current,
     sessionId: null,
   });

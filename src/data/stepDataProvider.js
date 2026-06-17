@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import {
   CUSTOMIZATION_CATEGORIES,
@@ -9,26 +9,82 @@ import {
 } from "./customizationCatalog.js";
 import { DEFAULT_STEP_GOAL } from "../game/stepRules.js";
 import { createMockStepSnapshot } from "./mockStepData.js";
+import { readPersistedJson, writePersistedJson } from "../storage/persistedJson.js";
 
 const StepDataContext = createContext(null);
+const STEP_STORAGE_KEY = "life-online-step-data-v1";
+
+function createDefaultShopState() {
+  const ownedItemIdsByCategory = createDefaultOwnedItemIds();
+  const selectedItemIdsByCategory = createDefaultSelectedItemIds();
+
+  return {
+    coinBalance: DEFAULT_SHOP_COIN_BALANCE,
+    ownedItemIdsByCategory,
+    selectedItemIdsByCategory,
+    skinToneId: selectedItemIdsByCategory.skinTone,
+  };
+}
+
+function uniqueStrings(values) {
+  return [...new Set((Array.isArray(values) ? values : []).map((value) => String(value ?? "").trim()).filter(Boolean))];
+}
+
+function normalizeOwnedIds(defaultIds, persistedIds) {
+  return uniqueStrings([...(Array.isArray(persistedIds) ? persistedIds : []), ...defaultIds]);
+}
+
+function normalizeSelectedId(categoryId, ownedIds, fallbackSelectedId) {
+  const selectedId = String(fallbackSelectedId ?? "").trim();
+  if (categoryId === "skinTone" && selectedId) {
+    return ownedIds.includes(selectedId) ? selectedId : ownedIds[0] ?? null;
+  }
+
+  return ownedIds.includes(selectedId) ? selectedId : ownedIds[0] ?? null;
+}
+
+function normalizeShopState(value) {
+  const defaultShopState = createDefaultShopState();
+  const persistedOwned = value?.ownedItemIdsByCategory ?? {};
+  const persistedSelected = value?.selectedItemIdsByCategory ?? {};
+  const ownedItemIdsByCategory = {};
+  const selectedItemIdsByCategory = {};
+
+  for (const category of CUSTOMIZATION_CATEGORIES) {
+    const categoryId = category.id;
+    const defaultOwnedIds = defaultShopState.ownedItemIdsByCategory?.[categoryId] ?? [];
+    const ownedIds = normalizeOwnedIds(defaultOwnedIds, persistedOwned?.[categoryId]);
+    const selectedId = normalizeSelectedId(categoryId, ownedIds, persistedSelected?.[categoryId] ?? defaultShopState.selectedItemIdsByCategory?.[categoryId]);
+
+    ownedItemIdsByCategory[categoryId] = ownedIds;
+    selectedItemIdsByCategory[categoryId] = selectedId;
+  }
+
+  const skinToneId = selectedItemIdsByCategory.skinTone ?? defaultShopState.skinToneId ?? null;
+
+  return {
+    coinBalance: Math.max(0, Math.floor(Number(value?.coinBalance ?? defaultShopState.coinBalance))),
+    ownedItemIdsByCategory,
+    selectedItemIdsByCategory,
+    skinToneId,
+  };
+}
+
+function normalizeClaimedMissionRewardIds(value) {
+  return uniqueStrings(value);
+}
 
 export function StepDataProvider({ children, mode = "mock", adminEnabled = false }) {
   const [mockState, setMockState] = useState(() => createMockStepSnapshot());
   const [adminVisible, setAdminVisible] = useState(false);
-  const defaultOwnedItemIds = useMemo(() => createDefaultOwnedItemIds(), []);
-  const defaultSelectedItemIds = useMemo(() => createDefaultSelectedItemIds(), []);
-  const [shopState, setShopState] = useState(() => ({
-    coinBalance: DEFAULT_SHOP_COIN_BALANCE,
-    ownedItemIdsByCategory: defaultOwnedItemIds,
-    selectedItemIdsByCategory: defaultSelectedItemIds,
-    skinToneId: defaultSelectedItemIds.skinTone,
-  }));
+  const [shopState, setShopState] = useState(() => createDefaultShopState());
   const [claimedMissionRewardIds, setClaimedMissionRewardIds] = useState([]);
   const [behaviorAdmin, setBehaviorAdmin] = useState(() => ({
     forcedEnergyLevel: null,
     forcedLongTermState: null,
     forcedSpecialActionKey: null,
   }));
+  const [isReady, setIsReady] = useState(false);
   const isMockMode = mode === "mock";
   const history = isMockMode ? mockState.history : [];
   const today = history[0] ?? {
@@ -38,9 +94,45 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
     source: isMockMode ? "mock" : "device",
   };
 
+  useEffect(() => {
+    let cancelled = false;
+
+    readPersistedJson(STEP_STORAGE_KEY, null)
+      .then((value) => {
+        if (cancelled) {
+          return;
+        }
+
+        setShopState(normalizeShopState(value?.shopState));
+        setClaimedMissionRewardIds(normalizeClaimedMissionRewardIds(value?.claimedMissionRewardIds));
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) {
+          setIsReady(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
+    void writePersistedJson(STEP_STORAGE_KEY, {
+      shopState,
+      claimedMissionRewardIds,
+    });
+  }, [claimedMissionRewardIds, isReady, shopState]);
+
   const value = useMemo(
     () => ({
       mode,
+      isReady,
       goal: DEFAULT_STEP_GOAL,
       today,
       history,
@@ -54,6 +146,10 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
           (shopState.ownedItemIdsByCategory?.[categoryId] ?? []).includes(itemId),
         selectItem: (categoryId, itemId) => {
           setShopState((current) => {
+            if (current.selectedItemIdsByCategory?.[categoryId] === itemId) {
+              return current;
+            }
+
             if (categoryId !== "skinTone" && !(current.ownedItemIdsByCategory?.[categoryId] ?? []).includes(itemId)) {
               return current;
             }
@@ -75,9 +171,7 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
             const ownedIds = current.ownedItemIdsByCategory?.[categoryId] ?? [];
             if (ownedIds.includes(itemId)) {
               purchaseStatus = "owned";
-              return {
-                ...current,
-              };
+              return current;
             }
 
             const nextCoinBalance = Math.max(0, current.coinBalance - price);
@@ -224,6 +318,7 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
       mode,
       shopState,
       today,
+      isReady,
     ],
   );
 
