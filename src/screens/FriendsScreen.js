@@ -477,14 +477,14 @@ export function FriendsScreen() {
         <View style={styles.groupCard}>
           <View style={styles.groupCardTop}>
             <View>
-              <Text style={styles.groupCardLabel}>??</Text>
-              <Text style={styles.groupCardTitle}>{selectedGroup?.name ?? "?? ??? ???"}</Text>
+              <Text style={styles.groupCardLabel}>그룹</Text>
+              <Text style={styles.groupCardTitle}>{selectedGroup?.name ?? "아직 그룹이 없어요"}</Text>
             </View>
-            {selectedGroup ? <Text style={styles.systemBadge}>?? {selectedGroup.code}</Text> : null}
+            {selectedGroup ? <Text style={styles.systemBadge}>번호 {selectedGroup.code}</Text> : null}
           </View>
           <Text style={styles.groupCardMeta}>
-            {selectedGroup ? String(groupCounts[selectedGroup.id] ?? 0) + "?" : "? ??? ???? ?????."}
-            {selectedGroup?.leaderId ? " ? ??? " + (mergedFriends.find((friend) => friend.id === selectedGroup.leaderId)?.nickname ?? "") : ""}
+            {selectedGroup ? String(groupCounts[selectedGroup.id] ?? 0) + "명" : "새 그룹을 만들거나 들어가세요."}
+            {selectedGroup?.leaderId ? " · 그룹장 " + (mergedFriends.find((friend) => friend.id === selectedGroup.leaderId)?.nickname ?? "") : ""}
           </Text>
 
           {groups.length ? (
@@ -522,14 +522,14 @@ export function FriendsScreen() {
                       onPress={() => setShowGroupRename((current) => !current)}
                       style={styles.groupActionFlexButton}
                     >
-                      <Text style={styles.secondaryButtonLabel}>?? ??</Text>
+                      <Text style={styles.secondaryButtonLabel}>그룹 관리</Text>
                     </Pressable>
                     <Pressable onPress={() => setShowDeleteConfirm(true)} style={styles.dangerButton}>
-                      <Text style={styles.dangerButtonLabel}>?? ??</Text>
+                      <Text style={styles.dangerButtonLabel}>그룹 삭제</Text>
                     </Pressable>
                   </>
                 ) : (
-                  <Text style={styles.groupActionNote}>??? ?? ???? ??? ??? ?????.</Text>
+                  <Text style={styles.groupActionNote}>그룹을 하나 만들거나 번호를 입력해 들어가세요.</Text>
                 )}
               </View>
 
@@ -538,12 +538,12 @@ export function FriendsScreen() {
                   <TextInput
                     value={renameGroupName}
                     onChangeText={setRenameGroupName}
-                    placeholder="?? ??"
+                    placeholder="그룹 이름"
                     placeholderTextColor={theme.colors.inkSoft}
                     style={styles.textInput}
                   />
                   <Pressable onPress={renameGroup} style={styles.secondaryButton}>
-                    <Text style={styles.secondaryButtonLabel}>??</Text>
+                    <Text style={styles.secondaryButtonLabel}>변경</Text>
                   </Pressable>
                 </View>
               ) : null}
@@ -601,29 +601,29 @@ export function FriendsScreen() {
         <>
           <View style={styles.groupActionCard}>
             <View style={styles.groupActionHeader}>
-              <Text style={styles.groupActionTitle}>?? ??</Text>
-              <Text style={styles.groupActionHint}>@???</Text>
+              <Text style={styles.groupActionTitle}>친구 추가</Text>
+              <Text style={styles.groupActionHint}>@아이디</Text>
             </View>
             <View style={styles.inlineInputRow}>
               <TextInput
                 value={friendHandleInput}
                 onChangeText={setFriendHandleInput}
-                placeholder="@???"
+                placeholder="@아이디"
                 placeholderTextColor={theme.colors.inkSoft}
                 autoCapitalize="none"
                 autoCorrect={false}
                 style={styles.textInput}
               />
               <Pressable onPress={addFriendFromHandle} style={styles.primaryButton}>
-                <Text style={styles.primaryButtonLabel}>??</Text>
+                <Text style={styles.primaryButtonLabel}>추가</Text>
               </Pressable>
             </View>
             {friendAddMessage ? <Text style={styles.groupActionNote}>{friendAddMessage}</Text> : null}
           </View>
 
           <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>?? ??</Text>
-            <Text style={styles.listSubtitle}>??? ?? ??? ? ? ???.</Text>
+            <Text style={styles.listTitle}>친구 목록</Text>
+            <Text style={styles.listSubtitle}>카드를 눌러 자세히 볼 수 있어요.</Text>
           </View>
 
           <View style={styles.friendGallery}>
@@ -654,8 +654,8 @@ export function FriendsScreen() {
       ) : (
         <>
           <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>?? ??</Text>
-            <Text style={styles.listSubtitle}>??? ??? ???? ????.</Text>
+            <Text style={styles.listTitle}>그룹 친구</Text>
+            <Text style={styles.listSubtitle}>선택한 그룹의 친구들만 보여줘요.</Text>
           </View>
 
           {groupFriends.length ? (
@@ -678,7 +678,7 @@ export function FriendsScreen() {
                     </View>
                     <View style={styles.friendGalleryCaption}>
                       <FriendIdentity friend={friend} />
-                      {isLeader ? <Text style={styles.friendLeaderBadge}>???</Text> : null}
+                      {isLeader ? <Text style={styles.friendLeaderBadge}>그룹장</Text> : null}
                     </View>
                   </Pressable>
                 );
@@ -706,7 +706,7 @@ export function FriendsScreen() {
                     <Text style={styles.modalHandle}>@{selectedFriend.handle}</Text>
                   </View>
                   <Pressable onPress={() => setSelectedFriendId(null)} style={styles.modalCloseButton}>
-                    <Text style={styles.modalCloseButtonLabel}>?</Text>
+                    <Text style={styles.modalCloseButtonLabel}>×</Text>
                   </Pressable>
                 </View>
 
@@ -722,8 +722,8 @@ export function FriendsScreen() {
                   {viewMode === "friends" ? (
                     <>
                       <View style={styles.modalStatsRow}>
-                        <StatBlock label="??? ? ?" value={formatFriendSince(selectedFriend.friendSince)} />
-                        <StatBlock label="?? ???" value={formatFriendTogether(selectedFriend.friendSince)} />
+                        <StatBlock label="친구가 된 날" value={formatFriendSince(selectedFriend.friendSince)} />
+                        <StatBlock label="함께 걸은지" value={formatFriendTogether(selectedFriend.friendSince)} />
                       </View>
                       <View style={styles.modalDeleteRow}>
                         <Pressable
@@ -733,14 +733,14 @@ export function FriendsScreen() {
                             pressed && styles.friendDeleteButtonPressed,
                           ]}
                         >
-                          <Text style={styles.friendDeleteButtonLabel}>?? ??</Text>
+                          <Text style={styles.friendDeleteButtonLabel}>친구 삭제</Text>
                         </Pressable>
                       </View>
                     </>
                   ) : (
                     <View style={styles.modalStatsRow}>
-                      <StatBlock label="??? ??? ?" value={formatMembershipDate(selectedFriendGroupJoinedAt)} />
-                      <StatBlock label="???" value={String(selectedFriendContribution) + "?"} />
+                      <StatBlock label="그룹에 들어온 날" value={formatMembershipDate(selectedFriendGroupJoinedAt)} />
+                      <StatBlock label="기여도" value={String(selectedFriendContribution) + "점"} />
                     </View>
                   )}
                 </ScrollView>
@@ -758,17 +758,17 @@ export function FriendsScreen() {
       >
         <Pressable style={styles.modalBackdrop} onPress={() => setShowFriendDeleteConfirm(false)}>
           <Pressable style={styles.deleteConfirmCard} onPress={() => null}>
-            <Text style={styles.deleteConfirmTitle}>?? ??????</Text>
-            <Text style={styles.deleteConfirmText}>?? ??? ???? ???? ????.</Text>
+            <Text style={styles.deleteConfirmTitle}>친구 삭제할까요?</Text>
+            <Text style={styles.deleteConfirmText}>친구 관계를 삭제하고 목록에서 사라져요.</Text>
             <View style={styles.deleteConfirmRow}>
               <Pressable
                 onPress={() => setShowFriendDeleteConfirm(false)}
                 style={[styles.secondaryButton, styles.deleteConfirmButton]}
               >
-                <Text style={styles.secondaryButtonLabel}>??</Text>
+                <Text style={styles.secondaryButtonLabel}>취소</Text>
               </Pressable>
               <Pressable onPress={deleteFriend} style={[styles.dangerButton, styles.deleteConfirmButton]}>
-                <Text style={styles.dangerButtonLabel}>??</Text>
+                <Text style={styles.dangerButtonLabel}>삭제</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -783,11 +783,11 @@ export function FriendsScreen() {
       >
         <Pressable style={styles.modalBackdrop} onPress={() => setShowDeleteConfirm(false)}>
           <Pressable style={styles.deleteConfirmCard} onPress={() => null}>
-            <Text style={styles.deleteConfirmTitle}>?? ??????</Text>
-            <Text style={styles.deleteConfirmText}>?? ??? ??? ????.</Text>
+            <Text style={styles.deleteConfirmTitle}>그룹 삭제할까요?</Text>
+            <Text style={styles.deleteConfirmText}>그룹 정보와 멤버가 삭제돼요.</Text>
             <View style={styles.deleteConfirmRow}>
               <Pressable onPress={() => setShowDeleteConfirm(false)} style={styles.secondaryButton}>
-                <Text style={styles.secondaryButtonLabel}>??</Text>
+                <Text style={styles.secondaryButtonLabel}>취소</Text>
               </Pressable>
               <Pressable
                 onPress={() => {
@@ -795,7 +795,7 @@ export function FriendsScreen() {
                 }}
                 style={styles.dangerButton}
               >
-                <Text style={styles.dangerButtonLabel}>??</Text>
+                <Text style={styles.dangerButtonLabel}>삭제</Text>
               </Pressable>
             </View>
           </Pressable>
