@@ -184,13 +184,26 @@ export function getFriendDirectory() {
 
 export function createFriendGroupState(friends = []) {
   return friends.reduce((acc, friend) => {
-    acc[friend.id] = normalizeGroupIds(friend.groupIds);
+    acc[friend.id] = normalizeMembershipMap(friend.groupIds);
     return acc;
   }, {});
 }
 
 export function getFriendGroupIds(friend, groupState = {}) {
-  return normalizeGroupIds(groupState?.[friend.id] ?? friend?.groupIds ?? []);
+  return normalizeGroupIds(extractMembershipSource(groupState?.[friend.id], friend?.groupIds ?? []));
+}
+
+export function getFriendGroupJoinedAt(friend, groupId, groupState = {}) {
+  const membership = groupState?.[friend?.id];
+  if (!membership || !groupId) {
+    return null;
+  }
+
+  if (Array.isArray(membership)) {
+    return null;
+  }
+
+  return String(membership?.[groupId] ?? "").trim() || null;
 }
 
 export function getFriendGroupNames(friend, groupState = {}, groups = DEFAULT_FRIEND_GROUPS) {
@@ -211,18 +224,18 @@ export function toggleFriendGroupMembership(groupState, friendId, groupId) {
     return groupState;
   }
 
-  const currentIds = normalizeGroupIds(groupState?.[friendId] ?? []);
-  const nextIds = new Set(currentIds);
+  const currentMembership = normalizeMembershipMap(groupState?.[friendId] ?? []);
+  const nextMembership = { ...currentMembership };
 
-  if (nextIds.has(groupId)) {
-    nextIds.delete(groupId);
+  if (nextMembership[groupId]) {
+    delete nextMembership[groupId];
   } else {
-    nextIds.add(groupId);
+    nextMembership[groupId] = new Date().toISOString().slice(0, 10);
   }
 
   return {
     ...groupState,
-    [friendId]: Array.from(nextIds),
+    [friendId]: nextMembership,
   };
 }
 
@@ -252,8 +265,58 @@ export function getFriendSortLabel(mode) {
 }
 
 function normalizeGroupIds(groupIds) {
-  const normalized = new Set(Array.isArray(groupIds) ? groupIds.filter(Boolean) : []);
+  const normalized = new Set(
+    Array.isArray(groupIds)
+      ? groupIds
+          .map((item) => {
+            if (typeof item === "string") {
+              return item;
+            }
+
+            if (item && typeof item === "object") {
+              return String(item.groupId ?? item.id ?? "").trim();
+            }
+
+            return String(item ?? "").trim();
+          })
+          .filter(Boolean)
+      : [],
+  );
   return Array.from(normalized);
+}
+
+function normalizeMembershipMap(value) {
+  if (Array.isArray(value)) {
+    return value.reduce((acc, groupId) => {
+      const normalizedGroupId = String(groupId ?? "").trim();
+      if (normalizedGroupId) {
+        acc[normalizedGroupId] = new Date().toISOString().slice(0, 10);
+      }
+      return acc;
+    }, {});
+  }
+
+  if (!value || typeof value !== "object") {
+    return {};
+  }
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .map(([groupId, joinedAt]) => [String(groupId ?? "").trim(), String(joinedAt ?? "").trim()])
+      .filter(([groupId]) => Boolean(groupId)),
+  );
+}
+
+function extractMembershipSource(membership, fallback = []) {
+  if (membership && typeof membership === "object" && !Array.isArray(membership)) {
+    return Object.keys(membership);
+  }
+
+  if (Array.isArray(membership)) {
+    return membership;
+  }
+
+  return fallback;
 }
 
 function normalizeHandle(handle) {

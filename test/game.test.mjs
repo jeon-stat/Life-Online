@@ -3,6 +3,11 @@ import test from "node:test";
 
 import { CHARACTER_CLASSES } from "../src/characters.js";
 import { buildCharacterViewModel } from "../src/game/characterState.js";
+import {
+  getAdjustedWeeklySteps,
+  getContributionScore,
+  getGroupAverageAdjustedWeeklySteps,
+} from "../src/game/groupMetrics.js";
 import { getLevelProgress, getStreak, getTotalXp } from "../src/game/progression.js";
 import { DEFAULT_STEP_GOAL, getEnergyLevel } from "../src/game/stepRules.js";
 import { ADMIN_STEP_PRESETS, buildMockHistory } from "../src/data/mockStepData.js";
@@ -21,6 +26,37 @@ test("energy level follows the new 0-to-6 tiers", () => {
   assert.equal(getEnergyLevel(5200, DEFAULT_STEP_GOAL), 4);
   assert.equal(getEnergyLevel(7300, DEFAULT_STEP_GOAL), 5);
   assert.equal(getEnergyLevel(10000, DEFAULT_STEP_GOAL), 6);
+});
+
+test("group contribution normalizes by membership duration", () => {
+  const referenceDate = new Date("2026-06-17T12:00:00Z");
+  const shortMembershipAdjusted = getAdjustedWeeklySteps(7000, "2026-06-16", referenceDate);
+  const longMembershipAdjusted = getAdjustedWeeklySteps(7000, "2026-06-01", referenceDate);
+
+  assert.equal(shortMembershipAdjusted > longMembershipAdjusted, true);
+});
+
+test("group contribution score centers the average at 50 points", () => {
+  const referenceDate = new Date("2026-06-17T12:00:00Z");
+
+  assert.equal(getContributionScore(10000, 10000, "2026-06-01", referenceDate), 50);
+  assert.equal(getContributionScore(15000, 10000, "2026-06-01", referenceDate), 100);
+  assert.equal(getContributionScore(5000, 10000, "2026-06-01", referenceDate), 0);
+});
+
+test("group average adjusted weekly steps uses membership dates", () => {
+  const referenceDate = new Date("2026-06-17T12:00:00Z");
+  const members = [
+    { id: "a", weeklySteps: 7000 },
+    { id: "b", weeklySteps: 14000 },
+  ];
+  const average = getGroupAverageAdjustedWeeklySteps(
+    members,
+    (friend) => (friend.id === "a" ? "2026-06-16" : "2026-06-01"),
+    referenceDate,
+  );
+
+  assert.equal(Math.round(average), Math.round((7000 * (7 / 3) + 14000) / 2));
 });
 
 test("progression rewards daily goal completion and builds levels", () => {
