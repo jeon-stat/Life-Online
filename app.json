@@ -15,6 +15,11 @@
       "bundler": "metro",
       "output": "single"
     },
+    "ios": {
+      "infoPlist": {
+        "NSMotionUsageDescription": "걸음 수를 읽어서 산책 기록과 보상을 계산하기 위해 필요합니다."
+      }
+    },
     "plugins": [
       "expo-status-bar"
     ]
