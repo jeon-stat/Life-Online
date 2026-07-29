@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
-import { CharacterStage } from "../components/CharacterStage.js";
+import { CharacterStage } from "../components/CharacterStage";
 import { CHARACTER_CLASSES } from "../characters.js";
 import { theme } from "../constants/theme.js";
 import { useStepData } from "../data/stepDataProvider.js";
