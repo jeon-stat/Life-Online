@@ -1,36 +1,30 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { CharacterStage } from "../components/CharacterStage.js";
 import { CHARACTER_CLASSES } from "../characters.js";
-import { CharacterStage } from "../components/CharacterStage";
 import { theme } from "../constants/theme.js";
 import { useStepData } from "../data/stepDataProvider.js";
-import { CUSTOMIZATION_CATEGORIES, CUSTOMIZATION_ITEMS } from "../data/customizationCatalog.js";
-import { buildCharacterViewModel } from "../game/characterState.js";
 
-const PAGE_SIZE = 9;
+const COLLECTION_SECTIONS = [
+  { id: "action", title: "동작", selector: "selectAction", stateKey: "selectedActionId" },
+  { id: "pet", title: "펫", selector: "selectPet", stateKey: "selectedPetId" },
+  { id: "background", title: "배경", selector: "selectBackground", stateKey: "selectedBackgroundId" },
+  { id: "expression", title: "표정", selector: "selectExpression", stateKey: "selectedExpressionId" },
+  { id: "outfit", title: "의상", selector: "selectOutfit", stateKey: "selectedOutfitId" },
+];
 
 export function CharacterScreen() {
-  const { today, history, goal, shop } = useStepData();
-  const [selectedCategoryId, setSelectedCategoryId] = useState("top");
-  const [pageByCategory, setPageByCategory] = useState({});
-  const [draftSelectionByCategory, setDraftSelectionByCategory] = useState(() => ({
-    ...shop.selectedItemIdsByCategory,
-    skinTone: shop.skinToneId ?? shop.selectedItemIdsByCategory.skinTone ?? null,
-  }));
+  const { growth, rewards, shop, characterViewState } = useStepData();
 
-  const selectedCategory =
-    CUSTOMIZATION_CATEGORIES.find((category) => category.id === selectedCategoryId) ?? CUSTOMIZATION_CATEGORIES[0];
-
-  const activeSkinTone =
-    CUSTOMIZATION_ITEMS.skinTone.find((tone) => tone.id === draftSelectionByCategory.skinTone) ??
-    CUSTOMIZATION_ITEMS.skinTone[0] ??
-    null;
-
-  const previewCharacter = useMemo(() => {
+  const character = useMemo(() => {
     const baseCharacter = CHARACTER_CLASSES[0];
+    const selectedSkinTone =
+      shop.items.skinTone.find((tone) => tone.id === shop.skinToneId) ??
+      shop.items.skinTone[0] ??
+      null;
 
-    if (!activeSkinTone) {
+    if (!selectedSkinTone) {
       return baseCharacter;
     }
 
@@ -38,81 +32,29 @@ export function CharacterScreen() {
       ...baseCharacter,
       palette: {
         ...baseCharacter.palette,
-        skin: activeSkinTone.color,
+        skin: selectedSkinTone.color,
       },
-      skinTone: activeSkinTone.color,
+      skinTone: selectedSkinTone.color,
     };
-  }, [activeSkinTone]);
+  }, [shop.items.skinTone, shop.skinToneId]);
 
-  const characterViewState = useMemo(
-    () => buildCharacterViewModel({ todayRecord: today, history, goal, admin: null }),
-    [goal, history, today],
-  );
-
-  const allCategoryItems = CUSTOMIZATION_ITEMS[selectedCategoryId] ?? [];
-  const ownedIds = shop.ownedItemIdsByCategory[selectedCategoryId] ?? [];
-  const ownedCategoryItems = allCategoryItems.filter((item) => ownedIds.includes(item.id));
-  const selectedItemId = draftSelectionByCategory[selectedCategoryId] ?? null;
-
-  const currentSelection =
-    ownedCategoryItems.find((item) => item.id === selectedItemId) ?? ownedCategoryItems[0] ?? null;
-  const hasUnsavedChanges = CUSTOMIZATION_CATEGORIES.some((category) => {
-    const draftId = draftSelectionByCategory[category.id] ?? null;
-    const savedId =
-      category.id === "skinTone" ? shop.skinToneId ?? null : shop.selectedItemIdsByCategory[category.id] ?? null;
-    return draftId !== savedId;
-  });
-
-  const totalPages = Math.max(1, Math.ceil(ownedCategoryItems.length / PAGE_SIZE));
-  const currentPage = Math.min(pageByCategory[selectedCategoryId] ?? 0, totalPages - 1);
-  const visibleItems =
-    selectedCategoryId === "skinTone"
-      ? ownedCategoryItems
-      : ownedCategoryItems.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
-
-  const handleSelectItem = (item) => {
-    setDraftSelectionByCategory((current) => ({
-      ...current,
-      [selectedCategoryId]: item.id,
-      skinTone: selectedCategoryId === "skinTone" ? item.id : current.skinTone,
-    }));
-  };
-
-  const handleSave = () => {
-    const nextSkinToneId = draftSelectionByCategory.skinTone ?? null;
-    if (nextSkinToneId && nextSkinToneId !== shop.skinToneId) {
-      shop.setSkinTone?.(nextSkinToneId);
-    }
-
-    CUSTOMIZATION_CATEGORIES.forEach((category) => {
-      if (category.id === "skinTone") {
-        return;
-      }
-
-      const nextItemId = draftSelectionByCategory[category.id] ?? null;
-      const savedItemId = shop.selectedItemIdsByCategory?.[category.id] ?? null;
-      if (nextItemId && nextItemId !== savedItemId) {
-        shop.selectItem?.(category.id, nextItemId);
-      }
-    });
-  };
-
-  const setPage = (nextPage) => {
-    setPageByCategory((current) => ({
-      ...current,
-      [selectedCategoryId]: nextPage,
-    }));
+  const collections = {
+    action: rewards.actionOptions,
+    pet: rewards.petOptions,
+    background: rewards.backgroundOptions,
+    expression: rewards.expressionOptions,
+    outfit: rewards.outfitOptions,
   };
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.pageTitleWrap}>
-        <Text style={styles.pageTitle}>꾸미기</Text>
+        <Text style={styles.pageTitle}>성장과 수집</Text>
       </View>
 
       <View style={styles.previewPanel}>
         <CharacterStage
-          character={previewCharacter}
+          character={character}
           state={characterViewState}
           presentation="full"
           scale={0.86}
@@ -121,104 +63,97 @@ export function CharacterScreen() {
         />
 
         <View style={styles.previewBadge}>
-          <Text style={styles.previewBadgeLabel}>{selectedCategory.label}</Text>
-          {currentSelection ? <Text style={styles.previewBadgeValue}>{currentSelection.label}</Text> : null}
-        </View>
-      </View>
-
-      <View style={styles.categoryCard}>
-        <View style={styles.categoryRow}>
-          {CUSTOMIZATION_CATEGORIES.map((category) => {
-            const active = category.id === selectedCategoryId;
-            return (
-              <Pressable
-                key={category.id}
-                onPress={() => setSelectedCategoryId(category.id)}
-                style={[styles.categoryChip, active && styles.categoryChipActive]}
-              >
-                <Text style={[styles.categoryChipLabel, active && styles.categoryChipLabelActive]}>
-                  {category.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-
-      <View style={styles.itemCard}>
-        <View style={styles.itemHeader}>
-          <Text style={styles.itemTitle}>{selectedCategory.label}</Text>
-        </View>
-
-        {selectedCategoryId === "skinTone" ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.skinToneRow}>
-            {visibleItems.map((item) => {
-              const selected = selectedItemId === item.id;
-              return (
-                <Pressable
-                  key={item.id}
-                  onPress={() => handleSelectItem(item)}
-                  style={[styles.skinToneChip, selected && styles.skinToneChipSelected]}
-                >
-                  <View style={[styles.skinToneSwatch, { backgroundColor: item.color }]} />
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        ) : (
-          <>
-            <View style={styles.itemGrid}>
-              {visibleItems.map((item) => {
-                const selected = selectedItemId === item.id;
-                return (
-                  <Pressable
-                    key={item.id}
-                    onPress={() => handleSelectItem(item)}
-                    style={[styles.itemTile, selected && styles.itemTileSelected]}
-                  >
-                    <View style={[styles.itemDot, { backgroundColor: selectedCategory.accent }]} />
-                    <Text style={styles.itemLabel} numberOfLines={1}>
-                      {item.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            {totalPages > 1 ? (
-              <View style={styles.paginationRow}>
-                {Array.from({ length: totalPages }, (_, index) => (
-                  <Pressable
-                    key={`${selectedCategoryId}-page-${index + 1}`}
-                    onPress={() => setPage(index)}
-                    style={[styles.pageChip, currentPage === index && styles.pageChipActive]}
-                  >
-                    <Text style={[styles.pageChipLabel, currentPage === index && styles.pageChipLabelActive]}>
-                      {index + 1}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
-          </>
-        )}
-      </View>
-
-      <View style={styles.saveCard}>
-        <View style={styles.saveTextWrap}>
-          <Text style={styles.saveTitle}>{hasUnsavedChanges ? "저장 전" : "저장됨"}</Text>
-          <Text style={styles.saveNote}>
-            {hasUnsavedChanges ? "아래 버튼을 눌러야 적용돼요." : "지금 상태가 캐릭터에 반영돼 있어요."}
+          <Text style={styles.previewBadgeTitle}>현재 세계</Text>
+          <Text style={styles.previewBadgeText}>
+            Lv.{growth.currentLevel} · 최고 Lv.{growth.highestLevelReached}
+          </Text>
+          <Text style={styles.previewBadgeText}>
+            {characterViewState.currentAction?.label ?? "기본 자세"}
+            {characterViewState.selectedPet?.label ? ` · ${characterViewState.selectedPet.label}` : ""}
           </Text>
         </View>
-        <Pressable
-          onPress={handleSave}
-          style={[styles.saveButton, !hasUnsavedChanges && styles.saveButtonDisabled]}
-        >
-          <Text style={[styles.saveButtonLabel, !hasUnsavedChanges && styles.saveButtonLabelDisabled]}>저장</Text>
-        </Pressable>
       </View>
+
+      <View style={styles.noticeCard}>
+        <Text style={styles.noticeTitle}>보상은 영구 보유</Text>
+        <Text style={styles.noticeText}>
+          현재 레벨이 내려가더라도 최고 레벨과 이미 잠금 해제한 보상은 유지돼요. 잠긴 항목은 앞으로 얻을 콘텐츠를 미리 보여 줍니다.
+        </Text>
+      </View>
+
+      <View style={styles.roadmapCard}>
+        <Text style={styles.sectionTitle}>Lv.1 ~ Lv.20 로드맵</Text>
+        <View style={styles.roadmapList}>
+          {rewards.roadmap.map((entry) => (
+            <View
+              key={`roadmap-${entry.level}`}
+              style={[
+                styles.roadmapRow,
+                entry.current && styles.roadmapRowCurrent,
+                entry.reached && styles.roadmapRowReached,
+              ]}
+            >
+              <View style={styles.roadmapLevelWrap}>
+                <Text style={styles.roadmapLevel}>Lv.{entry.level}</Text>
+                <Text style={styles.roadmapState}>
+                  {entry.current ? "현재" : entry.reached ? "달성" : entry.level === growth.currentLevel + 1 ? "다음" : "잠금"}
+                </Text>
+              </View>
+              <View style={styles.roadmapRewards}>
+                {entry.rewards.length ? (
+                  entry.rewards.map((reward) => (
+                    <Text key={reward.id} style={styles.roadmapRewardText}>
+                      {reward.name}
+                    </Text>
+                  ))
+                ) : (
+                  <Text style={styles.roadmapRewardText}>기본 세계 시작</Text>
+                )}
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      {COLLECTION_SECTIONS.map((section) => (
+        <CollectionSection
+          key={section.id}
+          title={section.title}
+          items={collections[section.id]}
+          selectedId={growth[section.stateKey]}
+          onSelect={growth[section.selector]}
+        />
+      ))}
     </ScrollView>
+  );
+}
+
+function CollectionSection({ title, items = [], selectedId, onSelect }) {
+  return (
+    <View style={styles.collectionCard}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.collectionGrid}>
+        {items.map((item) => {
+          const selected = selectedId === item.id;
+          return (
+            <Pressable
+              key={item.id}
+              onPress={() => item.unlocked && onSelect?.(item.id)}
+              style={[
+                styles.collectionTile,
+                selected && styles.collectionTileSelected,
+                !item.unlocked && styles.collectionTileLocked,
+              ]}
+            >
+              <Text style={styles.collectionTileTitle}>{item.label}</Text>
+              <Text style={styles.collectionTilePreview}>{item.preview}</Text>
+              <Text style={styles.collectionTileDescription}>{item.description}</Text>
+              <Text style={styles.collectionTileState}>{item.unlocked ? (selected ? "선택됨" : "보유") : `Lv.${item.requiredLevel}`}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 
@@ -231,6 +166,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.md,
     gap: theme.spacing.md,
+    paddingBottom: 112,
   },
   pageTitleWrap: {
     alignItems: "center",
@@ -247,239 +183,168 @@ const styles = StyleSheet.create({
   },
   previewPanel: {
     minHeight: 300,
-    borderRadius: 0,
+    borderRadius: theme.radius.xl,
     overflow: "hidden",
     position: "relative",
-    marginHorizontal: -theme.spacing.md,
-    marginTop: -6,
-    marginBottom: -4,
     backgroundColor: "#ffffff",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   previewBadge: {
     position: "absolute",
     left: 16,
     bottom: 16,
-    minWidth: 116,
+    right: 16,
     borderRadius: theme.radius.lg,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     backgroundColor: "rgba(255,255,255,0.92)",
     borderWidth: 1,
     borderColor: theme.colors.border,
     gap: 4,
   },
-  previewBadgeLabel: {
-    color: theme.colors.inkSoft,
-    fontSize: 11,
-    fontWeight: "800",
-    fontFamily: theme.fonts.body,
-  },
-  previewBadgeValue: {
+  previewBadgeTitle: {
     color: theme.colors.ink,
     fontSize: 14,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
-  categoryCard: {
-    borderRadius: theme.radius.xl,
-    padding: 12,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  categoryRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  categoryChip: {
-    minHeight: 36,
-    paddingHorizontal: 12,
-    borderRadius: theme.radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.surfaceMuted,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  categoryChipActive: {
-    backgroundColor: "#111111",
-    borderColor: "#111111",
-  },
-  categoryChipLabel: {
+  previewBadgeText: {
     color: theme.colors.inkSoft,
     fontSize: 12,
-    fontWeight: "900",
-    fontFamily: theme.fonts.body,
-  },
-  categoryChipLabelActive: {
-    color: "#ffffff",
-  },
-  itemCard: {
-    borderRadius: theme.radius.xl,
-    padding: 16,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    gap: 12,
-  },
-  itemHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  itemTitle: {
-    color: theme.colors.ink,
-    fontSize: 16,
-    fontWeight: "900",
-    fontFamily: theme.fonts.body,
-  },
-  itemMeta: {
-    color: theme.colors.inkSoft,
-    fontSize: 11,
+    lineHeight: 18,
     fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
-  itemGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    rowGap: 8,
-  },
-  itemTile: {
-    width: "31%",
-    minHeight: 72,
-    borderRadius: theme.radius.lg,
-    paddingHorizontal: 8,
-    paddingVertical: 10,
-    backgroundColor: theme.colors.surfaceSoft,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-  },
-  itemTileSelected: {
-    borderColor: theme.colors.ink,
-    backgroundColor: theme.colors.surface,
-  },
-  itemDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 999,
-  },
-  itemLabel: {
-    color: theme.colors.ink,
-    fontSize: 11,
-    lineHeight: 13,
-    fontWeight: "900",
-    textAlign: "center",
-    fontFamily: theme.fonts.body,
-  },
-  skinToneRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 4,
-  },
-  skinToneChip: {
-    width: 34,
-    height: 34,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surfaceMuted,
-  },
-  skinToneChipSelected: {
-    borderColor: theme.colors.ink,
-    borderWidth: 2,
-  },
-  skinToneSwatch: {
-    width: 22,
-    height: 22,
-    borderRadius: 999,
-  },
-  paginationRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-    paddingTop: 2,
-  },
-  saveCard: {
+  noticeCard: {
     borderRadius: theme.radius.xl,
     padding: 16,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: "#fff9ef",
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
+    borderColor: "#f1dfb9",
+    gap: 6,
   },
-  saveTextWrap: {
-    flex: 1,
-    gap: 4,
-  },
-  saveTitle: {
+  noticeTitle: {
     color: theme.colors.ink,
     fontSize: 15,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
-  saveNote: {
+  noticeText: {
     color: theme.colors.inkSoft,
     fontSize: 12,
+    lineHeight: 19,
     fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
-  saveButton: {
-    minWidth: 76,
-    height: 40,
-    borderRadius: theme.radius.pill,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#111111",
-    paddingHorizontal: 16,
-  },
-  saveButtonDisabled: {
-    backgroundColor: theme.colors.surfaceMuted,
+  roadmapCard: {
+    borderRadius: theme.radius.xl,
+    padding: 16,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
     borderColor: theme.colors.border,
+    gap: 12,
   },
-  saveButtonLabel: {
-    color: "#ffffff",
+  sectionTitle: {
+    color: theme.colors.ink,
+    fontSize: 16,
+    fontWeight: "900",
+    fontFamily: theme.fonts.display,
+  },
+  roadmapList: {
+    gap: 8,
+  },
+  roadmapRow: {
+    borderRadius: theme.radius.lg,
+    padding: 14,
+    backgroundColor: theme.colors.surfaceSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 8,
+  },
+  roadmapRowReached: {
+    borderColor: "#d9e8cf",
+    backgroundColor: "#f6fbf2",
+  },
+  roadmapRowCurrent: {
+    borderColor: "#111111",
+  },
+  roadmapLevelWrap: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  roadmapLevel: {
+    color: theme.colors.ink,
     fontSize: 14,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
-  saveButtonLabelDisabled: {
+  roadmapState: {
     color: theme.colors.inkSoft,
+    fontSize: 11,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
   },
-  pageChip: {
-    minWidth: 34,
-    height: 34,
-    borderRadius: 999,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surfaceMuted,
+  roadmapRewards: {
+    gap: 4,
   },
-  pageChipActive: {
-    backgroundColor: "#111111",
-    borderColor: "#111111",
-  },
-  pageChipLabel: {
+  roadmapRewardText: {
     color: theme.colors.inkSoft,
     fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
+  },
+  collectionCard: {
+    borderRadius: theme.radius.xl,
+    padding: 16,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 12,
+  },
+  collectionGrid: {
+    gap: 10,
+  },
+  collectionTile: {
+    borderRadius: theme.radius.lg,
+    padding: 14,
+    backgroundColor: theme.colors.surfaceSoft,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 5,
+  },
+  collectionTileSelected: {
+    borderColor: "#111111",
+    backgroundColor: "#ffffff",
+  },
+  collectionTileLocked: {
+    opacity: 0.45,
+  },
+  collectionTileTitle: {
+    color: theme.colors.ink,
+    fontSize: 14,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
-  pageChipLabelActive: {
-    color: "#ffffff",
+  collectionTilePreview: {
+    color: theme.colors.inkSoft,
+    fontSize: 11,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
+  },
+  collectionTileDescription: {
+    color: theme.colors.inkSoft,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
+  },
+  collectionTileState: {
+    color: theme.colors.ink,
+    fontSize: 11,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
 });
-

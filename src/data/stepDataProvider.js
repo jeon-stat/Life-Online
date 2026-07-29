@@ -5,180 +5,54 @@ import { Pedometer } from "expo-sensors";
 import {
   CUSTOMIZATION_CATEGORIES,
   CUSTOMIZATION_ITEMS,
-  DEFAULT_SHOP_COIN_BALANCE,
-  createDefaultOwnedItemIds,
-  createDefaultSelectedItemIds,
 } from "./customizationCatalog.js";
-import { DEFAULT_STEP_GOAL } from "../game/stepRules.js";
-import { createMockStepSnapshot } from "./mockStepData.js";
+import {
+  HISTORY_RETENTION_DAYS,
+  STEP_STORAGE_KEY,
+  createDefaultStepRecord,
+  mergeStepHistory,
+  migratePersistedStepData,
+  normalizePersistedStepData,
+  normalizeStepRecord,
+} from "./stepDataMigration.js";
+import { advanceMockHistoryDay, createMockStepSnapshot, updateMockHistorySteps } from "./mockStepData.js";
 import { readPersistedJson, writePersistedJson } from "../storage/persistedJson.js";
+import { buildCharacterViewModel } from "../game/characterState.js";
+import { addDays, formatDateKey, getWeekKey, normalizeDateKey, startOfLocalDay } from "../game/dateUtils.js";
+import {
+  ACTION_CATALOG,
+  BACKGROUND_CATALOG,
+  EXPRESSION_CATALOG,
+  OUTFIT_CATALOG,
+  PET_CATALOG,
+  getRewardById,
+  getRewardsForLevel,
+  getStarterActionId,
+  getStarterBackgroundId,
+  getUnlockedContentIds,
+} from "../game/levelRewards.js";
+import {
+  createDefaultGrowthState,
+  getGoalStreak,
+  getGrowthOverview,
+  getRecentDailyResults,
+  getWeeklyResultSummary,
+  mergeRewardIds,
+  normalizeGrowthState,
+  processPendingDailyResults,
+  requiredPoints,
+} from "../game/progression.js";
+import { DEFAULT_STEP_GOAL } from "../game/stepRules.js";
 
 const StepDataContext = createContext(null);
-const STEP_STORAGE_KEY = "life-online-step-data-v2";
-const STEP_HISTORY_DAYS = 7;
 const STEP_REFRESH_INTERVAL_MS = 30000;
+const DEVICE_FETCH_DAYS = 30;
+const WELCOME_FEEDBACK_MS = 6000;
+const WALK_FEEDBACK_MS = 9000;
+const CELEBRATION_FEEDBACK_MS = 12000;
 
-function createDefaultShopState() {
-  const ownedItemIdsByCategory = createDefaultOwnedItemIds();
-  const selectedItemIdsByCategory = createDefaultSelectedItemIds();
-
-  return {
-    coinBalance: DEFAULT_SHOP_COIN_BALANCE,
-    ownedItemIdsByCategory,
-    selectedItemIdsByCategory,
-    skinToneId: selectedItemIdsByCategory.skinTone,
-  };
-}
-
-function createDefaultDeviceStepState() {
-  return {
-    history: [],
-    lastSyncAt: null,
-    pedometerAvailable: null,
-    permissionStatus: "unknown",
-    source: "device",
-  };
-}
-
-function createDefaultTodayRecord(source = "device") {
-  const date = formatDateKey(new Date());
-
-  return {
-    id: date,
-    date,
-    steps: 0,
-    source,
-  };
-}
-
-function normalizeDateKey(value, fallbackDate = new Date()) {
-  const source = value instanceof Date ? value : new Date(value ?? fallbackDate);
-  if (Number.isNaN(source.getTime())) {
-    const fallback = new Date(fallbackDate);
-    return formatDateKey(fallback);
-  }
-
-  return formatDateKey(source);
-}
-
-function formatDateKey(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-function startOfLocalDay(value) {
-  const date = value instanceof Date ? new Date(value) : new Date(value ?? new Date());
-  if (Number.isNaN(date.getTime())) {
-    return startOfLocalDay(new Date());
-  }
-
-  date.setHours(0, 0, 0, 0);
-  return date;
-}
-
-function addDays(date, amount) {
-  const nextDate = new Date(date);
-  nextDate.setDate(nextDate.getDate() + amount);
-  return nextDate;
-}
-
-function normalizePermissionStatus(value) {
-  const status = String(value ?? "").trim();
-  if (status === "granted" || status === "denied" || status === "undetermined" || status === "unavailable") {
-    return status;
-  }
-
-  return "unknown";
-}
-
-function normalizeStepRecord(value, fallbackDate = new Date(), fallbackSource = "device") {
-  const date = normalizeDateKey(value?.date ?? value?.id ?? fallbackDate, fallbackDate);
-  const steps = Math.max(0, Math.floor(Number(value?.steps ?? 0)));
-
-  return {
-    id: String(value?.id ?? date),
-    date,
-    steps,
-    source: String(value?.source ?? fallbackSource),
-  };
-}
-
-function normalizeStepHistory(value) {
-  const byDate = new Map();
-
-  for (const record of Array.isArray(value) ? value : []) {
-    const normalized = normalizeStepRecord(record);
-    byDate.set(normalized.date, normalized);
-  }
-
-  return [...byDate.values()]
-    .sort((left, right) => right.date.localeCompare(left.date))
-    .slice(0, STEP_HISTORY_DAYS);
-}
-
-function normalizeShopState(value) {
-  const defaultShopState = createDefaultShopState();
-  const persistedOwned = value?.ownedItemIdsByCategory ?? {};
-  const persistedSelected = value?.selectedItemIdsByCategory ?? {};
-  const ownedItemIdsByCategory = {};
-  const selectedItemIdsByCategory = {};
-
-  for (const category of CUSTOMIZATION_CATEGORIES) {
-    const categoryId = category.id;
-    const defaultOwnedIds = defaultShopState.ownedItemIdsByCategory?.[categoryId] ?? [];
-    const ownedIds = uniqueStrings([...(Array.isArray(persistedOwned?.[categoryId]) ? persistedOwned[categoryId] : []), ...defaultOwnedIds]);
-    const selectedId = normalizeSelectedId(
-      categoryId,
-      ownedIds,
-      persistedSelected?.[categoryId] ?? defaultShopState.selectedItemIdsByCategory?.[categoryId],
-    );
-
-    ownedItemIdsByCategory[categoryId] = ownedIds;
-    selectedItemIdsByCategory[categoryId] = selectedId;
-  }
-
-  const skinToneId = selectedItemIdsByCategory.skinTone ?? defaultShopState.skinToneId ?? null;
-
-  return {
-    coinBalance: Math.max(0, Math.floor(Number(value?.coinBalance ?? defaultShopState.coinBalance))),
-    ownedItemIdsByCategory,
-    selectedItemIdsByCategory,
-    skinToneId,
-  };
-}
-
-function normalizeSelectedId(categoryId, ownedIds, fallbackSelectedId) {
-  const selectedId = String(fallbackSelectedId ?? "").trim();
-  if (categoryId === "skinTone" && selectedId) {
-    return ownedIds.includes(selectedId) ? selectedId : ownedIds[0] ?? null;
-  }
-
-  return ownedIds.includes(selectedId) ? selectedId : ownedIds[0] ?? null;
-}
-
-function normalizeDeviceStepState(value) {
-  const defaultState = createDefaultDeviceStepState();
-
-  return {
-    history: normalizeStepHistory(value?.history ?? defaultState.history),
-    lastSyncAt: typeof value?.lastSyncAt === "string" ? value.lastSyncAt : defaultState.lastSyncAt,
-    pedometerAvailable:
-      typeof value?.pedometerAvailable === "boolean" ? value.pedometerAvailable : defaultState.pedometerAvailable,
-    permissionStatus: normalizePermissionStatus(value?.permissionStatus),
-    source: value?.source === "device" ? "device" : defaultState.source,
-  };
-}
-
-function uniqueStrings(values) {
-  return [...new Set((Array.isArray(values) ? values : []).map((value) => String(value ?? "").trim()).filter(Boolean))];
-}
-
-function mergeTodayIntoHistory(history, todayRecord) {
-  const normalizedToday = normalizeStepRecord(todayRecord);
-  const nextHistory = [normalizedToday, ...normalizeStepHistory(history).filter((record) => record.date !== normalizedToday.date)];
-  return nextHistory.slice(0, STEP_HISTORY_DAYS);
+function getTodayDateKey() {
+  return formatDateKey(new Date());
 }
 
 async function readStepCountForRange(start, end) {
@@ -208,28 +82,26 @@ async function ensurePedometerPermission(currentStatus) {
   return requestPedometerPermission();
 }
 
-async function readRecentStepHistory(days = STEP_HISTORY_DAYS) {
-  const today = new Date();
-  const history = await Promise.all(
+async function readRecentStepHistory(days = DEVICE_FETCH_DAYS) {
+  const today = startOfLocalDay(new Date());
+  const records = await Promise.all(
     Array.from({ length: days }, async (_, index) => {
-      const day = addDays(startOfLocalDay(today), -index);
+      const day = addDays(today, -index);
       const dayEnd = addDays(day, 1);
       const steps = await readStepCountForRange(day, dayEnd);
+      const dateKey = formatDateKey(day);
 
-      return normalizeStepRecord(
-        {
-          id: formatDateKey(day),
-          date: formatDateKey(day),
-          steps,
-          source: index === 0 ? "device" : "device_history",
-        },
-        day,
-        index === 0 ? "device" : "device_history",
-      );
+      return normalizeStepRecord({
+        id: dateKey,
+        date: dateKey,
+        steps,
+        source: index === 0 ? "device" : "device_history",
+        hasData: true,
+      });
     }),
   );
 
-  return normalizeStepHistory(history);
+  return mergeStepHistory([], records);
 }
 
 async function readTodayStepRecord() {
@@ -237,43 +109,40 @@ async function readTodayStepRecord() {
   const now = new Date();
   const steps = await readStepCountForRange(today, now);
 
-  return normalizeStepRecord(
-    {
-      id: formatDateKey(today),
-      date: formatDateKey(today),
-      steps,
-      source: "device",
-    },
-    today,
-    "device",
-  );
+  return normalizeStepRecord({
+    id: getTodayDateKey(),
+    date: getTodayDateKey(),
+    steps,
+    source: "device",
+    hasData: true,
+  });
 }
 
 export function StepDataProvider({ children, mode = "mock", adminEnabled = false }) {
-  const [mockState, setMockState] = useState(() => createMockStepSnapshot());
-  const [adminVisible, setAdminVisible] = useState(false);
-  const [shopState, setShopState] = useState(() => createDefaultShopState());
+  const [mockState, setMockState] = useState(() => createMockStepSnapshot(new Date()));
+  const [shopState, setShopState] = useState(() => normalizePersistedStepData({}).shopState);
   const [claimedMissionRewardIds, setClaimedMissionRewardIds] = useState([]);
-  const [deviceStepState, setDeviceStepState] = useState(() => createDefaultDeviceStepState());
-  const [behaviorAdmin, setBehaviorAdmin] = useState(() => ({
-    forcedEnergyLevel: null,
-    forcedLongTermState: null,
-    forcedSpecialActionKey: null,
-  }));
+  const [deviceStepState, setDeviceStepState] = useState(() => normalizePersistedStepData({}).deviceStepState);
+  const [growthState, setGrowthState] = useState(() => createDefaultGrowthState());
+  const [adminVisible, setAdminVisible] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [feedbackState, setFeedbackState] = useState({
+    walking: false,
+    celebrating: false,
+    welcoming: false,
+  });
   const syncInFlightRef = useRef(false);
   const syncQueuedRef = useRef(false);
+  const feedbackTimeoutsRef = useRef({});
+  const previousTodayStepsRef = useRef(null);
+  const previousReachedGoalRef = useRef(false);
 
   const isMockMode = mode === "mock";
   const isNativeStepMode = !isMockMode && Platform.OS !== "web";
   const history = isMockMode ? mockState.history : deviceStepState.history;
   const today =
-    history[0] ?? {
-      id: "today",
-      date: new Date().toISOString().slice(0, 10),
-      steps: 0,
-      source: isMockMode ? "mock" : deviceStepState.source,
-    };
+    history[0] ??
+    createDefaultStepRecord(new Date(), isMockMode ? "mock" : "device", isMockMode);
 
   useEffect(() => {
     let cancelled = false;
@@ -284,9 +153,11 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
           return;
         }
 
-        setShopState(normalizeShopState(value?.shopState));
-        setClaimedMissionRewardIds(uniqueStrings(value?.claimedMissionRewardIds));
-        setDeviceStepState(normalizeDeviceStepState(value?.deviceStepState));
+        const migrated = migratePersistedStepData(value);
+        setShopState(migrated.shopState);
+        setClaimedMissionRewardIds(migrated.claimedMissionRewardIds);
+        setDeviceStepState(migrated.deviceStepState);
+        setGrowthState(migrated.growthState);
       })
       .catch(() => {})
       .finally(() => {
@@ -305,12 +176,62 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
       return;
     }
 
-    void writePersistedJson(STEP_STORAGE_KEY, {
-      shopState,
-      claimedMissionRewardIds,
-      deviceStepState,
-    });
-  }, [claimedMissionRewardIds, deviceStepState, isReady, shopState]);
+    void writePersistedJson(
+      STEP_STORAGE_KEY,
+      normalizePersistedStepData({
+        version: 3,
+        shopState,
+        claimedMissionRewardIds,
+        deviceStepState,
+        growthState,
+      }),
+    );
+  }, [claimedMissionRewardIds, deviceStepState, growthState, isReady, shopState]);
+
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
+    setGrowthState((current) =>
+      processPendingDailyResults({
+        growthState: current,
+        history,
+        goal: DEFAULT_STEP_GOAL,
+        todayDateKey: today.date,
+      }),
+    );
+  }, [history, isReady, today.date]);
+
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
+    pulseFeedback(setFeedbackState, feedbackTimeoutsRef, "welcoming", WELCOME_FEEDBACK_MS);
+  }, [isReady]);
+
+  useEffect(() => {
+    if (!isReady) {
+      return;
+    }
+
+    const currentSteps = today.steps ?? 0;
+    const previousSteps = previousTodayStepsRef.current;
+    const reachedGoal = currentSteps >= DEFAULT_STEP_GOAL;
+    const didIncrease = previousSteps != null && currentSteps > previousSteps;
+
+    if (didIncrease) {
+      pulseFeedback(setFeedbackState, feedbackTimeoutsRef, "walking", WALK_FEEDBACK_MS);
+    }
+
+    if (reachedGoal && !previousReachedGoalRef.current) {
+      pulseFeedback(setFeedbackState, feedbackTimeoutsRef, "celebrating", CELEBRATION_FEEDBACK_MS);
+    }
+
+    previousTodayStepsRef.current = currentSteps;
+    previousReachedGoalRef.current = reachedGoal;
+  }, [isReady, today.steps]);
 
   useEffect(() => {
     if (!isReady || !isNativeStepMode) {
@@ -338,7 +259,7 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
         if (!available) {
           setDeviceStepState((current) => ({
             ...current,
-            history: current.history.length ? current.history : [createDefaultTodayRecord()],
+            history: current.history.length ? current.history : [createDefaultStepRecord(new Date())],
             pedometerAvailable: false,
             permissionStatus: "unavailable",
             source: "device",
@@ -347,7 +268,7 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
           return;
         }
 
-        const permission = await ensurePedometerPermission(current.permissionStatus);
+        const permission = await ensurePedometerPermission(deviceStepState.permissionStatus);
         if (cancelled) {
           return;
         }
@@ -356,6 +277,9 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
         if (!permission?.granted) {
           setDeviceStepState((current) => ({
             ...current,
+            history: current.history.length
+              ? current.history
+              : [createDefaultStepRecord(new Date(), "device", false)],
             pedometerAvailable: true,
             permissionStatus,
             source: "device",
@@ -365,14 +289,14 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
         }
 
         if (includeHistory) {
-          const nextHistory = await readRecentStepHistory(STEP_HISTORY_DAYS);
+          const nextHistory = await readRecentStepHistory(DEVICE_FETCH_DAYS);
           if (cancelled) {
             return;
           }
 
           setDeviceStepState((current) => ({
             ...current,
-            history: nextHistory,
+            history: mergeStepHistory(current.history, nextHistory).slice(0, HISTORY_RETENTION_DAYS),
             pedometerAvailable: true,
             permissionStatus,
             source: "device",
@@ -388,7 +312,7 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
 
         setDeviceStepState((current) => ({
           ...current,
-          history: mergeTodayIntoHistory(current.history.length ? current.history : [createDefaultTodayRecord()], todayRecord),
+          history: mergeStepHistory(current.history, [todayRecord]).slice(0, HISTORY_RETENTION_DAYS),
           pedometerAvailable: true,
           permissionStatus,
           source: "device",
@@ -422,6 +346,7 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
 
     appStateSubscription = AppState.addEventListener("change", (state) => {
       if (state === "active") {
+        pulseFeedback(setFeedbackState, feedbackTimeoutsRef, "welcoming", WELCOME_FEEDBACK_MS);
         void syncStepData({ includeHistory: false });
       }
     });
@@ -433,7 +358,49 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
       }
       appStateSubscription?.remove?.();
     };
-  }, [isNativeStepMode, isReady]);
+  }, [deviceStepState.permissionStatus, isNativeStepMode, isReady]);
+
+  const currentWeekKey = getWeekKey(today.date);
+  const growthOverview = getGrowthOverview(growthState);
+  const recentDailyResults = getRecentDailyResults(growthState);
+  const weeklySummary = getWeeklyResultSummary(growthState, currentWeekKey);
+  const unlockedActionIds = [getStarterActionId(), ...getUnlockedContentIds(growthState.unlockedRewardIds, "action")];
+  const unlockedBackgroundIds = [getStarterBackgroundId(), ...getUnlockedContentIds(growthState.unlockedRewardIds, "background")];
+  const unlockedPetIds = getUnlockedContentIds(growthState.unlockedRewardIds, "pet");
+  const unlockedExpressionIds = ["expression-starter-calm", ...getUnlockedContentIds(growthState.unlockedRewardIds, "expression")];
+  const unlockedOutfitIds = getUnlockedContentIds(growthState.unlockedRewardIds, "outfit");
+  const actionOptions = ACTION_CATALOG.map((action) => ({
+    ...action,
+    unlocked: unlockedActionIds.includes(action.id),
+  }));
+  const backgroundOptions = BACKGROUND_CATALOG.map((background) => ({
+    ...background,
+    unlocked: unlockedBackgroundIds.includes(background.id),
+  }));
+  const petOptions = PET_CATALOG.map((pet) => ({
+    ...pet,
+    unlocked: unlockedPetIds.includes(pet.id),
+  }));
+  const expressionOptions = EXPRESSION_CATALOG.map((expression) => ({
+    ...expression,
+    unlocked: unlockedExpressionIds.includes(expression.id),
+  }));
+  const outfitOptions = OUTFIT_CATALOG.map((outfit) => ({
+    ...outfit,
+    unlocked: unlockedOutfitIds.includes(outfit.id),
+  }));
+
+  const characterViewState = useMemo(
+    () =>
+      buildCharacterViewModel({
+        todayRecord: today,
+        history,
+        goal: DEFAULT_STEP_GOAL,
+        growthState,
+        recentFeedback: feedbackState,
+      }),
+    [feedbackState, growthState, history, today],
+  );
 
   const value = useMemo(
     () => ({
@@ -448,14 +415,62 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
         lastSyncAt: deviceStepState.lastSyncAt,
         source: deviceStepState.source,
       },
+      growth: {
+        ...growthOverview,
+        recentDailyResults,
+        weeklySummary,
+        streak: getGoalStreak(growthState),
+        lifetimeSteps: history.reduce((sum, record) => sum + (record?.steps ?? 0), 0),
+        selectedActionId: growthState.selectedActionId,
+        selectedPetId: growthState.selectedPetId,
+        selectedBackgroundId: growthState.selectedBackgroundId,
+        selectedExpressionId: growthState.selectedExpressionId,
+        selectedOutfitId: growthState.selectedOutfitId,
+        levelUpEvents: growthState.levelUpEvents,
+        selectAction: (actionId) => {
+          if (!unlockedActionIds.includes(actionId)) return;
+          setGrowthState((current) => normalizeGrowthState({ ...current, selectedActionId: actionId }));
+        },
+        selectPet: (petId) => {
+          if (petId !== null && !unlockedPetIds.includes(petId)) return;
+          setGrowthState((current) => normalizeGrowthState({ ...current, selectedPetId: petId }));
+        },
+        selectBackground: (backgroundId) => {
+          if (!unlockedBackgroundIds.includes(backgroundId)) return;
+          setGrowthState((current) => normalizeGrowthState({ ...current, selectedBackgroundId: backgroundId }));
+        },
+        selectExpression: (expressionId) => {
+          if (!unlockedExpressionIds.includes(expressionId)) return;
+          setGrowthState((current) => normalizeGrowthState({ ...current, selectedExpressionId: expressionId }));
+        },
+        selectOutfit: (outfitId) => {
+          if (outfitId !== null && !unlockedOutfitIds.includes(outfitId)) return;
+          setGrowthState((current) => normalizeGrowthState({ ...current, selectedOutfitId: outfitId }));
+        },
+      },
+      rewards: {
+        actionOptions,
+        backgroundOptions,
+        petOptions,
+        expressionOptions,
+        outfitOptions,
+        roadmap: Array.from({ length: 20 }, (_, index) => ({
+          level: index + 1,
+          rewards: getRewardsForLevel(index + 1),
+          reached: growthOverview.highestLevelReached >= index + 1,
+          current: growthOverview.currentLevel === index + 1,
+        })),
+        getReward: getRewardById,
+      },
+      characterViewState,
       shop: {
         coinBalance: shopState.coinBalance,
         categories: CUSTOMIZATION_CATEGORIES,
+        items: CUSTOMIZATION_ITEMS,
         ownedItemIdsByCategory: shopState.ownedItemIdsByCategory,
         selectedItemIdsByCategory: shopState.selectedItemIdsByCategory,
         skinToneId: shopState.skinToneId,
-        isOwnedItem: (categoryId, itemId) =>
-          (shopState.ownedItemIdsByCategory?.[categoryId] ?? []).includes(itemId),
+        isOwnedItem: (categoryId, itemId) => (shopState.ownedItemIdsByCategory?.[categoryId] ?? []).includes(itemId),
         selectItem: (categoryId, itemId) => {
           setShopState((current) => {
             if (current.selectedItemIdsByCategory?.[categoryId] === itemId) {
@@ -561,21 +576,6 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
       admin: {
         visible: adminVisible,
         canOverride: Boolean(adminEnabled && isMockMode),
-        source: today.source,
-        ...behaviorAdmin,
-        skinTones: CUSTOMIZATION_ITEMS.skinTone,
-        skinToneId: shopState.skinToneId,
-        setSkinTone: (nextSkinToneId) => {
-          if (!adminEnabled) return;
-          setShopState((current) => ({
-            ...current,
-            skinToneId: nextSkinToneId,
-            selectedItemIdsByCategory: {
-              ...current.selectedItemIdsByCategory,
-              skinTone: nextSkinToneId,
-            },
-          }));
-        },
         toggleVisible: () => {
           if (!adminEnabled) return;
           setAdminVisible((current) => !current);
@@ -588,71 +588,163 @@ export function StepDataProvider({ children, mode = "mock", adminEnabled = false
           if (!adminEnabled) return;
           setAdminVisible(false);
         },
-        setForcedEnergyLevel: (nextLevel) => {
-          if (!adminEnabled) return;
-          setBehaviorAdmin((current) => ({
+        dates: history.slice(0, 14).map((record) => record.date),
+        selectedTodayDate: today.date,
+        setTodaySteps: (steps) => {
+          if (!isMockMode) return;
+          setMockState((current) => ({
             ...current,
-            forcedEnergyLevel: nextLevel === null ? null : clampNumber(nextLevel, 0, 6),
+            history: updateMockHistorySteps(current.history, today.date, steps),
           }));
         },
-        setForcedLongTermState: (nextState) => {
-          if (!adminEnabled) return;
-          setBehaviorAdmin((current) => ({ ...current, forcedLongTermState: nextState }));
-        },
-        setForcedSpecialActionKey: (nextKey) => {
-          if (!adminEnabled) return;
-          setBehaviorAdmin((current) => ({
+        setPastSteps: (dateKey, steps) => {
+          if (!isMockMode) return;
+          setMockState((current) => ({
             ...current,
-            forcedSpecialActionKey: normalizeSpecialActionKey(nextKey),
+            history: updateMockHistorySteps(current.history, normalizeDateKey(dateKey), steps),
           }));
         },
-        resetBehavior: () => {
-          if (!adminEnabled) return;
-          setBehaviorAdmin({
-            forcedEnergyLevel: null,
-            forcedLongTermState: null,
-            forcedSpecialActionKey: null,
+        advanceDay: () => {
+          if (!isMockMode) return;
+          setMockState((current) => ({
+            ...current,
+            history: advanceMockHistoryDay(current.history, 0),
+          }));
+        },
+        processPendingResults: () => {
+          setGrowthState((current) =>
+            processPendingDailyResults({
+              growthState: current,
+              history,
+              goal: DEFAULT_STEP_GOAL,
+              todayDateKey: today.date,
+            }),
+          );
+        },
+        rebuildGrowth: () => {
+          setGrowthState((current) => {
+            const resetState = {
+              ...createDefaultGrowthState(),
+              selectedActionId: current.selectedActionId,
+              selectedPetId: current.selectedPetId,
+              selectedBackgroundId: current.selectedBackgroundId,
+              selectedExpressionId: current.selectedExpressionId,
+              selectedOutfitId: current.selectedOutfitId,
+            };
+
+            return processPendingDailyResults({
+              growthState: resetState,
+              history,
+              goal: DEFAULT_STEP_GOAL,
+              todayDateKey: today.date,
+            });
           });
         },
-        resetMock: () => {
-          if (!adminEnabled || !isMockMode) return;
-          setMockState(createMockStepSnapshot());
+        setCurrentLevel: (level) => {
+          const nextLevel = Math.max(1, Math.min(20, Math.floor(Number(level ?? 1))));
+          setGrowthState((current) =>
+            normalizeGrowthState({
+              ...current,
+              currentLevel: nextLevel,
+              highestLevelReached: Math.max(current.highestLevelReached, nextLevel),
+              unlockedRewardIds: mergeRewardIds(current.unlockedRewardIds, Math.max(current.highestLevelReached, nextLevel)),
+            }),
+          );
+        },
+        setGrowthPoints: (points) => {
+          const safePoints = Math.max(0, Math.floor(Number(points ?? 0)));
+          setGrowthState((current) =>
+            normalizeGrowthState({
+              ...current,
+              growthPoints: Math.min(requiredPoints(current.currentLevel) - 1, safePoints),
+            }),
+          );
+        },
+        setWeeklyRestUsed: (used) => {
+          setGrowthState((current) =>
+            normalizeGrowthState({
+              ...current,
+              currentWeekKey,
+              weeklyRestUsed: Boolean(used),
+            }),
+          );
+        },
+        unlockReward: (rewardId) => {
+          if (!getRewardById(rewardId)) return;
+          setGrowthState((current) =>
+            normalizeGrowthState({
+              ...current,
+              unlockedRewardIds: [...current.unlockedRewardIds, rewardId],
+            }),
+          );
+        },
+        resetGrowthData: () => {
+          setGrowthState(createDefaultGrowthState());
+        },
+        simulateMigration: () => {
+          setGrowthState((current) =>
+            migratePersistedStepData({
+              shopState,
+              claimedMissionRewardIds,
+              deviceStepState: { ...deviceStepState, history },
+              growthState: null,
+            }).growthState,
+          );
         },
       },
     }),
     [
+      actionOptions,
       adminEnabled,
       adminVisible,
-      behaviorAdmin,
+      backgroundOptions,
+      characterViewState,
       claimedMissionRewardIds,
-      history,
+      currentWeekKey,
       deviceStepState,
+      expressionOptions,
+      growthOverview,
+      growthState,
+      history,
       isMockMode,
       isReady,
       mode,
+      outfitOptions,
+      petOptions,
+      recentDailyResults,
       shopState,
       today,
+      unlockedActionIds,
+      unlockedBackgroundIds,
+      unlockedExpressionIds,
+      unlockedOutfitIds,
+      unlockedPetIds,
+      weeklySummary,
     ],
   );
 
   return <StepDataContext.Provider value={value}>{children}</StepDataContext.Provider>;
 }
 
-function clampNumber(value, min, max) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return min;
-  return Math.max(min, Math.min(max, numeric));
-}
-
-function normalizeSpecialActionKey(value) {
-  if (value === null) return null;
-
-  const key = String(value);
-  if (key === "hipHopDancing") {
-    return key;
+function normalizePermissionStatus(value) {
+  const status = String(value ?? "").trim();
+  if (status === "granted" || status === "denied" || status === "undetermined" || status === "unavailable") {
+    return status;
   }
 
-  return null;
+  return "unknown";
+}
+
+function pulseFeedback(setFeedbackState, feedbackTimeoutsRef, key, duration) {
+  setFeedbackState((current) => ({ ...current, [key]: true }));
+
+  if (feedbackTimeoutsRef.current[key]) {
+    clearTimeout(feedbackTimeoutsRef.current[key]);
+  }
+
+  feedbackTimeoutsRef.current[key] = setTimeout(() => {
+    setFeedbackState((current) => ({ ...current, [key]: false }));
+  }, duration);
 }
 
 export function useStepData() {

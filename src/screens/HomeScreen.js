@@ -1,19 +1,21 @@
 import { useMemo } from "react";
-import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 
-import { CharacterStage } from "../components/CharacterStage";
+import { CharacterStage } from "../components/CharacterStage.js";
 import { CHARACTER_CLASSES } from "../characters.js";
 import { theme } from "../constants/theme.js";
 import { useStepData } from "../data/stepDataProvider.js";
-import { buildCharacterViewModel } from "../game/characterState.js";
 
 export function HomeScreen() {
   const { height: windowHeight } = useWindowDimensions();
-  const { today, history, goal, admin, device } = useStepData();
+  const { today, goal, growth, rewards, device, shop, characterViewState } = useStepData();
 
   const character = useMemo(() => {
     const baseCharacter = CHARACTER_CLASSES[0];
-    const selectedSkinTone = admin?.skinTones?.find((tone) => tone.id === admin?.skinToneId);
+    const selectedSkinTone =
+      shop.items.skinTone.find((tone) => tone.id === shop.skinToneId) ??
+      shop.items.skinTone[0] ??
+      null;
 
     if (!selectedSkinTone) {
       return baseCharacter;
@@ -27,55 +29,113 @@ export function HomeScreen() {
       },
       skinTone: selectedSkinTone.color,
     };
-  }, [admin?.skinToneId, admin?.skinTones]);
+  }, [shop.items.skinTone, shop.skinToneId]);
 
-  const viewState = buildCharacterViewModel({ todayRecord: today, history, goal, admin });
-  const stageHeight = Math.max(600, Math.min(860, Math.round(windowHeight * 0.94)));
-  const cameraPosition = [0, 1.56, 10.6];
-  const progressWidth = `${Math.max(0, Math.min(viewState.progressPercent, 100))}%`;
+  const stageHeight = Math.max(420, Math.min(680, Math.round(windowHeight * 0.56)));
+  const nextRewards = characterViewState.nextRewards ?? [];
+  const nextRewardNames = nextRewards.length ? nextRewards.map((reward) => reward.name).join(", ") : "최종 레벨 보상";
+  const gaugeWidth = `${Math.max(0, Math.min(100, Math.round(characterViewState.levelProgress * 100)))}%`;
 
   return (
-    <View style={[styles.screen, { backgroundColor: viewState.sceneBackground }]} >
+    <ScrollView style={[styles.screen, { backgroundColor: characterViewState.sceneBackground }]} contentContainerStyle={styles.content}>
       <View style={styles.stageWrap}>
-        <CharacterStage
-          character={character}
-          state={viewState}
-          height={stageHeight}
-          cameraPosition={cameraPosition}
+        <CharacterStage character={character} state={characterViewState} height={stageHeight} />
+      </View>
+
+      <View style={styles.heroCard}>
+        <View style={styles.heroTopRow}>
+          <View>
+            <Text style={styles.heroEyebrow}>작은 세계 성장도</Text>
+            <Text style={styles.heroLevel}>Lv.{growth.currentLevel}</Text>
+          </View>
+          <View style={styles.heroBadge}>
+            <Text style={styles.heroBadgeText}>최고 Lv.{growth.highestLevelReached}</Text>
+          </View>
+        </View>
+
+        <Text style={styles.heroDescription}>{characterViewState.growthDescription}</Text>
+
+        <View style={styles.gaugeTrack}>
+          <View style={[styles.gaugeFill, { width: gaugeWidth }]} />
+        </View>
+
+        <View style={styles.heroBottomRow}>
+          <Text style={styles.heroPoints}>
+            성장 포인트 {growth.growthPoints} / {growth.pointsRequired}
+          </Text>
+          <Text style={styles.heroNextReward}>다음 보상: {nextRewardNames}</Text>
+        </View>
+      </View>
+
+      <View style={styles.statsGrid}>
+        <InfoCard
+          title="오늘 걸음"
+          value={`${formatNumber(today.steps)} / ${formatNumber(goal)}보`}
+          detail={`${Math.round(characterViewState.todayProjection.ratio * 100)}% 달성`}
+        />
+        <InfoCard
+          title="오늘 예상 결과"
+          value={characterViewState.statusLabel}
+          detail={characterViewState.bubbleText}
+          accent={characterViewState.todayProjection.finalResult === "GROW"}
+        />
+        <InfoCard
+          title="이번 주 휴식권"
+          value={growth.weeklyRestUsed ? "이미 사용함" : "사용 가능"}
+          detail={`성장 ${growth.weeklySummary?.growCount ?? 0}일 · 유지 ${growth.weeklySummary?.keepCount ?? 0}일`}
+        />
+        <InfoCard
+          title="현재 선택"
+          value={characterViewState.currentAction?.label ?? "기본 자세"}
+          detail={characterViewState.selectedPet?.label ?? characterViewState.selectedExpression?.label ?? "콘텐츠 선택 가능"}
         />
       </View>
 
-      <View style={styles.todayInline} pointerEvents="none">
-        <View style={styles.todayTextRow}>
-          <Text style={styles.todaySteps}>{formatNumber(viewState.steps)}보</Text>
-          <Text style={styles.todaySlash}>/</Text>
-          <Text style={styles.todayGoal}>{formatNumber(viewState.goal)}보</Text>
-          <Text style={styles.todayPercent}>{Math.round(viewState.progressPercent)}%</Text>
+      {characterViewState.todayProjection.finalResult === "GROW" ? (
+        <View style={styles.celebrationCard}>
+          <Text style={styles.celebrationTitle}>목표 달성 중</Text>
+          <Text style={styles.celebrationText}>오늘이 이대로 끝나면 성장 포인트가 1 올라가고 세계가 더 풍성해져요.</Text>
         </View>
+      ) : null}
 
-        <View style={styles.track}>
-          <View style={[styles.fill, { width: progressWidth }]} />
-        </View>
-
-        <View style={styles.deviceStatusCard}>
-          <View style={styles.deviceStatusRow}>
-            <Text style={styles.deviceStatusLabel}>걸음 연동</Text>
-            <Text style={styles.deviceStatusValue}>{getDeviceStatusLabel(device)}</Text>
-          </View>
-
-          <View style={styles.deviceStatusRow}>
-            <Text style={styles.deviceStatusLabel}>마지막 동기화</Text>
-            <Text style={styles.deviceStatusValue}>{formatSyncLabel(device?.lastSyncAt)}</Text>
-          </View>
-        </View>
+      <View style={styles.nextLevelCard}>
+        <Text style={styles.sectionTitle}>다음 레벨 보상</Text>
+        {nextRewards.length ? (
+          nextRewards.map((reward) => (
+            <View key={reward.id} style={styles.rewardRow}>
+              <View>
+                <Text style={styles.rewardName}>{reward.name}</Text>
+                <Text style={styles.rewardDescription}>{reward.description}</Text>
+              </View>
+              <Text style={styles.rewardPreview}>{reward.preview}</Text>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.rewardDescription}>Lv.20에 도달했어요. 이제 지금의 세계를 계속 지켜 주세요.</Text>
+        )}
       </View>
+
+      <View style={styles.deviceRow}>
+        <Text style={styles.deviceText}>걸음 연동: {getDeviceStatusLabel(device)}</Text>
+        <Text style={styles.deviceText}>마지막 동기화: {formatSyncLabel(device.lastSyncAt)}</Text>
+      </View>
+    </ScrollView>
+  );
+}
+
+function InfoCard({ title, value, detail, accent = false }) {
+  return (
+    <View style={[styles.infoCard, accent && styles.infoCardAccent]}>
+      <Text style={styles.infoTitle}>{title}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
+      <Text style={styles.infoDetail}>{detail}</Text>
     </View>
   );
 }
 
 function getDeviceStatusLabel(device) {
   if (device?.available === false) {
-    return "사용 불가";
+    return "기기 미지원";
   }
 
   if (device?.permissionStatus === "granted") {
@@ -87,7 +147,7 @@ function getDeviceStatusLabel(device) {
   }
 
   if (device?.permissionStatus === "unavailable") {
-    return "기기 미지원";
+    return "사용 불가";
   }
 
   return "확인 중";
@@ -107,105 +167,208 @@ function formatSyncLabel(value) {
     return "아직 없음";
   }
 
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   const hours = String(date.getHours()).padStart(2, "0");
   const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${date.getMonth() + 1}월 ${date.getDate()}일 ${hours}:${minutes}`;
+  return `${month}.${day} ${hours}:${minutes}`;
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    position: "relative",
-    overflow: "hidden",
-    backgroundColor: theme.colors.appBackground,
+  },
+  content: {
+    paddingBottom: 104,
   },
   stageWrap: {
-    flex: 1,
-    marginHorizontal: -theme.spacing.sm,
-    justifyContent: "flex-start",
-  },
-  todayInline: {
-    position: "absolute",
-    left: theme.spacing.md,
-    right: theme.spacing.md,
-    bottom: 84,
-    gap: 10,
-    alignItems: "center",
-  },
-  todayTextRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 6,
-    flexWrap: "wrap",
+    minHeight: 400,
     justifyContent: "center",
   },
-  todaySteps: {
+  heroCard: {
+    marginHorizontal: theme.spacing.md,
+    marginTop: -12,
+    borderRadius: theme.radius.xl,
+    padding: 18,
+    backgroundColor: "rgba(255,255,255,0.94)",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 12,
+  },
+  heroTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  heroEyebrow: {
+    color: theme.colors.inkSoft,
+    fontSize: 12,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
+  },
+  heroLevel: {
     color: theme.colors.ink,
-    fontSize: 18,
-    lineHeight: 22,
+    fontSize: 30,
     fontWeight: "900",
-    letterSpacing: -0.3,
     fontFamily: theme.fonts.display,
   },
-  todaySlash: {
-    color: theme.colors.muted,
-    fontSize: 18,
-    lineHeight: 22,
+  heroBadge: {
+    borderRadius: theme.radius.pill,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: "#111111",
+  },
+  heroBadgeText: {
+    color: "#ffffff",
+    fontSize: 11,
     fontWeight: "900",
     fontFamily: theme.fonts.body,
   },
-  todayGoal: {
+  heroDescription: {
     color: theme.colors.inkSoft,
-    fontSize: 16,
-    lineHeight: 22,
-    fontWeight: "800",
+    fontSize: 13,
+    lineHeight: 20,
+    fontWeight: "700",
     fontFamily: theme.fonts.body,
   },
-  todayPercent: {
-    color: theme.colors.muted,
-    fontSize: 12,
-    lineHeight: 18,
-    fontWeight: "800",
-    paddingLeft: 6,
-    fontFamily: theme.fonts.body,
-  },
-  track: {
-    width: "72%",
-    height: 10,
+  gaugeTrack: {
+    height: 12,
     borderRadius: theme.radius.pill,
     overflow: "hidden",
-    backgroundColor: "#efefed",
-    alignSelf: "center",
+    backgroundColor: "#ebe8de",
   },
-  deviceStatusCard: {
-    width: "72%",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+  gaugeFill: {
+    height: "100%",
+    borderRadius: theme.radius.pill,
+    backgroundColor: "#7ba85f",
+  },
+  heroBottomRow: {
+    gap: 6,
+  },
+  heroPoints: {
+    color: theme.colors.ink,
+    fontSize: 14,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  heroNextReward: {
+    color: theme.colors.inkSoft,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
+  },
+  statsGrid: {
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.md,
+    gap: 10,
+  },
+  infoCard: {
     borderRadius: theme.radius.lg,
-    backgroundColor: "rgba(255,255,255,0.86)",
+    padding: 16,
+    backgroundColor: "rgba(255,255,255,0.9)",
     borderWidth: 1,
     borderColor: theme.colors.border,
     gap: 6,
   },
-  deviceStatusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
+  infoCardAccent: {
+    borderColor: "#8fbe70",
+    backgroundColor: "#f6fbf2",
   },
-  deviceStatusLabel: {
+  infoTitle: {
     color: theme.colors.inkSoft,
     fontSize: 12,
     fontWeight: "800",
+    fontFamily: theme.fonts.body,
   },
-  deviceStatusValue: {
+  infoValue: {
     color: theme.colors.ink,
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: "900",
+    fontFamily: theme.fonts.body,
   },
-  fill: {
-    height: "100%",
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.colors.ink,
+  infoDetail: {
+    color: theme.colors.inkSoft,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
+  },
+  celebrationCard: {
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    borderRadius: theme.radius.xl,
+    padding: 18,
+    backgroundColor: "#111111",
+    gap: 6,
+  },
+  celebrationTitle: {
+    color: "#ffffff",
+    fontSize: 15,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  celebrationText: {
+    color: "rgba(255,255,255,0.82)",
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
+  },
+  nextLevelCard: {
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    borderRadius: theme.radius.xl,
+    padding: 18,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: 12,
+  },
+  sectionTitle: {
+    color: theme.colors.ink,
+    fontSize: 16,
+    fontWeight: "900",
+    fontFamily: theme.fonts.display,
+  },
+  rewardRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 10,
+    borderRadius: theme.radius.lg,
+    padding: 14,
+    backgroundColor: theme.colors.surfaceSoft,
+  },
+  rewardName: {
+    color: theme.colors.ink,
+    fontSize: 14,
+    fontWeight: "900",
+    fontFamily: theme.fonts.body,
+  },
+  rewardDescription: {
+    color: theme.colors.inkSoft,
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
+  },
+  rewardPreview: {
+    color: theme.colors.inkSoft,
+    fontSize: 11,
+    fontWeight: "800",
+    fontFamily: theme.fonts.body,
+  },
+  deviceRow: {
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.md,
+    gap: 4,
+  },
+  deviceText: {
+    color: theme.colors.inkSoft,
+    fontSize: 11,
+    fontWeight: "700",
+    fontFamily: theme.fonts.body,
   },
 });
