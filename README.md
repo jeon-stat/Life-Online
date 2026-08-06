@@ -1,39 +1,9 @@
 # Life Online
 
-캐릭터 성장과 기록을 중심으로 만든 Expo 기반 웹/앱 프로젝트입니다.
+Expo-based app workspace for the Life Online character project.
 
-## 요약
+## Current flow
 
-이 프로젝트는 React Native와 Expo로 만든 작업물이며, 웹 배포 흐름까지 포함되어 있습니다.
-
-- 로그인 기반 앱 구조
-- 홈, 기록, 캐릭터 탭 구성
-- 웹에서는 모의 데이터로 동작하는 단계형 흐름
-- 관리자 및 개발 모드 지원
-- 3D와 UI 컴포넌트의 공통 사용
-
-## 프로젝트 구조
-
-- `App.js`: 전체 앱 진입점과 탭 라우팅
-- `src/`: 화면, 컴포넌트, 인증, 상수, 데이터 제공 로직
-- `public/`: 웹 자산과 모델 파일
-- `docs/`: GitHub Pages 배포용 정적 산출물
-- `tools/`: 빌드 정보 생성과 Pages 동기화 스크립트
-
-## 실행
-
-```bash
-npm install
-npm run web
-```
-
-## 웹 배포
-
-- `npm run export:web`: 정적 웹 빌드 생성
-- `npm run sync:pages`: 생성된 산출물을 Pages 배포 흐름에 맞게 정리
-- `npm run deploy:pages`: 빌드와 동기화를 한 번에 실행
-
-## 참고
-
-- 소스 파일에서 공개 배포 URL은 확인되지 않았습니다.
-- 배포 주소를 추측해서 적기보다, 배포 흐름을 명확히 적는 쪽으로 정리했습니다.
+- `npm run web`: local dev server with live updates
+- `npm run export:web`: static web build for deployment
+- push to `main`: GitHub Pages auto-deploys the latest web build

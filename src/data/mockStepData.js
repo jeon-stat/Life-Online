@@ -1,29 +1,29 @@
 import { DEFAULT_STEP_GOAL } from "../game/stepRules.js";
-import { addDays, createLocalDateFromKey, formatDateKey, normalizeDateKey } from "../game/dateUtils.js";
 
 export const ADMIN_STEP_PRESETS = [
   { id: "rest", label: "0보", steps: 0 },
-  { id: "keep", label: "5,500보", steps: 5500 },
-  { id: "grow", label: `${DEFAULT_STEP_GOAL.toLocaleString("ko-KR")}보`, steps: DEFAULT_STEP_GOAL },
-  { id: "bonus", label: "13,200보", steps: 13200 },
+  { id: "warm", label: "1800보", steps: 1800 },
+  { id: "steady", label: "4200보", steps: 4200 },
+  { id: "goal", label: `${DEFAULT_STEP_GOAL}보`, steps: DEFAULT_STEP_GOAL },
+  { id: "bonus", label: "8600보", steps: 8600 },
 ];
 
 const DEFAULT_HISTORY_DAYS = 365;
-const RECENT_WEEK_PATTERN = [8800, 6200, 11000, 4900, 9300, 7800, 10100];
+const RECENT_WEEK_PATTERN = [8300, 7600, 9100, 6400, 8800, 5400, 10200];
 const HOUR_BINS = 24;
 
 export function buildMockHistory({
-  baseDate = new Date("2026-07-29T12:00:00+09:00"),
+  baseDate = new Date(),
   days = DEFAULT_HISTORY_DAYS,
   todaySteps = RECENT_WEEK_PATTERN[0],
   todaySource = "mock",
 } = {}) {
-  const baseDateKey = normalizeDateKey(baseDate);
-  const normalizedBaseDate = createLocalDateFromKey(baseDateKey);
+  const normalizedBaseDate = createLocalDate(baseDate);
 
   return Array.from({ length: days }, (_, index) => {
-    const date = addDays(normalizedBaseDate, -index);
-    const dateKey = formatDateKey(date);
+    const date = new Date(normalizedBaseDate);
+    date.setDate(normalizedBaseDate.getDate() - index);
+
     const steps =
       index === 0
         ? normalizeSteps(todaySteps ?? RECENT_WEEK_PATTERN[0])
@@ -32,50 +32,50 @@ export function buildMockHistory({
           : generateDailySteps(date, index);
 
     return {
-      id: dateKey,
-      date: dateKey,
+      id: formatLocalDate(date),
+      date: formatLocalDate(date),
       steps,
       source: index === 0 ? todaySource : "mock",
-      hasData: true,
       hourlySteps: buildHourlySteps(date, steps),
     };
   });
 }
 
-export function createMockStepSnapshot(baseDate = new Date("2026-07-29T12:00:00+09:00")) {
+export function createMockStepSnapshot() {
   return {
     mode: "mock",
     source: "mock",
-    history: buildMockHistory({ baseDate }),
+    history: buildMockHistory(),
   };
 }
 
-export function updateMockHistorySteps(history = [], dateKey, steps) {
-  const normalizedDateKey = normalizeDateKey(dateKey);
-  const nextRecord = {
-    id: normalizedDateKey,
-    date: normalizedDateKey,
-    steps: normalizeSteps(steps),
+export function applyAdminOverride(steps) {
+  return {
+    mode: "mock",
     source: "admin_override",
-    hasData: true,
-    hourlySteps: buildHourlySteps(createLocalDateFromKey(normalizedDateKey), normalizeSteps(steps)),
+    history: buildMockHistory({
+      baseDate: new Date(),
+      todaySteps: steps,
+      todaySource: "admin_override",
+    }),
   };
-
-  const byDate = new Map(history.map((record) => [record.date, record]));
-  byDate.set(normalizedDateKey, {
-    ...(byDate.get(normalizedDateKey) ?? {}),
-    ...nextRecord,
-  });
-
-  return [...byDate.values()].sort((left, right) => right.date.localeCompare(left.date)).slice(0, DEFAULT_HISTORY_DAYS);
 }
 
-export function advanceMockHistoryDay(history = [], nextTodaySteps = 0) {
-  const today = history[0]?.date ?? "2026-07-29";
-  const nextDate = formatDateKey(addDays(createLocalDateFromKey(today), 1));
-  const nextHistory = updateMockHistorySteps(history, nextDate, nextTodaySteps);
+function createLocalDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return new Date();
+  }
 
-  return nextHistory.sort((left, right) => right.date.localeCompare(left.date)).slice(0, DEFAULT_HISTORY_DAYS);
+  date.setHours(12, 0, 0, 0);
+  return date;
+}
+
+function formatLocalDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function normalizeSteps(value) {
@@ -93,7 +93,7 @@ function generateDailySteps(date, age) {
   const seasonalWave = Math.sin((dayOfYear / 365) * Math.PI * 2) * 900;
   const midWave = Math.cos((dayOfYear / 48) * Math.PI * 2) * 700;
   const shortWave = Math.sin(dayOfYear / 6.3) * 650;
-  const weekdayBoost = [-900, 120, 240, 360, 620, 1600, 1100][weekday] ?? 0;
+  const weekdayBoost = [ -900, 120, 240, 360, 620, 1600, 1100 ][weekday] ?? 0;
   const noise = seededNoise(dayOfYear, weekday) * 900;
   const base = 4300 + recentBoost + seasonalWave + midWave + shortWave + weekdayBoost + noise;
 

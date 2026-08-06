@@ -1,6 +1,7 @@
-import { Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Platform, SafeAreaView, ScrollView, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
+import { Pressable, Text, TextInput } from "react-native";
 
 import { AuthProvider, useAuth } from "./src/auth/AuthProvider.js";
 import { StepDataProvider, useStepData } from "./src/data/stepDataProvider.js";
@@ -15,6 +16,7 @@ import { AccountMenu } from "./src/components/AccountMenu.js";
 import { BottomTabs } from "./src/components/BottomTabs.js";
 import { theme } from "./src/constants/theme.js";
 import { LAST_UPDATED_LABEL } from "./src/generated/buildInfo.js";
+import { buildCharacterViewModel } from "./src/game/characterState.js";
 
 Text.defaultProps = Text.defaultProps ?? {};
 Text.defaultProps.style = [Text.defaultProps.style, { fontFamily: theme.fonts.body }];
@@ -82,7 +84,7 @@ function useWebFonts() {
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState("home");
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isReady: isAuthReady } = useAuth();
   const adminEnabled = useMemo(() => {
     if (typeof __DEV__ !== "undefined" && __DEV__ === true) {
       return true;
@@ -112,10 +114,20 @@ function AppContent() {
 }
 
 function AppShell({ activeTab, onChangeTab }) {
-  const { goal, admin, growth, characterViewState } = useStepData();
+  const { today, history, goal, admin, isReady: isStepReady } = useStepData();
   const { currentUser, signOut } = useAuth();
   const [menuVisible, setMenuVisible] = useState(false);
-  const viewState = characterViewState;
+
+  const viewState = useMemo(
+    () =>
+      buildCharacterViewModel({
+        todayRecord: today,
+        history,
+        goal,
+        admin,
+      }),
+    [admin, goal, history, today],
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -146,7 +158,7 @@ function AppShell({ activeTab, onChangeTab }) {
         {admin?.visible && admin?.canOverride ? (
           <View style={styles.adminPanelOverlay} pointerEvents="box-none">
             <ScrollView contentContainerStyle={styles.adminPanelScrollContent} showsVerticalScrollIndicator={false}>
-              <AdminPanel admin={admin} onClose={admin.toggleVisible} />
+              <AdminPanel admin={admin} behavior={viewState.behavior} onClose={admin.toggleVisible} />
             </ScrollView>
           </View>
         ) : null}
@@ -174,7 +186,7 @@ function AppShell({ activeTab, onChangeTab }) {
         <AccountMenu
           visible={menuVisible}
           currentUser={currentUser}
-          totalSteps={growth?.lifetimeSteps ?? 0}
+          totalSteps={viewState.growth?.lifetimeSteps ?? 0}
           goal={goal}
           onClose={() => setMenuVisible(false)}
           onLogout={() => {
